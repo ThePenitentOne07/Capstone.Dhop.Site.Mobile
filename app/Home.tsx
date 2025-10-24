@@ -4,10 +4,15 @@ import { useRouter } from "expo-router";
 import { useUserInfo } from "../hooks/useUserInfo";
 import { Header, SearchBar, FeaturedChoreography, ArtistSection, ClassesSection } from "../components";
 import { sharedStyles } from "../styles/shared";
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 export default function HomeScreen() {
   const { user, loading, error } = useUserInfo();
   const router = useRouter();
+
+  // Debug: Log user data
+  console.log('Home user data:', user);
+  console.log('Home user name:', user?.name);
 
   const handleNotificationPress = () => {
     console.log('Notification pressed');
@@ -44,10 +49,13 @@ export default function HomeScreen() {
         price: item?.price,
         yearExperience: item?.yearExperience,
         about: item?.about,
+        area: item?.area ? JSON.stringify(item.area) : undefined,
+        danceType: item?.danceType ? JSON.stringify(item.danceType) : undefined,
       },
     });
+    console.log("item", item);
   };
-
+  
   const handleArtistShowMore = () => {
     console.log('Artist show more pressed');
   };
@@ -74,12 +82,15 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={sharedStyles.screenRoot}>
+      
       <ScrollView style={sharedStyles.scrollView} showsVerticalScrollIndicator={false}>
+        
         <Header 
           userName={user?.name}
           onNotificationPress={handleNotificationPress}
           onMenuPress={handleMenuPress}
         />
+        
 
         <SearchBar 
           onSearchChange={handleSearchChange}

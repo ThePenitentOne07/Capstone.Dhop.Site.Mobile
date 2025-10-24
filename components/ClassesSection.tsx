@@ -40,7 +40,7 @@ export const ClassesSection: React.FC<ClassesSectionProps> = ({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Classes for today</Text>
+        <Text style={styles.sectionTitle}>Thể loại</Text>
         <TouchableOpacity onPress={onEditPress}>
           <Text style={styles.showMore}>Edit &gt;</Text>
         </TouchableOpacity>

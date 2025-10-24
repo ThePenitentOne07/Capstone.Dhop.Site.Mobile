@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 
 interface SearchBarProps {
@@ -8,17 +8,35 @@ interface SearchBarProps {
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({ 
-  placeholder = "Search Artist, course... etc",
+  placeholder = "Tìm biên đạo, nhóm nhảy",
   onSearchChange,
   onFilterPress 
 }) => {
+  const [typedPlaceholder, setTypedPlaceholder] = useState('');
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
+
+  useEffect(() => {
+    let currentIndex = 0;
+    const typingInterval = setInterval(() => {
+      if (currentIndex < placeholder.length) {
+        setTypedPlaceholder(placeholder.substring(0, currentIndex + 1));
+        currentIndex++;
+      } else {
+        setIsTypingComplete(true);
+        clearInterval(typingInterval);
+      }
+    }, 100); // Adjust speed here (100ms per character)
+
+    return () => clearInterval(typingInterval);
+  }, [placeholder]);
+
   return (
     <View style={styles.searchContainer}>
       <View style={styles.searchBar}>
         <Text style={styles.searchIcon}>🔍</Text>
         <TextInput 
           style={styles.searchInput}
-          placeholder={placeholder}
+          placeholder={isTypingComplete ? placeholder : typedPlaceholder}
           placeholderTextColor="#999"
           onChangeText={onSearchChange}
         />
@@ -57,8 +75,8 @@ const styles = StyleSheet.create({
     color: "#111827",
   },
   filterButton: {
-    width: 48,
-    height: 48,
+    width: 50,
+    height: 70, 
     borderRadius: 12,
     backgroundColor: '#FF7A00',
     alignItems: 'center',

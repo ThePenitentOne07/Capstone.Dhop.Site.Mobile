@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 interface HeaderProps {
@@ -12,11 +12,110 @@ export const Header: React.FC<HeaderProps> = ({
   onNotificationPress, 
   onMenuPress 
 }) => {
+  const [displayText, setDisplayText] = useState('');
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [hasStartedAnimation, setHasStartedAnimation] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Debug: Log the userName prop
+  console.log('Header userName prop:', userName);
+  
+  // Handle cases where userName might be undefined, null, or empty
+  const displayName = userName && userName !== 'User' ? userName : 'Guest';
+  const originalText = `Hi, ${displayName}`;
+
+  useEffect(() => {
+    // Always start with empty string to prevent showing full text first
+    if (userName && userName !== 'User' && !hasStartedAnimation) {
+      setDisplayText('');
+      setHasStartedAnimation(true);
+    } else if (!userName) {
+      // If userName is still loading, show a placeholder
+      setDisplayText('Hi, ...');
+    }
+  }, [userName, hasStartedAnimation]);
+
+  const generateRandomChar = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    return chars[Math.floor(Math.random() * chars.length)];
+  };
+
+  const startAnimation = () => {
+    if (isAnimating || !originalText) return;
+    
+    setIsAnimating(true);
+    const duration = 800; 
+    const steps = 20;
+    const stepDuration = duration / steps;
+    
+    let step = 0;
+    intervalRef.current = setInterval(() => {
+      if (step < steps) {
+        // Generate random characters for each position
+        const randomText = originalText
+          .split('')
+          .map((char) => {
+            // Skip spaces and special characters
+            if (char === ' ' || !/[A-Za-z0-9]/.test(char)) {
+              return char;
+            }
+            
+            // Gradually reveal the original character
+            const revealProbability = step / steps;
+            if (Math.random() < revealProbability) {
+              return char;
+            }
+            return generateRandomChar();
+          })
+          .join('');
+        
+        setDisplayText(randomText);
+        step++;
+      } else {
+        // Animation complete, show original text
+        setDisplayText(originalText);
+        setIsAnimating(false);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      }
+    }, stepDuration);
+  };
+
+  const stopAnimation = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setIsAnimating(false);
+    setDisplayText(originalText);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
+
+  // Start animation immediately when we have the correct userName
+  useEffect(() => {
+    if (userName && userName !== 'User' && hasStartedAnimation) {
+      // Start animation immediately without delay
+      startAnimation();
+    }
+  }, [userName, hasStartedAnimation]);
+
   return (
     <View style={styles.header}>
       <View style={styles.topRow}>
         <View style={styles.greetingContainer}>
-          <Text style={styles.greeting}>Hey, {userName}</Text>
+          <Text style={styles.greeting}>
+            {userName && userName !== 'User' ? displayText : 'Hi, ...'}
+          </Text>
         </View>
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconButton} onPress={onNotificationPress}>
@@ -28,7 +127,7 @@ export const Header: React.FC<HeaderProps> = ({
         </View>
       </View>
       <View style={styles.subtextContainer}>
-        <Text style={styles.greetingSubtext}>Chào bạn trở lại! </Text>
+        {/* <Text style={styles.greetingSubtext}>Chào mừng bạn trở lại! </Text> */}
       </View>
     </View>
   );

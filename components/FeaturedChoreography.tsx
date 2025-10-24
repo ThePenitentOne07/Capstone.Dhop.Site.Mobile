@@ -16,6 +16,9 @@ interface ApiChoreographyItem {
     price?: number;
     yearExperience?: number;
     about?: string;
+    area?: string;
+    danceType?: string;
+
   }
 }
 
@@ -38,14 +41,14 @@ const fallbackImages = [
   require('../assets/energetic-dance-performance-given-by-lady-illustration-svg-download-png-11526278.webp'),
 ];
 
-const categories = ['Popular', 'Latest', 'All'];
+const categories = ['Nổi bật', 'Mới nhất', 'Tất cả'];
 
 export const FeaturedChoreography: React.FC<FeaturedChoreographyProps> = ({ 
   onShowMore,
   onCategoryChange,
   onItemPress 
 }) => {
-  const [activeCategory, setActiveCategory] = React.useState('Popular');
+  const [activeCategory, setActiveCategory] = React.useState('Nổi bật');
   const [data, setData] = React.useState<ApiChoreographyItem[]>([]);
   const [loading, setLoading] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -138,7 +141,10 @@ export const FeaturedChoreography: React.FC<FeaturedChoreographyProps> = ({
                     price: item.choreography?.price,
                     yearExperience: item.choreography?.yearExperience,
                     about: item.choreography?.about,
-                  })}
+                    area: item.choreography?.area,
+                    danceType: item.choreography?.danceType,
+                  }
+                )}
                 >
                   <Image 
                     source={imageSource} 

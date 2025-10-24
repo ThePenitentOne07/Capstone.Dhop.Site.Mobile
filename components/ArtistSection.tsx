@@ -51,9 +51,9 @@ export const ArtistSection: React.FC<ArtistSectionProps> = ({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Artist</Text>
+        <Text style={styles.sectionTitle}>Nhóm nhảy</Text>
         <TouchableOpacity onPress={onShowMore}>
-          <Text style={styles.showMore}>Show more </Text>
+          <Text style={styles.showMore}>Xem tất cả &gt;</Text>
         </TouchableOpacity>
       </View>
       

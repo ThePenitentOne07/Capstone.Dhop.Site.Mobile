@@ -1,13 +1,19 @@
-import { View, Text, Button, Image, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, Button, Image, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } from "react-native-reanimated";
-import { Introduction } from "../../components/ChoreographerDetail/index";
+import { LinearGradient } from 'expo-linear-gradient';
+import { Introduction, ChoreographerProject } from "../../components/ChoreographerDetail/index";
 
 export default function DetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const [selectedTab, setSelectedTab] = useState("My Progress");
+
+  // Get screen dimensions for responsive animation
+  const screenWidth = Dimensions.get('window').width;
+  const segmentControlWidth = screenWidth - 50; // 20px margin on each side
+  const slideDistance = segmentControlWidth / 2; // Each segment takes half the width
 
   // Animation values
   const slideValue = useSharedValue(0);
@@ -19,6 +25,8 @@ export default function DetailsScreen() {
   const price = params.price ? Number(params.price) : undefined;
   const about = params.about as string | undefined;
   const yearExperience = params.yearExperience ? Number(params.yearExperience) : undefined;
+  const danceType = params.danceType ? JSON.parse(params.danceType as string) : undefined;
+  const area = params.area ? JSON.parse(params.area as string) : undefined;
 
   const imageSource = avatar
     ? { uri: avatar }
@@ -32,37 +40,53 @@ export default function DetailsScreen() {
 
   // Animated style for the sliding background
   const animatedBackgroundStyle = useAnimatedStyle(() => {
-    const translateX = interpolate(slideValue.value, [0, 1], [0, 165]);
+    const translateX = interpolate(slideValue.value, [0, 1], [0, slideDistance]);
     return {
       transform: [{ translateX }],
     };
   });
 
+  // Function to render the appropriate component based on selected tab
+  const renderTabContent = () => {
+    switch (selectedTab) {
+      case "My Progress":
+        return <Introduction props={{ 
+          title, 
+          name, 
+          price: price || 0, 
+          yearExperience: yearExperience || 0, 
+          about: about || "",
+          area: area || [],
+          danceType: danceType || []
+        }} />;
+      case "My Account":
+        return <ChoreographerProject />;
+      default:
+        return <Introduction props={{ 
+          title, 
+          name, 
+          price: price || 0, 
+          yearExperience: yearExperience || 0, 
+          about: about || "",
+          area: area || [],
+          danceType: danceType || []
+        }} />;
+    }
+  };
+
   return (
     <View style={styles.screenRoot}>
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-        <Image source={imageSource} style={styles.coverImage} resizeMode="cover" />
-
-        <View style={styles.profileSection}>
-          <View style={styles.profileInfo}>
-            <View style={styles.avatarContainer}>
-              <Image 
-                source={imageSource} 
-                style={styles.avatar} 
-                resizeMode="cover" 
-              />
-            </View>
-            <View style={styles.userDetails}>
-              <Text style={styles.userName}>{name || "Lisa Haydon"}</Text>
-              {/* <Text style={styles.userLocation}>Mumbai, India</Text> */}
-            </View>
-          </View>
-          <View style={styles.coinsContainer}>
-          <Text style={styles.coinsText}>5.0 </Text>
-            <Text style={styles.coinsIcon}>⭐</Text>
-  
-          </View>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.imageContainer}>
+          <Image source={imageSource} style={styles.coverImage} resizeMode="cover" />
+          <LinearGradient
+            colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.3)', 'rgba(255, 255, 255, 0.8)', '#FFFFFF']}
+            locations={[0, 0.3, 0.7, 1]}
+            style={styles.imageGradient}
+          />
         </View>
+
+        
 
         <View style={styles.segmentedControl}>
           <Animated.View style={[styles.slidingBackground, animatedBackgroundStyle]} />
@@ -89,14 +113,17 @@ export default function DetailsScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-        <Introduction props={{ title, name, price, yearExperience, about }} />
-        <View style={styles.primaryBtnContainer}>
-        <TouchableOpacity style={styles.primaryBtn} activeOpacity={0.9} onPress={() => router.back()}>
-            <Text style={styles.primaryBtnText}>Go Back</Text>
-          </TouchableOpacity>
-          </View>
+        
+        {renderTabContent()}
+        <View style={styles.bottomSpacer} />
       </ScrollView>
       
+      {/* Sticky Button */}
+      <View style={styles.stickyButtonContainer}>
+        <TouchableOpacity style={styles.primaryBtn} activeOpacity={0.9} onPress={() => router.back()}>
+          <Text style={styles.primaryBtnText}>Đặt lịch!</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -108,10 +135,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
+  scrollView: {
+    flex: 1,
+  },
+  imageContainer: {
+    position: 'relative',
+    width: "100%",
+    height: 220,
+  },
   coverImage: {
     width: "100%",
     height: 220,
     backgroundColor: "#F3F4F6",
+  },
+  imageGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: "100%",
+    height: 220,
   },
   profileSection: {
     flexDirection: "row",
@@ -230,14 +274,30 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "600",
   },
-  primaryBtnContainer: {
+  bottomSpacer: {
+    height: 100, // Space for the sticky button
+  },
+  stickyButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 32,
+    paddingBottom: 34, // Extra padding for safe area
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
   },
- 
   primaryBtn: {
-    marginTop: 24,
     height: 48,
     borderRadius: 12,
     backgroundColor: "#FF7A00",
