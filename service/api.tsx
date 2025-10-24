@@ -11,3 +11,12 @@ export const loginUser = (values: LoginFormValues) => {
     return apiNoToken.post("/auth/otp", { email, otp });
   };
   
+  export const getUserInfo = () => {
+    return api.get("/users/info");
+  };
+
+// Fetch list of users with CHOREOGRAPHY role
+export const getChoreographyUsers = (pageNo: number = 1, pageSize: number = 10) => {
+  return api.get(`/users/CHOREOGRAPHY`, { params: { pageNo, pageSize } });
+};
+  

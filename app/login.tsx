@@ -43,7 +43,7 @@ export default function LoginScreen() {
         throw new Error("Không nhận được token từ máy chủ");
       }
       await AsyncStorage.setItem("token", token);
-      router.replace("/");
+      router.replace("/Home");
     } catch (e: any) {
       console.log("login error:", e?.response?.data ?? e);
       const message = e?.response?.data?.message || e?.message || "Đăng nhập thất bại";
