@@ -20,6 +20,14 @@ export default function Layout() {
       <Stack.Screen name="signUp" options={{ headerShown: false }} />
       <Stack.Screen name="otpSignUp" options={{ headerShown: false }} />
       <Stack.Screen name="Home" options={{ headerShown: false }} />
+      <Stack.Screen name="CustomerMenu" options={{ headerShown: false }} />
+      <Stack.Screen name="BookingList" options={{ headerShown: true, title: "Đơn đặt lịch" }} />
+      <Stack.Screen name="BookingDetail" options={{ headerShown: true, title: "Chi tiết đơn đặt" }} />
+      <Stack.Screen name="Choreographer/ChoreographerHome" options={{ headerShown: false }} />
+      <Stack.Screen name="Choreographer/RequestBookingList" options={{ headerShown: true, title: "Đơn đặt lịch" }} />
+      <Stack.Screen name="Choreographer/BookingDetailOnHold" options={{ headerShown: true, title: "Chi tiết đơn đặt" }} />
+      <Stack.Screen name="Choreographer/CheckInQr" options={{ headerShown: false }} />
+      <Stack.Screen name="CustomerQRCheckIn" options={{ headerShown: false }} />
       <Stack.Screen 
         name="detailsChoreography/[id]" 
         options={{ 
@@ -34,6 +42,19 @@ export default function Layout() {
           }
         }} 
       />
+      <Stack.Screen name="choreographerBooking/[id]" 
+        options={{ 
+          headerShown: true,
+          title: "Đặt lịch",
+          headerStyle: {
+            backgroundColor: "#FF7A00",
+          },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: {
+            fontWeight: "600",
+          }
+        }} 
+        />
     </Stack>
   );
 }

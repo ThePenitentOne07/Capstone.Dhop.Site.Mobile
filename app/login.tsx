@@ -3,7 +3,7 @@ import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet, Imag
 import Animated, { SlideInDown,  BounceIn, Easing, CSSAnimationKeyframes} from "react-native-reanimated";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { loginUser } from "../service/api";
+import { loginUser, getUserInfo } from "../service/api";
 
 
 export default function LoginScreen() {
@@ -43,7 +43,21 @@ export default function LoginScreen() {
         throw new Error("Không nhận được token từ máy chủ");
       }
       await AsyncStorage.setItem("token", token);
-      router.replace("/Home");
+      // fetch user info to decide where to go
+      try {
+        const userRes = await getUserInfo();
+        // FIX: role is an array property 'role', not 'roles', each element has a 'name'
+        const role = userRes?.data?.role?.[0]?.name;
+        console.log("role:", userRes?.data);
+        if (String(role).toUpperCase() === 'CHOREOGRAPHY' || String(role).toUpperCase() === 'CHOREOGRAPHER') {
+          router.replace("/Choreographer/ChoreographerHome");
+        } else {
+          router.replace("/Home");
+        }
+      } catch {
+        // fallback to Home if role cannot be fetched
+        router.replace("/Home");
+      }
     } catch (e: any) {
       console.log("login error:", e?.response?.data ?? e);
       const message = e?.response?.data?.message || e?.message || "Đăng nhập thất bại";

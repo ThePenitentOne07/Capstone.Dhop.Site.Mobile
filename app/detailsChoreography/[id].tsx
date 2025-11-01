@@ -18,6 +18,18 @@ export default function DetailsScreen() {
   // Animation values
   const slideValue = useSharedValue(0);
 
+  // Helper function to safely parse JSON
+  const safeJsonParse = (value: any, defaultValue: any = undefined) => {
+    if (!value) return defaultValue;
+    if (typeof value === 'object') return value;
+    if (typeof value !== 'string') return defaultValue;
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      return defaultValue;
+    }
+  };
+
   const id = String(params.id || "");
   const title = (params.title as string) || (params.nickname as string) || "Choreography";
   const name = (params.name as string) || (params.artist as string) || "";
@@ -25,8 +37,8 @@ export default function DetailsScreen() {
   const price = params.price ? Number(params.price) : undefined;
   const about = params.about as string | undefined;
   const yearExperience = params.yearExperience ? Number(params.yearExperience) : undefined;
-  const danceType = params.danceType ? JSON.parse(params.danceType as string) : undefined;
-  const area = params.area ? JSON.parse(params.area as string) : undefined;
+  const danceType = safeJsonParse(params.danceType, undefined);
+  const area = safeJsonParse(params.area, undefined);
 
   const imageSource = avatar
     ? { uri: avatar }
@@ -120,8 +132,24 @@ export default function DetailsScreen() {
       
       {/* Sticky Button */}
       <View style={styles.stickyButtonContainer}>
-        <TouchableOpacity style={styles.primaryBtn} activeOpacity={0.9} onPress={() => router.back()}>
-          <Text style={styles.primaryBtnText}>Đặt lịch!</Text>
+        <TouchableOpacity 
+          style={styles.primaryBtn} 
+          activeOpacity={0.9} 
+          onPress={() => router.push({
+            pathname: '/choreographerBooking/[id]',
+            params: { 
+              id, 
+              name, 
+              avatar, 
+              price: String(price || 0), 
+              about, 
+              yearExperience: String(yearExperience || 0), 
+              danceType: JSON.stringify(danceType || []), 
+              area: JSON.stringify(area || [])
+            }
+          })}
+        >
+          <Text style={styles.primaryBtnText}>Đặt lịch ngay!</Text>
         </TouchableOpacity>
       </View>
     </View>

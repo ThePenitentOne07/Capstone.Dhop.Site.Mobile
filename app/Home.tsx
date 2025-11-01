@@ -19,7 +19,7 @@ export default function HomeScreen() {
   };
 
   const handleMenuPress = () => {
-    console.log('Menu pressed');
+    router.push('/CustomerMenu');
   };
 
   const handleSearchChange = (text: string) => {
