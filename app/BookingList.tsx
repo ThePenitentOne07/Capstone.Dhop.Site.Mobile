@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { getChoreographerBookings } from '../service/api';
+import { useRefetchOnFocus } from './hooks';
 
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
@@ -12,26 +13,35 @@ export default function BookingList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string|null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>('Tất cả');
+  const mountedRef = useRef(true);
 
-  useEffect(() => {
-    let mounted = true;
-    async function fetchData() {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await getChoreographerBookings();
-        if (mounted) {
-          setData(res.data || []);
-        }
-      } catch (e: any) {
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await getChoreographerBookings();
+      if (mountedRef.current) {
+        setData(res.data || []);
+      }
+    } catch (e: any) {
+      if (mountedRef.current) {
         setError(e?.response?.data?.message || e?.message || 'Lỗi khi tải danh sách đặt lịch');
-      } finally {
-        if (mounted) setLoading(false);
+      }
+    } finally {
+      if (mountedRef.current) {
+        setLoading(false);
       }
     }
-    fetchData();
-    return () => { mounted = false; };
   }, []);
+
+  useEffect(() => {
+    fetchData();
+    return () => { 
+      mountedRef.current = false; 
+    };
+  }, [fetchData]);
+
+  useRefetchOnFocus(fetchData);
 
   const filteredData = useMemo(() => {
     if (selectedStatus === 'Tất cả') return data;
@@ -49,7 +59,19 @@ export default function BookingList() {
 
   return (
     <View style={styles.root}>
-      <Stack.Screen options={{ title: 'Đơn đặt lịch' }} />
+      <Stack.Screen 
+        options={{ 
+          headerShown: true,
+          title: 'Đơn đặt lịch',
+          headerStyle: {
+            backgroundColor: "#FF7A00",
+          },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: {
+            fontWeight: "600",
+          }
+        }} 
+      />
       <Text style={styles.header}>Danh sách đơn đặt lịch</Text>
 
       <StatusChips selected={selectedStatus} onSelect={setSelectedStatus} />

@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useMemo, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { acceptChoreographerBooking } from '../../service/api';
 import { useRouter } from 'expo-router';
+import { useConversationStore } from '../../states/conversationStore';
+
 
 const YELLOW = '#FFD540';
 const ORANGE = '#FF7120';
@@ -26,8 +28,20 @@ export default function BookingDetailOnHold() {
   const [acceptLoading, setAcceptLoading] = useState(false);
   const [acceptSuccess, setAcceptSuccess] = useState<boolean|undefined>();
   const [acceptError, setAcceptError] = useState<string|undefined>();
+  const [chatLoading, setChatLoading] = useState(false);
 
   const router = useRouter();
+  const { createConversation } = useConversationStore();
+
+  // Navigate after showing modal
+  useEffect(() => {
+    if (acceptSuccess === true) {
+      const timer = setTimeout(() => {
+        router.push('/Choreographer/RequestBookingList');
+      }, 2000); // Show modal for 2 seconds before navigating
+      return () => clearTimeout(timer);
+    }
+  }, [acceptSuccess, router]);
 
   if (!booking) {
     return (
@@ -71,9 +85,42 @@ export default function BookingDetailOnHold() {
           {!!booking.area && (
             <Text style={styles.addrText}>{booking.area.ward}, {booking.area.city}</Text>
           )}
-          <TouchableOpacity style={styles.msgBtnFab} activeOpacity={0.86} onPress={()=>{}}>
-            
-            <Text style={styles.msgBtnFabLabel}>Nhắn tin</Text>
+          <TouchableOpacity 
+            style={styles.msgBtnFab} 
+            activeOpacity={0.86} 
+            onPress={async () => {
+              if (!booking.customer?.userUUID) {
+                Alert.alert('Lỗi', 'Không tìm thấy thông tin khách hàng');
+                return;
+              }
+
+              setChatLoading(true);
+              try {
+                const conversation = await createConversation({
+                  type: 'DIRECT',
+                  participantIds: [booking.customer.userUUID],
+                });
+
+                router.push({
+                  pathname: '/ChatDetail',
+                  params: {
+                    conversation: JSON.stringify(conversation),
+                  },
+                });
+              } catch (error: any) {
+                console.error('Failed to create conversation:', error);
+                Alert.alert('Lỗi', error?.message || 'Không thể tạo cuộc trò chuyện');
+              } finally {
+                setChatLoading(false);
+              }
+            }}
+            disabled={chatLoading}
+          >
+            {chatLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.msgBtnFabLabel}>Nhắn tin</Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -105,12 +152,23 @@ export default function BookingDetailOnHold() {
         {Array.isArray(booking.trainingSessions) && booking.trainingSessions.length > 0 && (
           <View style={styles.sessionsBlock}>
             <Text style={styles.sessionsTitle}>Các buổi tập</Text>
-            {booking.trainingSessions.map((s: any, idx: number) => (
-              <View style={styles.sessionCard} key={idx}>
-                <Text style={styles.sessionHeading}>Buổi #{s.sessionNo || (idx + 1)}</Text>
-                <Text style={styles.sessionDate}>{sessionSummary(s)}</Text>
-              </View>
-            ))}
+            {booking.trainingSessions.map((s: any, idx: number) => {
+              const statusName = s.statusName || '';
+              const statusColor = getStatusColor(statusName);
+              const statusText = translateStatus(statusName);
+              
+              return (
+                <View style={styles.sessionCard} key={idx}>
+                  <Text style={styles.sessionHeading}>Buổi #{s.sessionNo || (idx + 1)}</Text>
+                  <Text style={styles.sessionDate}>{sessionSummary(s)}</Text>
+                  {statusText && (
+                    <Text style={[styles.sessionStatus, { color: statusColor }]}>
+                      {statusText}
+                    </Text>
+                  )}
+                </View>
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -141,7 +199,6 @@ export default function BookingDetailOnHold() {
               )}
             </TouchableOpacity>
           </View>
-          {acceptSuccess && <Text style={{textAlign:'center',color:'#16a34a',fontWeight:'bold',marginBottom:6}}>Đồng ý đơn thành công!</Text>}
           {acceptError && <Text style={{textAlign:'center',color:'#b91c1c',fontWeight:'bold',marginBottom:6}}>{acceptError}</Text>}
         </>
       )}
@@ -153,6 +210,23 @@ export default function BookingDetailOnHold() {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Success Modal */}
+      <Modal
+        visible={acceptSuccess === true}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {}}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalIconCircle}>
+              <Text style={styles.modalIcon}>✓</Text>
+            </View>
+            <Text style={styles.modalTitle}>Đơn đã được chấp nhận</Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -183,6 +257,33 @@ function sessionSummary(s: any) {
   } catch {
     return '';
   }
+}
+
+function translateStatus(statusName: string): string {
+  const statusMap: { [key: string]: string } = {
+    'TRAINING_SESSION_SUSSECCFUL': 'Đã hoàn thành',
+    'TRAINING_SESSION_SUSSCECCFUL': 'Đã hoàn thành', // Handle typo variant
+    'TRAINING_SESSION_NOT_STARTED': 'Chưa bắt đầu',
+    'TRAINING_SESSION_STARTED': 'Đang diễn ra',
+    'TRAINING_SESSION_CANCELLED': 'Đã hủy',
+  };
+  return statusMap[statusName] || statusName;
+}
+
+function getStatusColor(statusName: string): string {
+  if (statusName === 'TRAINING_SESSION_SUSSECCFUL' || statusName === 'TRAINING_SESSION_SUSSCECCFUL') {
+    return '#0F9D58'; // Green for successful
+  }
+  if (statusName === 'TRAINING_SESSION_NOT_STARTED') {
+    return '#FF7A00'; // Orange for not started
+  }
+  if (statusName === 'TRAINING_SESSION_STARTED') {
+    return '#2196F3'; // Blue for started
+  }
+  if (statusName === 'TRAINING_SESSION_CANCELLED') {
+    return '#C92A2A'; // Red for cancelled
+  }
+  return '#6B7280'; // Default gray
 }
 
 const styles = StyleSheet.create({
@@ -372,6 +473,13 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontSize: 13,
     fontFamily: 'RobotoMono_400Regular',
+    marginBottom: 4,
+  },
+  sessionStatus: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 4,
+    fontFamily: 'RobotoMono_700Bold',
   },
   msgBtn: {
     backgroundColor: ORANGE2,
@@ -523,6 +631,44 @@ const styles = StyleSheet.create({
   checkinBtnText: {
     color: '#fff',
     fontSize: 16,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    minWidth: 280,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  modalIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#ECFDF5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  modalIcon: {
+    fontSize: 32,
+    color: '#10B981',
+    fontWeight: '900',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    textAlign: 'center',
     fontFamily: 'RobotoMono_700Bold',
   },
 });

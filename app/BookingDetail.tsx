@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { acceptChoreographerBooking } from '../service/api';
 import { useRouter } from 'expo-router';
+import { useConversationStore } from '../states/conversationStore';
 
 const YELLOW = '#FFD540';
 const ORANGE = '#FF7120';
@@ -26,8 +27,10 @@ export default function BookingDetail() {
   const [acceptLoading, setAcceptLoading] = useState(false);
   const [acceptSuccess, setAcceptSuccess] = useState<boolean|undefined>();
   const [acceptError, setAcceptError] = useState<string|undefined>();
+  const [chatLoading, setChatLoading] = useState(false);
 
   const router = useRouter();
+  const { createConversation } = useConversationStore();
 
   if (!booking) {
     return (
@@ -71,9 +74,46 @@ export default function BookingDetail() {
           {!!booking.area && (
             <Text style={styles.addrText}>{booking.area.ward}, {booking.area.city}</Text>
           )}
-          <TouchableOpacity style={styles.msgBtnFab} activeOpacity={0.86} onPress={()=>{}}>
-            
-            <Text style={styles.msgBtnFabLabel}>Nhắn tin</Text>
+          <TouchableOpacity 
+            style={styles.msgBtnFab} 
+            activeOpacity={0.86} 
+            onPress={async () => {
+              // For BookingDetail, we need to check if booking.choreography has userUUID
+              // Based on the structure, it might be booking.choreography.userUUID or booking.choreographerId
+              const choreographerUUID = booking.choreography?.userUUID || booking.choreographerId;
+              
+              if (!choreographerUUID) {
+                Alert.alert('Lỗi', 'Không tìm thấy thông tin biên đạo');
+                return;
+              }
+
+              setChatLoading(true);
+              try {
+                const conversation = await createConversation({
+                  type: 'DIRECT',
+                  participantIds: [choreographerUUID],
+                });
+
+                router.push({
+                  pathname: '/ChatDetail',
+                  params: {
+                    conversation: JSON.stringify(conversation),
+                  },
+                });
+              } catch (error: any) {
+                console.error('Failed to create conversation:', error);
+                Alert.alert('Lỗi', error?.message || 'Không thể tạo cuộc trò chuyện');
+              } finally {
+                setChatLoading(false);
+              }
+            }}
+            disabled={chatLoading}
+          >
+            {chatLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.msgBtnFabLabel}>Nhắn tin</Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -105,12 +145,23 @@ export default function BookingDetail() {
         {Array.isArray(booking.trainingSessions) && booking.trainingSessions.length > 0 && (
           <View style={styles.sessionsBlock}>
             <Text style={styles.sessionsTitle}>Các buổi tập</Text>
-            {booking.trainingSessions.map((s: any, idx: number) => (
-              <View style={styles.sessionCard} key={idx}>
-                <Text style={styles.sessionHeading}>Buổi #{s.sessionNo || (idx + 1)}</Text>
-                <Text style={styles.sessionDate}>{sessionSummary(s)}</Text>
-              </View>
-            ))}
+            {booking.trainingSessions.map((s: any, idx: number) => {
+              const statusName = s.statusName || '';
+              const statusColor = getStatusColor(statusName);
+              const statusText = translateStatus(statusName);
+              
+              return (
+                <View style={styles.sessionCard} key={idx}>
+                  <Text style={styles.sessionHeading}>Buổi #{s.sessionNo || (idx + 1)}</Text>
+                  <Text style={styles.sessionDate}>{sessionSummary(s)}</Text>
+                  {statusText && (
+                    <Text style={[styles.sessionStatus, { color: statusColor }]}>
+                      {statusText}
+                    </Text>
+                  )}
+                </View>
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -197,6 +248,33 @@ function sessionSummary(s: any) {
   } catch {
     return '';
   }
+}
+
+function translateStatus(statusName: string): string {
+  const statusMap: { [key: string]: string } = {
+    'TRAINING_SESSION_SUSSECCFUL': 'Đã hoàn thành',
+    'TRAINING_SESSION_SUSSCECCFUL': 'Đã hoàn thành', // Handle typo variant
+    'TRAINING_SESSION_NOT_STARTED': 'Chưa bắt đầu',
+    'TRAINING_SESSION_STARTED': 'Đang diễn ra',
+    'TRAINING_SESSION_CANCELLED': 'Đã hủy',
+  };
+  return statusMap[statusName] || statusName;
+}
+
+function getStatusColor(statusName: string): string {
+  if (statusName === 'TRAINING_SESSION_SUSSECCFUL' || statusName === 'TRAINING_SESSION_SUSSCECCFUL') {
+    return '#0F9D58'; // Green for successful
+  }
+  if (statusName === 'TRAINING_SESSION_NOT_STARTED') {
+    return '#FF7A00'; // Orange for not started
+  }
+  if (statusName === 'TRAINING_SESSION_STARTED') {
+    return '#2196F3'; // Blue for started
+  }
+  if (statusName === 'TRAINING_SESSION_CANCELLED') {
+    return '#C92A2A'; // Red for cancelled
+  }
+  return '#6B7280'; // Default gray
 }
 
 const styles = StyleSheet.create({
@@ -386,6 +464,13 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontSize: 13,
     fontFamily: 'RobotoMono_400Regular',
+    marginBottom: 4,
+  },
+  sessionStatus: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 4,
+    fontFamily: 'RobotoMono_700Bold',
   },
   msgBtn: {
     backgroundColor: ORANGE2,

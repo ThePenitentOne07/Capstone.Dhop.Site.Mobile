@@ -49,7 +49,7 @@ export default function CheckInQr() {
 
       await qrTrainingSession(sessionId, userId);
       setModalVisible(false);
-      router.back();
+      router.push("/Choreographer/RequestBookingList");
     } catch (e) {
       // keep modal open to let user retry or cancel
     } finally {
@@ -87,7 +87,7 @@ export default function CheckInQr() {
 
       {/* Top bar */}
       <View style={styles.topBar}>
-        <TouchableOpacity style={styles.topBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.topBtn} onPress={() => router.push('/Choreographer/RequestBookingList')}>
           <Text style={styles.topBtnText}>Đóng</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Quét mã QR</Text>
@@ -103,28 +103,72 @@ export default function CheckInQr() {
       </View>
 
       {/* Modal confirm */}
-      {modalVisible && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Bạn có muốn check buổi tập này !</Text>
-            {!!scannedPayload && (
-              <Text style={styles.modalSub}>{scannedPayload.data?.slice(0, 100)}</Text>
-            )}
-            <View style={styles.modalRow}>
-              <TouchableOpacity style={styles.modalBtnSecondary} onPress={handleCancel} disabled={submitting}>
-                <Text style={styles.modalBtnSecondaryText}>Không</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalBtnPrimary} onPress={handleConfirm} disabled={submitting}>
-                {submitting ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.modalBtnPrimaryText}>Có</Text>
-                )}
-              </TouchableOpacity>
+      {modalVisible && scannedPayload && (() => {
+        let parsedData: any = null;
+        try {
+          parsedData = JSON.parse(scannedPayload.data);
+        } catch (e) {
+          parsedData = null;
+        }
+
+        const address = parsedData?.address || '';
+        const scheduledTime = parsedData?.trainingSession?.scheduledTime || '';
+        const durationMinutes = parsedData?.trainingSession?.durationMinutes || 0;
+        const customerName = parsedData?.customerName || '';
+
+        return (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>Bạn có muốn checkin buổi tập này?</Text>
+              
+              {parsedData && (
+                <View style={styles.modalContent}>
+                  {customerName ? (
+                    <View style={styles.modalInfoRow}>
+                      <Text style={styles.modalLabel}>Khách hàng:</Text>
+                      <Text style={styles.modalValue}>{customerName}</Text>
+                    </View>
+                  ) : null}
+                  
+                  {address ? (
+                    <View style={styles.modalInfoRow}>
+                      <Text style={styles.modalLabel}>Địa chỉ:</Text>
+                      <Text style={styles.modalValue}>{address}</Text>
+                    </View>
+                  ) : null}
+                  
+                  {scheduledTime ? (
+                    <View style={styles.modalInfoRow}>
+                      <Text style={styles.modalLabel}>Thời gian:</Text>
+                      <Text style={styles.modalValue}>{formatDateTime(scheduledTime)}</Text>
+                    </View>
+                  ) : null}
+                  
+                  {durationMinutes > 0 ? (
+                    <View style={styles.modalInfoRow}>
+                      <Text style={styles.modalLabel}>Thời lượng:</Text>
+                      <Text style={styles.modalValue}>{formatDuration(durationMinutes)}</Text>
+                    </View>
+                  ) : null}
+                </View>
+              )}
+              
+              <View style={styles.modalRow}>
+                <TouchableOpacity style={styles.modalBtnSecondary} onPress={handleCancel} disabled={submitting}>
+                  <Text style={styles.modalBtnSecondaryText}>Không</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalBtnPrimary} onPress={handleConfirm} disabled={submitting}>
+                  {submitting ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.modalBtnPrimaryText}>Có</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      )}
+        );
+      })()}
 
       {scanned && !modalVisible && (
         <View style={styles.bottomBar}>
@@ -135,6 +179,37 @@ export default function CheckInQr() {
       )}
     </View>
   );
+}
+
+function formatDateTime(dateTimeString: string): string {
+  try {
+    const d = new Date(dateTimeString);
+    const dateStr = d.toLocaleDateString('vi-VN', { 
+      weekday: 'long', 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric' 
+    });
+    const timeStr = d.toLocaleTimeString('vi-VN', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    return `${dateStr}, ${timeStr}`;
+  } catch {
+    return dateTimeString;
+  }
+}
+
+function formatDuration(minutes: number): string {
+  if (minutes >= 60) {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    if (remainingMinutes > 0) {
+      return `${hours} giờ ${remainingMinutes} phút`;
+    }
+    return `${hours} giờ`;
+  }
+  return `${minutes} phút`;
 }
 
 const styles = StyleSheet.create({
@@ -243,6 +318,32 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto',
     color: '#6B7280',
     marginBottom: 12,
+  },
+  modalContent: {
+    marginVertical: 12,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  modalInfoRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    alignItems: 'flex-start',
+  },
+  modalLabel: {
+    fontFamily: 'Roboto',
+    color: '#6B7280',
+    fontSize: 14,
+    width: 90,
+    fontWeight: '600',
+  },
+  modalValue: {
+    fontFamily: 'Roboto',
+    color: '#111827',
+    fontSize: 14,
+    flex: 1,
+    flexWrap: 'wrap',
   },
   modalRow: {
     flexDirection: 'row',

@@ -10,6 +10,7 @@ const STATUS_CHIP_VALUES = [
   'Tất cả',
   'Đơn đặt chờ xác nhận',
   'Đơn đặt đã kích hoạt',
+  'Đơn đặt hoàn tất'
 ];
 
 export default function RequestBookingList() {

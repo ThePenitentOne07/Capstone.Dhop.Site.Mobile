@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { useUserInfo } from '../../hooks/useUserInfo';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, Easing, withDelay } from 'react-native-reanimated';
 
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
@@ -14,25 +15,121 @@ export default function ChoreographerHome() {
   // @ts-ignore: walletBalance might not be defined
   const coin = (user && typeof user.walletBalance !== 'undefined') ? user.walletBalance : 1200;
 
+  // Greeting randomizer (ported from Header)
+  const [displayText, setDisplayText] = useState('Hi, ...');
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [hasStartedAnimation, setHasStartedAnimation] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const displayName = username && username !== 'Choreographer' ? username : 'Guest';
+  const originalText = `Hi, ${displayName}`;
+
+  useEffect(() => {
+    if (username && username !== 'Choreographer' && !hasStartedAnimation) {
+      setDisplayText('');
+      setHasStartedAnimation(true);
+    } else if (!username) {
+      setDisplayText('Hi, ...');
+    }
+  }, [username, hasStartedAnimation]);
+
+  const generateRandomChar = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return chars[Math.floor(Math.random() * chars.length)];
+  };
+
+  const startAnimation = () => {
+    if (isAnimating || !originalText) return;
+    setIsAnimating(true);
+    const duration = 800;
+    const steps = 20;
+    const stepDuration = duration / steps;
+    let step = 0;
+    intervalRef.current = setInterval(() => {
+      if (step < steps) {
+        const randomText = originalText
+          .split('')
+          .map((char) => {
+            if (char === ' ' || !/[A-Za-z0-9]/.test(char)) {
+              return char;
+            }
+            const revealProbability = step / steps;
+            if (Math.random() < revealProbability) {
+              return char;
+            }
+            return generateRandomChar();
+          })
+          .join('');
+        setDisplayText(randomText);
+        step++;
+      } else {
+        setDisplayText(originalText);
+        setIsAnimating(false);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      }
+    }, stepDuration);
+  };
+
+  useEffect(() => {
+    if (username && username !== 'Choreographer' && hasStartedAnimation) {
+      startAnimation();
+    }
+  }, [username, hasStartedAnimation]);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  // Profile section entry animation
+  const profileOpacity = useSharedValue(0);
+  const profileTranslateY = useSharedValue(18);
+  useEffect(() => {
+    // Start immediately on mount
+    profileOpacity.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) });
+    profileTranslateY.value = withTiming(0, { duration: 700, easing: Easing.out(Easing.cubic) });
+  }, [profileOpacity, profileTranslateY]);
+  const profileAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: profileOpacity.value,
+    transform: [{ translateY: profileTranslateY.value }],
+  }));
+
   return (
     <View style={styles.root}>
             <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        {/* TOP GREETING */}
+        <View style={styles.headerTopRow}>
+          <View style={styles.greetingContainer}>
+            <Text style={styles.greeting}>{username ? displayText : 'Hi, ...'}</Text>
+          </View>
+          <View style={styles.headerIcons}>
+            <TouchableOpacity style={styles.iconButton}>
+              <Text style={styles.iconText}>🔔</Text>
+            </TouchableOpacity>
+            
+          </View>
+        </View>
         {/* PROFILE SECTION */}
-        <View style={styles.profileSection}>
+        <Animated.View style={[styles.profileSection, profileAnimatedStyle]}>
           <Image source={avatar} style={styles.profilePic} />
           <View style={{flex:1}}>
             <Text style={styles.name}>{username}</Text>
           </View>
-        </View>
+        </Animated.View>
 
         {/* MENU LIST */}
         <View style={styles.menuSection}>
-          <MenuButton icon="📜" label="Lịch đặt" onPress={()=>{router.push('/Choreographer/RequestBookingList')}} />
-          <MenuButton icon="" label="Ví tiền" />
-          <MenuButton icon="" label="Lịch sử giao dịch" />
-          <MenuButton icon="" label="Lịch" showLast={true} />
+          <MenuButton index={0} icon="📜" label="Lịch đặt" onPress={()=>{router.push('/Choreographer/RequestBookingList')}} />
+          <MenuButton index={1} icon="💳" label="Ví tiền" />
+          <MenuButton index={2} icon="📈" label="Lịch sử giao dịch" />
+          <MenuButton index={3} icon="" label="Chat" onPress={()=>{router.push('/ChatList')}} />
+
+          <MenuButton index={3} icon="📅" label="Lịch" showLast={true} />
         </View>
         {loading && <ActivityIndicator color={ORANGE2} style={{marginTop:20}} />}
       </ScrollView>
@@ -40,16 +137,44 @@ export default function ChoreographerHome() {
   );
 }
 
-function MenuButton({ icon, label, showLast, onPress }: { icon: string; label: string; showLast?: boolean; onPress?: () => void }) {
+function MenuButton({ index = 0, icon, label, showLast, onPress }: { index?: number; icon: string; label: string; showLast?: boolean; onPress?: () => void }) {
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(16);
+
+  useEffect(() => {
+    const delayMs = 220 * index;
+    opacity.value = withDelay(delayMs, withTiming(1, { duration: 900, easing: Easing.out(Easing.cubic) }));
+    translateY.value = withDelay(delayMs, withTiming(0, { duration: 900, easing: Easing.out(Easing.cubic) }));
+  }, [index, opacity, translateY]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }, { translateY: translateY.value }],
+    opacity: opacity.value,
+  }));
+
+  const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.8, { damping: 15, stiffness: 180 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 12, stiffness: 160 });
+  };
+
   return (
-    <TouchableOpacity style={[styles.menuBtn, showLast && {marginBottom: 0}]}
-      activeOpacity={0.7}
+    <AnimatedTouchable
+      style={[styles.menuBtn, showLast && {marginBottom: 0}, animatedStyle]}
+      activeOpacity={0.9}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       onPress={onPress}
     >
       <Text style={styles.menuIcon}>{icon}</Text>
       <Text style={styles.menuLabel}>{label}</Text>
       <Text style={styles.menuArrow}>›</Text>
-    </TouchableOpacity>
+    </AnimatedTouchable>
   );
 }
 
@@ -57,6 +182,39 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    marginBottom: 4,
+  },
+  greetingContainer: {
+    flex: 1,
+  },
+  greeting: {
+    fontSize: 20,
+    color: '#374151',
+    // fontWeight: '400',
+    fontFamily: "RobotoMono_400Regular"
+  },
+  headerIcons: {
+    flexDirection: 'row',
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 16,
+  },
+  iconText: {
+    fontSize: 18,
+    color: '#374151',
   },
   profileSection: {
     flexDirection: 'row',
@@ -160,25 +318,31 @@ const styles = StyleSheet.create({
   menuSection: {
     marginHorizontal: 20,
     backgroundColor:'#fff',
-    borderRadius: 22,
+    borderRadius: 0,
     paddingVertical: 2,
-    borderWidth: 1,
-    borderColor: '#FFD8B4',
+    borderWidth: 0,
+    borderColor: 'transparent',
     marginBottom:28,
     marginTop: 10,
   },
   menuBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 17,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderColor: '#FFE1BB',
-    marginBottom: 2,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: '#FFD8B4',
+    shadowColor: ORANGE2,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   menuIcon: {
-    fontSize: 22,
-    marginRight: 18,
+    fontSize: 20,
+    marginRight: 14,
     color: ORANGE2,
   },
   menuLabel: {
@@ -188,7 +352,7 @@ const styles = StyleSheet.create({
     color: ORANGE2,
   },
   menuArrow: {
-    fontSize: 22,
+    fontSize: 20,
     color: ORANGE2,
     fontWeight: '800',
     marginLeft: 8,

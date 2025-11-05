@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { useUserInfo } from '../hooks/useUserInfo';
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming, Easing } from 'react-native-reanimated';
 
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
@@ -17,23 +18,36 @@ export default function CustomerMenu(){
   
     return (
       <View style={styles.root}>
-              <Stack.Screen options={{ headerShown: false }} />
+              <Stack.Screen
+                  options={{ 
+                    headerShown: true,
+                    title: 'Menu',
+                    headerStyle: {
+                      backgroundColor: "#FF7A00",
+                    },
+                    headerTintColor: "#FFFFFF",
+                    headerTitleStyle: {
+                      fontWeight: "600",
+                    }
+                  }} 
+              />
   
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
           {/* PROFILE SECTION */}
-          <View style={styles.profileSection}>
+          <Animated.View style={[styles.profileSection, stylesAnimated.profileAnimated]}>
             <Image source={avatar} style={styles.profilePic} />
             <View style={{flex:1}}>
               <Text style={styles.name}>{username}</Text>
             </View>
-          </View>
+          </Animated.View>
   
           {/* MENU LIST */}
           <View style={styles.menuSection}>
-            <MenuButton icon="📜" label="Lịch đặt" onPress={()=>{router.push('/BookingList')}} />
-            <MenuButton icon="" label="Ví tiền" />
-            <MenuButton icon="" label="Lịch sử giao dịch" />
-            <MenuButton icon="" label="Lịch" showLast={true} />
+            <MenuButton index={0} icon="📜" label="Lịch đặt" onPress={()=>{router.push('/BookingList')}} />
+            <MenuButton index={1} icon="" label="Ví tiền" />
+            <MenuButton index={2} icon="" label="Lịch sử giao dịch" />
+            <MenuButton index={3} icon="" label="Chat" onPress={()=>{router.push('/ChatList')}} />
+            <MenuButton index={4} icon="" label="Lịch" showLast={true} />
           </View>
           {loading && <ActivityIndicator color={ORANGE2} style={{marginTop:20}} />}
         </ScrollView>
@@ -41,16 +55,43 @@ export default function CustomerMenu(){
     );
   }
   
-  function MenuButton({ icon, label, showLast, onPress }: { icon: string; label: string; showLast?: boolean; onPress?: () => void }) {
+  function MenuButton({ index = 0, icon, label, showLast, onPress }: { index?: number; icon: string; label: string; showLast?: boolean; onPress?: () => void }) {
+    const scale = useSharedValue(1);
+    const opacity = useSharedValue(0);
+    const translateY = useSharedValue(16);
+
+    useEffect(() => {
+      const delayMs = 220 * index;
+      opacity.value = withDelay(delayMs, withTiming(1, { duration: 900, easing: Easing.out(Easing.cubic) }));
+      translateY.value = withDelay(delayMs, withTiming(0, { duration: 900, easing: Easing.out(Easing.cubic) }));
+    }, [index, opacity, translateY]);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }, { translateY: translateY.value }],
+      opacity: opacity.value,
+    }));
+
+    const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
+    const handlePressIn = () => {
+      scale.value = withSpring(0.8, { damping: 15, stiffness: 180 });
+    };
+
+    const handlePressOut = () => {
+      scale.value = withSpring(1, { damping: 12, stiffness: 160 });
+    };
+
     return (
-      <TouchableOpacity style={[styles.menuBtn, showLast && {marginBottom: 0}]}
-        activeOpacity={0.7}
+      <AnimatedTouchable style={[styles.menuBtn, showLast && {marginBottom: 0}, animatedStyle]}
+        activeOpacity={0.9}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         onPress={onPress}
       >
         <Text style={styles.menuIcon}>{icon}</Text>
         <Text style={styles.menuLabel}>{label}</Text>
         <Text style={styles.menuArrow}>›</Text>
-      </TouchableOpacity>
+      </AnimatedTouchable>
     );
   }
   
@@ -161,25 +202,31 @@ export default function CustomerMenu(){
     menuSection: {
       marginHorizontal: 20,
       backgroundColor:'#fff',
-      borderRadius: 22,
+      borderRadius: 0,
       paddingVertical: 2,
-      borderWidth: 1,
-      borderColor: '#FFD8B4',
+      borderWidth: 0,
+      borderColor: 'transparent',
       marginBottom:28,
       marginTop: 10,
     },
     menuBtn: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingVertical: 17,
-      paddingHorizontal: 12,
-      borderBottomWidth: 1,
-      borderColor: '#FFE1BB',
-      marginBottom: 2,
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+      marginBottom: 12,
+      backgroundColor: '#fff',
+      borderRadius: 999,
+      borderWidth: 2,
+      borderColor: '#FFD8B4',
+      shadowColor: ORANGE2,
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 2,
     },
     menuIcon: {
-      fontSize: 22,
-      marginRight: 18,
+      fontSize: 20,
+      marginRight: 14,
       color: ORANGE2,
     },
     menuLabel: {
@@ -189,7 +236,7 @@ export default function CustomerMenu(){
       color: ORANGE2,
     },
     menuArrow: {
-      fontSize: 22,
+      fontSize: 20,
       color: ORANGE2,
       fontWeight: '800',
       marginLeft: 8,
@@ -197,4 +244,20 @@ export default function CustomerMenu(){
       opacity: 0.7,
     },
   });
+
+  // Animated styles that must be created outside render cycle
+  const stylesAnimated = (() => {
+    const profileOpacity = typeof useSharedValue === 'function' ? useSharedValue(0) : { value: 0 as any };
+    const profileTranslateY = typeof useSharedValue === 'function' ? useSharedValue(18) : { value: 18 as any };
+    // kick off on mount
+    useEffect(() => {
+      profileOpacity.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) });
+      profileTranslateY.value = withTiming(0, { duration: 700, easing: Easing.out(Easing.cubic) });
+    }, []);
+    const profileAnimated = useAnimatedStyle(() => ({
+      opacity: profileOpacity.value,
+      transform: [{ translateY: profileTranslateY.value }],
+    }));
+    return { profileAnimated } as const;
+  })();
   

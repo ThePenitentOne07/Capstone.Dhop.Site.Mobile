@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useRouter } from 'expo-router';
 import { useFormatCurrency } from '../../hooks/formatCurrency';
 
 interface SuccessfulProps {
@@ -11,6 +12,12 @@ interface SuccessfulProps {
 
 export default function Successful({ totalPrice, sessions, onDone }: SuccessfulProps) {
   const { formatCurrency } = useFormatCurrency();
+  const router = useRouter();
+  
+  const handleNavigateToBookingList = () => {
+    router.push('/BookingList');
+  };
+  
   return (
     <Animated.View entering={FadeInUp} style={styles.container}>
       <View style={styles.card}>
@@ -37,11 +44,20 @@ export default function Successful({ totalPrice, sessions, onDone }: SuccessfulP
           <Text style={styles.totalValue}>{formatCurrency(totalPrice)}</Text>
         </View>
 
-        {onDone && (
-          <TouchableOpacity style={styles.doneBtn} onPress={onDone} activeOpacity={0.85}>
-            <Text style={styles.doneText}>Xong</Text>
+        <View style={styles.buttonsContainer}>
+          <TouchableOpacity 
+            style={styles.bookingListBtn} 
+            onPress={handleNavigateToBookingList} 
+            activeOpacity={0.85}
+          >
+            <Text style={styles.bookingListText}>Tới danh sách đặt lịch</Text>
           </TouchableOpacity>
-        )}
+          {onDone && (
+            <TouchableOpacity style={styles.doneBtn} onPress={onDone} activeOpacity={0.85}>
+              <Text style={styles.doneText}>Xong</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </Animated.View>
   );
@@ -120,12 +136,29 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#78350F',
   },
-  doneBtn: {
+  buttonsContainer: {
+    width: '100%',
     marginTop: 16,
+    gap: 12,
+  },
+  bookingListBtn: {
+    backgroundColor: '#FF7A00',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  bookingListText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  doneBtn: {
     backgroundColor: '#111827',
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 24,
+    alignItems: 'center',
   },
   doneText: {
     color: '#FFFFFF',
