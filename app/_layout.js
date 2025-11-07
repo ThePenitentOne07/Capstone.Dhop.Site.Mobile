@@ -21,6 +21,19 @@ export default function Layout() {
       <Stack.Screen name="otpSignUp" options={{ headerShown: false }} />
       <Stack.Screen name="Home" options={{ headerShown: false }} />
       <Stack.Screen name="CustomerMenu" options={{ headerShown: false }} />
+      <Stack.Screen name="CustomerProfile" 
+        options={{ 
+          headerShown: true,
+          title: "Hồ sơ",
+          headerStyle: {
+            backgroundColor: "#FF7A00",
+          },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: {
+            fontWeight: "600",
+          }
+        }} 
+      />
       <Stack.Screen name="BookingList"  />
       <Stack.Screen name="BookingDetail" options={{ headerShown: true, title: "Chi tiết đơn đặt" }} />
       <Stack.Screen name="Choreographer/ChoreographerHome" options={{ headerShown: false }} />

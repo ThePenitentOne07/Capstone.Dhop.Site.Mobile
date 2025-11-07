@@ -4,15 +4,22 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIn
 import { useRouter, Stack } from 'expo-router';
 import { useUserInfo } from '../hooks/useUserInfo';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming, Easing } from 'react-native-reanimated';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
 
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
+
 export default function CustomerMenu(){
     const router = useRouter();
     const { user, loading } = useUserInfo();
-    const avatar = require('../assets/vecteezy_man-using-smartphone-device_24096847.png');
     const username = user?.name || 'Choreographer';
+    const avatarInitial = username?.[0]?.toUpperCase() || 'U';
+
+    const handleProfilePress = () => {
+      router.push('/CustomerProfile');
+    };
     // @ts-ignore: walletBalance might not be defined
     const coin = (user && typeof user.walletBalance !== 'undefined') ? user.walletBalance : 1200;
   
@@ -34,12 +41,27 @@ export default function CustomerMenu(){
   
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
           {/* PROFILE SECTION */}
-          <Animated.View style={[styles.profileSection, stylesAnimated.profileAnimated]}>
-            <Image source={avatar} style={styles.profilePic} />
+          <AnimatedTouchableOpacity
+            style={[styles.profileSection, stylesAnimated.profileAnimated] }
+            activeOpacity={0.9}
+            onPress={handleProfilePress}
+          >
+            <View style={styles.avatarWrapper}>
+              {user?.avatar ? (
+                <Image source={{ uri: user.avatar }} style={styles.profilePic} />
+              ) : (
+                <View style={styles.profileFallback}>
+                  <Text style={styles.profileFallbackText}>{avatarInitial}</Text>
+                </View>
+              )}
+              <View style={styles.editBadge}>
+                <MaterialIcons name="edit" size={12} color="#fff" />
+              </View>
+            </View>
             <View style={{flex:1}}>
               <Text style={styles.name}>{username}</Text>
             </View>
-          </Animated.View>
+          </AnimatedTouchableOpacity>
   
           {/* MENU LIST */}
           <View style={styles.menuSection}>
@@ -117,14 +139,46 @@ export default function CustomerMenu(){
       shadowRadius: 9,
       elevation: 3,
     },
+    avatarWrapper: {
+      position: 'relative',
+      marginRight: 18,
+    },
     profilePic: {
       width: 68,
       height: 68,
       borderRadius: 40,
-      marginRight: 18,
       borderWidth: 2,
       borderColor: ORANGE2,
       backgroundColor: '#fff',
+    },
+    profileFallback: {
+      width: 68,
+      height: 68,
+      borderRadius: 40,
+      borderWidth: 2,
+      borderColor: ORANGE2,
+      backgroundColor: '#fff',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    editBadge: {
+      position: 'absolute',
+      right: -2,
+      bottom: -2,
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: ORANGE2,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: '#fff',
+      zIndex: 1,
+    },
+    profileFallbackText: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: ORANGE2,
     },
     name: {
       fontSize: 20,

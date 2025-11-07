@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChatStore } from '../states/chatStore';
@@ -131,6 +131,8 @@ export default function ChatDetail() {
       } catch (error) {
         console.error('Failed to setup socket:', error);
       }
+      
+      
     };
 
     setupSocket();
@@ -158,7 +160,7 @@ export default function ChatDetail() {
       }, 100);
     }
   }, [chats.length, isLoading]);
-
+ 
   const handleSendMessage = async () => {
     if (!message.trim() || !conversation?.id || sending) return;
 
@@ -224,6 +226,7 @@ export default function ChatDetail() {
     const prevMessage = index > 0 ? chats[index - 1] : null;
     const showDate = formatMessageDate(item.createdDate, prevMessage?.createdDate);
     const isMe = item.me;
+    console.log("tin nhan",item);
 
     return (
       <View>
@@ -235,9 +238,13 @@ export default function ChatDetail() {
         <View style={[styles.messageContainer, isMe ? styles.messageRight : styles.messageLeft]}>
           {!isMe && (
             <View style={styles.avatarContainer}>
-              <Text style={styles.avatarText}>
-                {item.sender?.name?.[0]?.toUpperCase() || 'U'}
-              </Text>
+              {item.sender?.avatar ? (
+                <Image source={{ uri: item.sender.avatar }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.avatarText}>
+                  {item.sender?.name?.[0]?.toUpperCase() || 'U'}
+                </Text>
+              )}
             </View>
           )}
           <View style={[styles.messageBubble, isMe ? styles.messageBubbleRight : styles.messageBubbleLeft]}>
@@ -392,6 +399,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: ORANGE2,
     fontFamily: 'RobotoMono_700Bold',
+  },
+  avatarImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   avatarTextMe: {
     fontSize: 10,
