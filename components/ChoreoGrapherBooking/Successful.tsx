@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import { useFormatCurrency } from '../../hooks/formatCurrency';
+import { useFormatCurrency } from '../../hooks/useFormatCurrency';
 
 interface SuccessfulProps {
   totalPrice: number;

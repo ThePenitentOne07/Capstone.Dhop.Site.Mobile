@@ -40,7 +40,7 @@ export default function HomeScreen() {
 
   const handleChoreographyItemPress = (item: any) => {
     router.push({
-      pathname: "/detailsChoreography/[id]",
+      pathname: "/DetailsChoreography/[id]",
       params: {
         id: item?.id,
         title: item?.title,

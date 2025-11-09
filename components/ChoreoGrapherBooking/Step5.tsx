@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'rea
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { getChoreographerBookingTotalPrice, createChoreographerBooking } from '../../service/api';
 import { ChoreographerBooking } from '../../models/choreographerBooking';
-import { useFormatCurrency } from '../../hooks/formatCurrency';
+import { useFormatCurrency } from '../../hooks/useFormatCurrency';
 import Successful from './Successful';
 
 interface Step5Props {

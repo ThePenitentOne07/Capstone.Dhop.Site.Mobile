@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { ChatMessageRequest, ChatMessageResponse } from "../models/chat";
-import { ChatService } from "../service/ChatService";
+import { ChatService } from "../service/chatService";
 
 interface ChatState {
     chats: ChatMessageResponse[];

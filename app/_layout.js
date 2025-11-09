@@ -16,9 +16,9 @@ export default function Layout() {
   return (
     <Stack screenOptions={{ animation: "slide_from_right" }}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="login" options={{ headerShown: false }} />
-      <Stack.Screen name="signUp" options={{ headerShown: false }} />
-      <Stack.Screen name="otpSignUp" options={{ headerShown: false }} />
+      <Stack.Screen name="Login" options={{ headerShown: false }} />
+      <Stack.Screen name="SignUp" options={{ headerShown: false }} />
+      <Stack.Screen name="OtpSignUp" options={{ headerShown: false }} />
       <Stack.Screen name="Home" options={{ headerShown: false }} />
       <Stack.Screen name="CustomerMenu" options={{ headerShown: false }} />
       <Stack.Screen name="CustomerProfile" 
@@ -42,7 +42,7 @@ export default function Layout() {
       <Stack.Screen name="Choreographer/CheckInQr" options={{ headerShown: false }} />
       <Stack.Screen name="CustomerQRCheckIn" options={{ headerShown: false }} />
       <Stack.Screen 
-        name="detailsChoreography/[id]" 
+        name="DetailsChoreography/[id]" 
         options={{ 
           headerShown: true,
           title: "Chi tiết biên đạo",
@@ -55,7 +55,7 @@ export default function Layout() {
           }
         }} 
       />
-      <Stack.Screen name="choreographerBooking/[id]" 
+      <Stack.Screen name="ChoreographerBooking/[id]" 
         options={{ 
           headerShown: true,
           title: "Đặt lịch",

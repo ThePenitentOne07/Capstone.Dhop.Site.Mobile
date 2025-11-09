@@ -119,7 +119,7 @@ export default function HomeScreen() {
                   activeOpacity={0.8}
                   style={styles.buttonContainer}
                   onPress={() => {
-                    router.push("/login");
+                    router.push("/Login");
                   }}
                   entering={BounceIn.duration(1000).delay(1200)}
                   exiting={FadeOut.duration(800)}
