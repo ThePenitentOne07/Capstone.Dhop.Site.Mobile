@@ -136,7 +136,7 @@ export default function DetailsScreen() {
           style={styles.primaryBtn} 
           activeOpacity={0.9} 
           onPress={() => router.push({
-            pathname: '/choreographerBooking/[id]',
+            pathname: '/ChoreographerBooking/[id]',
             params: { 
               id, 
               name, 
