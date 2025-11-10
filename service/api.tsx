@@ -48,3 +48,13 @@ export const qrTrainingSession = (trainingSessionId: number, userId: number) => 
 export const generateTrainingSessionQR = (trainingSessionId: number) => {
   return api.get(`/training_session/generating-QR`, { params: { trainingSessionId } });
 };
+
+export interface UpdateUserProfilePayload {
+  avatar: string;
+  name: string;
+  phone: string;
+}
+
+export const updateUserProfile = (payload: UpdateUserProfilePayload) => {
+  return api.patch(`/users/profile`, payload);
+};

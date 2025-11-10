@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { Stack } from 'expo-router';
 import { useUserInfo } from '../hooks/useUserInfo';
 import * as ImagePicker from 'expo-image-picker';
 import { BlurView } from 'expo-blur';
 import { MaterialIcons } from '@expo/vector-icons';
+import { uploadImageToCloudinary } from '../service/cloudinaryService';
+import { updateUserProfile } from '../service/api';
 
 const ORANGE2 = '#FF7A00';
 const ORANGE = '#FF7120';
@@ -14,11 +16,16 @@ export default function CustomerProfile() {
   const [uploading, setUploading] = useState(false);
 //   const placeholderAvatar = require('../assets/vecteezy_man-using-smartphone-device_24096847.png');
   const avatarUri = user?.avatar as string | undefined;
+  const [localAvatarUri, setLocalAvatarUri] = useState<string | undefined>(avatarUri);
   const name = user?.name || 'Chưa có tên';
   const email = user?.email || 'Chưa cập nhật email';
   // @ts-ignore: optional fields may not exist on user
   const phone = user?.phone || 'Cập nhật số điện thoại';
   const avatarInitial = name?.[0]?.toUpperCase() || 'U';
+
+  useEffect(() => {
+    setLocalAvatarUri(avatarUri);
+  }, [avatarUri]);
 
   const handleImagePicker = async () => {
     try {
@@ -39,15 +46,31 @@ export default function CustomerProfile() {
 
       if (!result.canceled && result.assets[0]) {
         const imageUri = result.assets[0].uri;
-        // TODO: Upload image to server and update user avatar
-        // For now, just show an alert
-        Alert.alert('Thành công', 'Đã chọn ảnh. Tính năng upload sẽ được thêm sau.');
-        // After upload, call refetch() to refresh user data
-        // await refetch();
+        const asset = result.assets[0];
+        setUploading(true);
+        const uploadResult = await uploadImageToCloudinary(imageUri, asset.fileName ?? undefined);
+        setLocalAvatarUri(uploadResult.secure_url);
+
+        const payload = {
+          avatar: uploadResult.secure_url,
+          name: user?.name ?? '',
+          phone: user?.phone ?? '',
+        };
+
+        await updateUserProfile(payload);
+        await refetch();
+
+        Alert.alert('Thành công', 'Ảnh đại diện đã được cập nhật.');
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert('Lỗi', 'Không thể chọn ảnh. Vui lòng thử lại.');
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Không thể cập nhật ảnh đại diện. Vui lòng thử lại.';
+      Alert.alert('Lỗi', message);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -78,8 +101,8 @@ export default function CustomerProfile() {
             
               <ActivityIndicator color={ORANGE2} size="small" />
             
-          ) : avatarUri ? (
-            <Image source={{ uri: avatarUri }} style={styles.profilePic} />
+          ) : localAvatarUri ? (
+            <Image source={{ uri: localAvatarUri }} style={styles.profilePic} />
           ) : (
             <View style={styles.profileFallback}>
               <Text style={styles.profileFallbackText}>{avatarInitial}</Text>
@@ -92,7 +115,6 @@ export default function CustomerProfile() {
               </BlurView>
             </View>
           )}
-          eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJiYzgyOGZhOC1iMjc5LTRmNjQtYjhlNi04ZTQ1YjViYTNmMGIiLCJwZXJtaXNzaW9ucyI6W10sInNjb3BlIjoiUk9MRV9VU0VSIiwiaXNzIjoiZGhvcC5zaXRlIiwiZXhwIjoxNzYzNDA3MTY1LCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzYyNTA3MTY1LCJqdGkiOiIxNDc3ZTYwMC1hYWEyLTRlMmYtOTEzNC0xZjU0NGI2MWM3MmEifQ.TrejNR54S76z76gxFxsf6rgHxxOfH-KcZJ7Fi5fmu6rS8y88-iF88Kpy3z6bbQILfxtYoqXcpWvAbh0P62BLdQeyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJiYzgyOGZhOC1iMjc5LTRmNjQtYjhlNi04ZTQ1YjViYTNmMGIiLCJwZXJtaXNzaW9ucyI6W10sInNjb3BlIjoiUk9MRV9VU0VSIiwiaXNzIjoiZGhvcC5zaXRlIiwiZXhwIjoxNzYzNDA3MTY1LCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzYyNTA3MTY1LCJqdGkiOiIxNDc3ZTYwMC1hYWEyLTRlMmYtOTEzNC0xZjU0NGI2MWM3MmEifQ.TrejNR54S76z76gxFxsf6rgHxxOfH-KcZJ7Fi5fmu6rS8y88-iF88Kpy3z6bbQILfxtYoqXcpWvAbh0P62BLdQ
         </TouchableOpacity>
       </View>
 
