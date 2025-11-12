@@ -257,7 +257,13 @@ export default function ChatDetail() {
           </View>
           {isMe && (
             <View style={styles.avatarContainer}>
-              <Text style={styles.avatarTextMe}>Me</Text>
+              {item.sender?.avatar ? (
+                <Image source={{ uri: item.sender.avatar }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.avatarText}>
+                  {item.sender?.name?.[0]?.toUpperCase() || 'M'}
+                </Text>
+              )}
             </View>
           )}
         </View>
@@ -404,11 +410,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-  },
-  avatarTextMe: {
-    fontSize: 10,
-    color: ORANGE2,
-    fontFamily: 'RobotoMono_700Bold',
   },
   messageBubble: {
     maxWidth: '70%',

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useConversationStore } from '../states/conversationStore';
 import type { ConversationResponse } from '../models/conversation';
@@ -34,24 +34,53 @@ export default function ChatList() {
     try {
       const date = new Date(dateString);
       const now = new Date();
-      const diffTime = Math.abs(now.getTime() - date.getTime());
+      
+      // Check if date is invalid
+      if (isNaN(date.getTime())) {
+        return '';
+      }
+
+      // Use UTC dates for comparison to avoid timezone issues
+      const dateUTC = new Date(Date.UTC(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate()
+      ));
+      
+      const nowUTC = new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate()
+      ));
+
+      // Calculate difference in days
+      const diffTime = nowUTC.getTime() - dateUTC.getTime();
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
       if (diffDays === 0) {
-        return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        // Today - show time in local timezone
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        return `${hours}:${minutes}`;
       } else if (diffDays === 1) {
+        // Yesterday
         return 'Hôm qua';
-      } else if (diffDays < 7) {
+      } else if (diffDays < 7 && diffDays > 0) {
+        // Within this week
         return date.toLocaleDateString('vi-VN', { weekday: 'short' });
       } else {
+        // Older than a week - show date
         return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
       }
     } catch {
       return '';
     }
   };
+  
 
   const renderConversationItem = ({ item }: { item: ConversationResponse }) => {
+    console.log("list", item);
+
     return (
       <TouchableOpacity
         style={styles.conversationItem}
@@ -59,9 +88,13 @@ export default function ChatList() {
         activeOpacity={0.7}
       >
         <View style={styles.avatarContainer}>
-          <Text style={styles.avatarText}>
-            {item.conversationName?.[0]?.toUpperCase() || 'U'}
-          </Text>
+          {item.conversationAvatar ? (
+            <Image source={{ uri: item.conversationAvatar }} style={styles.avatarImage} />
+          ) : (
+            <Text style={styles.avatarText}>
+              {item.conversationName?.[0]?.toUpperCase() || 'U'}
+            </Text>
+          )}
         </View>
         <View style={styles.conversationContent}>
           <View style={styles.conversationHeader}>
@@ -214,6 +247,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: ORANGE2,
     fontFamily: 'RobotoMono_700Bold',
+  },
+  avatarImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   conversationContent: {
     flex: 1,

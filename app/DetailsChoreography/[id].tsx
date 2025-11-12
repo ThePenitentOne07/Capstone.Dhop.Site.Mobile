@@ -1,14 +1,33 @@
-import { View, Text, Button, Image, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
+import { View, Text, Button, Image, ScrollView, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } from "react-native-reanimated";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Introduction, ChoreographerProject } from "../../components/ChoreographerDetail/index";
+import { getChoreographerById } from "../../service/api";
+
+interface ChoreographerData {
+  id: string;
+  title?: string;
+  nickname?: string;
+  name?: string;
+  artist?: string;
+  avatar?: string;
+  price?: number;
+  about?: string;
+  yearExperience?: number;
+  danceType?: any[];
+  area?: any[];
+}
 
 export default function DetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const [selectedTab, setSelectedTab] = useState("My Progress");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState("")
+  const [choreographerData, setChoreographerData] = useState<ChoreographerData | null>(null);
 
   // Get screen dimensions for responsive animation
   const screenWidth = Dimensions.get('window').width;
@@ -18,27 +37,43 @@ export default function DetailsScreen() {
   // Animation values
   const slideValue = useSharedValue(0);
 
-  // Helper function to safely parse JSON
-  const safeJsonParse = (value: any, defaultValue: any = undefined) => {
-    if (!value) return defaultValue;
-    if (typeof value === 'object') return value;
-    if (typeof value !== 'string') return defaultValue;
-    try {
-      return JSON.parse(value);
-    } catch (e) {
-      return defaultValue;
-    }
-  };
-
   const id = String(params.id || "");
-  const title = (params.title as string) || (params.nickname as string) || "Choreography";
-  const name = (params.name as string) || (params.artist as string) || "";
-  const avatar = params.avatar as string | undefined;
-  const price = params.price ? Number(params.price) : undefined;
-  const about = params.about as string | undefined;
-  const yearExperience = params.yearExperience ? Number(params.yearExperience) : undefined;
-  const danceType = safeJsonParse(params.danceType, undefined);
-  const area = safeJsonParse(params.area, undefined);
+
+  // Fetch choreographer data
+  useEffect(() => {
+    const fetchChoreographerData = async () => {
+      if (!id) {
+        setError("Choreographer ID is required");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getChoreographerById(id);
+        setChoreographerData(response.data);
+        setUserId(response.data.userId)
+      } catch (err: any) {
+        console.error("Failed to fetch choreographer data:", err);
+        setError(err?.response?.data?.message || "Failed to load choreographer details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChoreographerData();
+  }, [id]);
+
+  // Extract data from fetched response
+  const title = choreographerData?.title || choreographerData?.nickname || "Choreography";
+  const name = choreographerData?.name || choreographerData?.artist || "";
+  const avatar = choreographerData?.avatar;
+  const price = choreographerData?.price;
+  const about = choreographerData?.about;
+  const yearExperience = choreographerData?.yearExperience;
+  const danceType = choreographerData?.danceType || [];
+  const area = choreographerData?.area || [];
 
   const imageSource = avatar
     ? { uri: avatar }
@@ -85,6 +120,31 @@ export default function DetailsScreen() {
         }} />;
     }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <View style={[styles.screenRoot, styles.centerContainer]}>
+        <ActivityIndicator size="large" color="#FF7A00" />
+        <Text style={styles.loadingText}>Đang tải thông tin...</Text>
+      </View>
+    );
+  }
+
+  // Error state
+  if (error || !choreographerData) {
+    return (
+      <View style={[styles.screenRoot, styles.centerContainer]}>
+        <Text style={styles.errorText}>{error || "Không tìm thấy thông tin"}</Text>
+        <TouchableOpacity 
+          style={styles.retryButton} 
+          onPress={() => router.back()}
+        >
+          <Text style={styles.retryButtonText}>Quay lại</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.screenRoot}>
@@ -138,7 +198,7 @@ export default function DetailsScreen() {
           onPress={() => router.push({
             pathname: '/ChoreographerBooking/[id]',
             params: { 
-              id, 
+              userId, 
               name, 
               avatar, 
               price: String(price || 0), 
@@ -162,6 +222,33 @@ const styles = StyleSheet.create({
   screenRoot: {
     flex: 1,
     backgroundColor: "#FFFFFF",
+  },
+  centerContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#6B7280",
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#C92A2A",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: "#FF7A00",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
   scrollView: {
     flex: 1,

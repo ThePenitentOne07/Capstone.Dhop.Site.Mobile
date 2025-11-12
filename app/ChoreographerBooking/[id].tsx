@@ -25,7 +25,7 @@ export default function ChoreographerBookingScreen() {
     }
   };
 
-  const id = String(params.id || "");
+  const id = String(params.userId || "");
   const name = (params.name as string) || "";
   const avatar = params.avatar as string | undefined;
   const price = params.price ? Number(params.price) : 0;
@@ -96,7 +96,11 @@ export default function ChoreographerBookingScreen() {
           />
         )}
         {currentStep === 2 && (
-          <Step2 numberOfDays={bookingData.numberOfDays} onNext={handleStep2Next} />
+          <Step2
+            choreographerId={id}
+            numberOfDays={bookingData.numberOfDays}
+            onNext={handleStep2Next}
+          />
         )}
         {currentStep === 3 && (
           <Step3 selectedDatesISO={bookingData.selectedDatesISO || []} onSubmit={handleStep3Next} />
@@ -111,7 +115,6 @@ export default function ChoreographerBookingScreen() {
             location={bookingData.location}
             detail={bookingData.description}
             sessions={bookingData.sessions || []}
-            pricePerHour={price}
           />
         )}
       </ScrollView>

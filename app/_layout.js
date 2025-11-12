@@ -40,6 +40,7 @@ export default function Layout() {
       <Stack.Screen name="Choreographer/RequestBookingList" options={{ headerShown: true, title: "Đơn đặt lịch" }} />
       <Stack.Screen name="Choreographer/BookingDetailOnHold" options={{ headerShown: true, title: "Chi tiết đơn đặt" }} />
       <Stack.Screen name="Choreographer/CheckInQr" options={{ headerShown: false }} />
+      <Stack.Screen name="Choreographer/Explore" options={{ headerShown: false }} />
       <Stack.Screen name="CustomerQRCheckIn" options={{ headerShown: false }} />
       <Stack.Screen 
         name="DetailsChoreography/[id]" 

@@ -17,8 +17,56 @@ export const loginUser = (values: LoginFormValues) => {
   };
 
 // Fetch list of users with CHOREOGRAPHY role
-export const getChoreographyUsers = (pageNo: number = 1, pageSize: number = 10) => {
-  return api.get(`/users/CHOREOGRAPHY`, { params: { pageNo, pageSize } });
+export interface ChoreographyUsersQuery {
+  pageNo?: number;
+  pageSize?: number;
+  areas?: number | null;
+  minExperience?: number | null;
+  maxExperience?: number | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+}
+
+export const getChoreographyUsers = ({
+  pageNo = 1,
+  pageSize = 10,
+  areas,
+  minExperience,
+  maxExperience,
+  minPrice,
+  maxPrice,
+}: ChoreographyUsersQuery = {}) => {
+  const params = {
+    pageNo,
+    pageSize,
+    areas: areas ?? undefined,
+    minExperience: minExperience ?? undefined,
+    maxExperience: maxExperience ?? undefined,
+    minPrice: minPrice ?? undefined,
+    maxPrice: maxPrice ?? undefined,
+  };
+  console.log("API getChoreographyUsers params:", params);
+  return api.get(`/users/CHOREOGRAPHY`, { params });
+};
+
+export interface GetChoreographyScheduleParams {
+  id: number | string;
+  startTime: string;
+  endTime: string;
+}
+
+export const getChoreographySchedule = ({
+  id,
+  startTime,
+  endTime,
+}: GetChoreographyScheduleParams) => {
+  const params = { id, startTime, endTime };
+  console.log("API getChoreographySchedule params:", params);
+  return api.get(`/choreography/schedule`, { params });
+};
+// Get choreographer details by ID
+export const getChoreographerById = (choreographerId: string) => {
+  return api.get(`/choreography/${choreographerId}`);
 };
   
 // Calculate total price for a choreographer booking

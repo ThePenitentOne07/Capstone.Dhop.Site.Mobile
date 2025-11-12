@@ -53,14 +53,14 @@ export const FeaturedChoreography: React.FC<FeaturedChoreographyProps> = ({
   const [loading, setLoading] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const pageNo = 1;
-  const pageSize = 10;
-
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await getChoreographyUsers(pageNo, pageSize);
+      const res = await getChoreographyUsers({
+        pageNo: 1,
+        pageSize: 10,
+      });
       const payload: ApiResponse = res.data;
       setData(Array.isArray(payload?.items) ? payload.items : []);
     } catch (e: any) {
@@ -133,7 +133,7 @@ export const FeaturedChoreography: React.FC<FeaturedChoreographyProps> = ({
                   onPress={() => onItemPress?.({
                     // map to a minimal shape for consumer code
                     // @ts-ignore allow consumer to decide
-                    id: String(item.id),
+                    id: String(item.choreography.choreographyId),
                     title,
                     artist,
                     image: imageSource,

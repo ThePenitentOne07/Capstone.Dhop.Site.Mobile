@@ -31,7 +31,7 @@ export default function HomeScreen() {
   };
 
   const handleChoreographyShowMore = () => {
-    console.log('Choreography show more pressed');
+    router.push("/Choreographer/Explore");
   };
 
   const handleChoreographyCategoryChange = (category: string) => {
@@ -43,14 +43,14 @@ export default function HomeScreen() {
       pathname: "/DetailsChoreography/[id]",
       params: {
         id: item?.id,
-        title: item?.title,
-        name: item?.artist,
-        avatar: item?.image?.uri || item?.avatar,
-        price: item?.price,
-        yearExperience: item?.yearExperience,
-        about: item?.about,
-        area: item?.area ? JSON.stringify(item.area) : undefined,
-        danceType: item?.danceType ? JSON.stringify(item.danceType) : undefined,
+        // title: item?.title,
+        // name: item?.artist,
+        // avatar: item?.image?.uri || item?.avatar,
+        // price: item?.price,
+        // yearExperience: item?.yearExperience,
+        // about: item?.about,
+        // area: item?.area ? JSON.stringify(item.area) : undefined,
+        // danceType: item?.danceType ? JSON.stringify(item.danceType) : undefined,
       },
     });
     console.log("item", item);
