@@ -24,7 +24,13 @@ export const useConversationStore = create<ConversationStore>((set) => ({
         set({ isLoading: true, error: null });
         try {
             const response = await ConversationService.getMyConversations();
-            set({ conversations: response, isLoading: false });
+            // Sort conversations by modifiedDate in descending order (latest first)
+            const sortedConversations = [...response].sort((a, b) => {
+                const dateA = new Date(a.modifiedDate).getTime();
+                const dateB = new Date(b.modifiedDate).getTime();
+                return dateB - dateA; // Descending order (newest first)
+            });
+            set({ conversations: sortedConversations, isLoading: false });
         } catch (error) {
             set({
                 error: error instanceof Error ? error.message : String(error),
@@ -38,10 +44,18 @@ export const useConversationStore = create<ConversationStore>((set) => ({
         try {
             const newConversation = await ConversationService.createConversation(request);
 
-            set((state) => ({
-                conversations: [...state.conversations, newConversation],
-                isLoading: false
-            }));
+            set((state) => {
+                // Add new conversation and sort by modifiedDate (latest first)
+                const updatedConversations = [...state.conversations, newConversation].sort((a, b) => {
+                    const dateA = new Date(a.modifiedDate).getTime();
+                    const dateB = new Date(b.modifiedDate).getTime();
+                    return dateB - dateA; // Descending order (newest first)
+                });
+                return {
+                    conversations: updatedConversations,
+                    isLoading: false
+                };
+            });
 
             return newConversation;
         } catch (error) {

@@ -47,7 +47,7 @@ export default function LoginScreen() {
       try {
         const userRes = await getUserInfo();
         // FIX: role is an array property 'role', not 'roles', each element has a 'name'
-        const role = userRes?.data?.role?.[0]?.name;
+        const role = userRes?.data?.role;
         console.log("role:", userRes?.data);
         if (String(role).toUpperCase() === 'CHOREOGRAPHY' || String(role).toUpperCase() === 'CHOREOGRAPHER') {
           router.replace("/Choreographer/ChoreographerHome");

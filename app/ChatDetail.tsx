@@ -37,9 +37,38 @@ export default function ChatDetail() {
   }, [params.conversation]);
 
   // Handle incoming socket messages
-  const handleIncomingMessage = useCallback((incomingMessage: IncomingMessage) => {
+  const handleIncomingMessage = useCallback(async (incomingMessage: IncomingMessage) => {
     // Only process messages for current conversation
     if (incomingMessage.conversationId !== conversation?.id) return;
+
+    // Find sender's avatar from conversation participants
+    const senderId = incomingMessage.sender?.id || '';
+    const participant = conversation?.participants?.find(
+      (p) => p.userUUID === senderId
+    );
+    let senderAvatar = participant?.avatar || '';
+    let senderName = incomingMessage.sender?.name || participant?.name || 'Unknown';
+
+    // If avatar is not found in participants, refetch chat to get updated data with avatar
+    if (!senderAvatar && conversation?.id) {
+      try {
+        await fetchCurrentChat(conversation.id);
+        // After refetch, check the chats array for a message from the same sender to get their avatar
+        // Get the latest chats from the store
+        const currentChats = useChatStore.getState().chats;
+        const senderMessage = currentChats.find(
+          (msg) => msg.sender?.userUUID === senderId && msg.sender?.avatar
+        );
+        if (senderMessage?.sender?.avatar) {
+          senderAvatar = senderMessage.sender.avatar;
+        }
+        if (senderMessage?.sender?.name) {
+          senderName = senderMessage.sender.name;
+        }
+      } catch (error) {
+        console.error('Failed to fetch chat for avatar:', error);
+      }
+    }
 
     // Convert IncomingMessage to ChatMessageResponse format
     const chatMessage: ChatMessageResponse = {
@@ -49,15 +78,15 @@ export default function ChatDetail() {
       me: !!incomingMessage.me,
       createdDate: incomingMessage.createdDate,
       sender: {
-        userUUID: incomingMessage.sender?.id || '',
-        name: incomingMessage.sender?.name || 'Unknown',
-        avatar: '',
+        userUUID: senderId,
+        name: senderName,
+        avatar: senderAvatar,
       },
     };
 
-    // Add message to chat store
+    // Add message to chat store only after we have avatar (or attempted to get it)
     addMessageToChat(chatMessage);
-  }, [conversation?.id, addMessageToChat]);
+  }, [conversation?.id, conversation?.participants, addMessageToChat, fetchCurrentChat]);
 
   // Setup socket connection
   useEffect(() => {
@@ -286,7 +315,7 @@ export default function ChatDetail() {
     <KeyboardAvoidingView
       style={styles.root}
       behavior={'padding'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 + insets.top : insets.bottom}
+      keyboardVerticalOffset={100}
     >
       <Stack.Screen
         options={{

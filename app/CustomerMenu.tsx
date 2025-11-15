@@ -66,7 +66,7 @@ export default function CustomerMenu(){
           {/* MENU LIST */}
           <View style={styles.menuSection}>
             <MenuButton index={0} icon="📜" label="Lịch đặt" onPress={()=>{router.push('/BookingList')}} />
-            <MenuButton index={1} icon="" label="Ví tiền" />
+            <MenuButton index={1} icon="" label="Ví tiền" onPress={()=>{router.push('/Wallet')}} />
             <MenuButton index={2} icon="" label="Lịch sử giao dịch" />
             <MenuButton index={3} icon="" label="Chat" onPress={()=>{router.push('/ChatList')}} />
             <MenuButton index={4} icon="" label="Lịch" showLast={true} />

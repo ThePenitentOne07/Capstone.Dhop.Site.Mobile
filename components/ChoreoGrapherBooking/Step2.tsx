@@ -177,7 +177,7 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
           ))}
         </View>
         <Text style={styles.sessionLegend}>
-          Số trong vòng tròn thể hiện số buổi đã có trong ngày đó.
+          Số trong vòng tròn thể số buổi tập mà biên đạo đang có trong hôm đó 
         </Text>
 
         {monthMatrix.map((row, rowIdx) => (
@@ -228,7 +228,9 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
                         {sessionCount}
                       </Text>
                     </View>
-                  ) : null}
+                  ) : (
+                    <View style={styles.sessionBadgePlaceholder} />
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -350,11 +352,12 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 10,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    paddingVertical: 4,
+    paddingTop: 4,
+    paddingBottom: 4,
   },
   dayCellSelected: {
     backgroundColor: '#FF7A00',
@@ -391,6 +394,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 6,
+  },
+  sessionBadgePlaceholder: {
+    marginTop: 6,
+    height: 22,
   },
   sessionBadgeSelected: {
     backgroundColor: '#FF9F43',

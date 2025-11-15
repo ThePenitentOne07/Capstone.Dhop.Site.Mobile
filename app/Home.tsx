@@ -1,33 +1,39 @@
-import React from 'react';
+import React from "react";
 import { SafeAreaView, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { useUserInfo } from "../hooks/useUserInfo";
-import { Header, SearchBar, FeaturedChoreography, ArtistSection, ClassesSection } from "../components";
+import {
+  Header,
+  SearchBar,
+  FeaturedChoreography,
+  ArtistSection,
+  ClassesSection,
+} from "../components";
 import { sharedStyles } from "../styles/shared";
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn } from "react-native-reanimated";
 
 export default function HomeScreen() {
   const { user, loading, error } = useUserInfo();
   const router = useRouter();
 
   // Debug: Log user data
-  console.log('Home user data:', user);
-  console.log('Home user name:', user?.name);
+  console.log("Home user data:", user);
+  console.log("Home user name:", user?.name);
 
   const handleNotificationPress = () => {
-    console.log('Notification pressed');
+    console.log("Notification pressed");
   };
 
   const handleMenuPress = () => {
-    router.push('/CustomerMenu');
+    router.push("/CustomerMenu");
   };
 
   const handleSearchChange = (text: string) => {
-    console.log('Search:', text);
+    console.log("Search:", text);
   };
 
   const handleFilterPress = () => {
-    console.log('Filter pressed');
+    console.log("Filter pressed");
   };
 
   const handleChoreographyShowMore = () => {
@@ -35,7 +41,7 @@ export default function HomeScreen() {
   };
 
   const handleChoreographyCategoryChange = (category: string) => {
-    console.log('Choreography category changed:', category);
+    console.log("Choreography category changed:", category);
   };
 
   const handleChoreographyItemPress = (item: any) => {
@@ -55,61 +61,61 @@ export default function HomeScreen() {
     });
     console.log("item", item);
   };
-  
+
   const handleArtistShowMore = () => {
-    console.log('Artist show more pressed');
+    console.log("Artist show more pressed");
   };
 
   const handleArtistPress = (artist: any) => {
-    console.log('Artist pressed:', artist);
+    console.log("Artist pressed:", artist);
   };
 
   const handleAddArtist = () => {
-    console.log('Add artist pressed');
+    console.log("Add artist pressed");
   };
 
   const handleClassesEdit = () => {
-    console.log('Classes edit pressed');
+    console.log("Classes edit pressed");
   };
 
   const handleClassesFilterChange = (filter: string) => {
-    console.log('Classes filter changed:', filter);
+    console.log("Classes filter changed:", filter);
   };
 
   const handleClassPress = (classItem: any) => {
-    console.log('Class pressed:', classItem);
+    console.log("Class pressed:", classItem);
   };
 
   return (
     <SafeAreaView style={sharedStyles.screenRoot}>
-      
-      <ScrollView style={sharedStyles.scrollView} showsVerticalScrollIndicator={false}>
-        
-        <Header 
+      <ScrollView
+        style={sharedStyles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        <Header
           userName={user?.name}
           onNotificationPress={handleNotificationPress}
           onMenuPress={handleMenuPress}
         />
-        
 
-        <SearchBar 
+        <SearchBar
           onSearchChange={handleSearchChange}
           onFilterPress={handleFilterPress}
         />
 
-        <FeaturedChoreography 
+        <FeaturedChoreography
           onShowMore={handleChoreographyShowMore}
           onCategoryChange={handleChoreographyCategoryChange}
           onItemPress={handleChoreographyItemPress}
         />
 
-        <ArtistSection 
+        <ArtistSection
           onShowMore={handleArtistShowMore}
           onArtistPress={handleArtistPress}
           onAddArtist={handleAddArtist}
         />
 
-        <ClassesSection 
+        <ClassesSection
           onEditPress={handleClassesEdit}
           onFilterChange={handleClassesFilterChange}
           onClassPress={handleClassPress}
@@ -118,4 +124,3 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-
