@@ -1,8 +1,18 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { sharedStyles, colors } from "../styles/shared";
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from "react-native";
 import TotalBallance from "../components/Wallet/TotalBallance";
+import Animated, { 
+  FadeInDown, 
+  FadeInRight, 
+  FadeIn,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  Easing
+} from "react-native-reanimated";
 
 function Wallet() {
   return (
@@ -12,59 +22,57 @@ function Wallet() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Wallet</Text>
-          <TouchableOpacity style={styles.iconButton}>
-            <Text style={styles.iconText}>⚙️</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Total Balance Card */}
         <TotalBallance />
 
         {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <Animated.View 
+          style={styles.section}
+          entering={FadeInDown.delay(200).duration(300)}
+        >
+          <Animated.Text 
+            style={styles.sectionTitle}
+            entering={FadeIn.delay(250).duration(300)}
+          >
+            Thao tác
+          </Animated.Text>
           <View style={styles.quickActions}>
-            <TouchableOpacity style={styles.actionButton}>
-              <View style={styles.actionIcon}>
-                <Text style={styles.actionIconText}>💸</Text>
-              </View>
-              <Text style={styles.actionLabel}>Add Money</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
-              <View style={styles.actionIcon}>
-                <Text style={styles.actionIconText}>📤</Text>
-              </View>
-              <Text style={styles.actionLabel}>Send</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
-              <View style={styles.actionIcon}>
-                <Text style={styles.actionIconText}>📥</Text>
-              </View>
-              <Text style={styles.actionLabel}>Receive</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
-              <View style={styles.actionIcon}>
-                <Text style={styles.actionIconText}>📊</Text>
-              </View>
-              <Text style={styles.actionLabel}>History</Text>
-            </TouchableOpacity>
+            <AnimatedActionButton
+              index={0}
+              icon="💸"
+              label="Nạp tiền"
+            />
+            <AnimatedActionButton
+              index={1}
+              icon="📥"
+              label="Rút tiền"
+            />
+            <AnimatedActionButton
+              index={2}
+              icon="📊"
+              label="History"
+            />
           </View>
-        </View>
+        </Animated.View>
 
         {/* Recent Transactions */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+        <Animated.View 
+          style={styles.section}
+          entering={FadeInDown.delay(400).duration(300)}
+        >
+          <Animated.View 
+            style={styles.sectionHeader}
+            entering={FadeIn.delay(450).duration(300)}
+          >
             <Text style={styles.sectionTitle}>Recent Transactions</Text>
             <TouchableOpacity>
               <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
           
           <View style={styles.transactionsList}>
             <TransactionItem 
+              index={0}
               icon="💃"
               title="Dance Class Payment"
               date="Today, 2:30 PM"
@@ -72,6 +80,7 @@ function Wallet() {
               type="outgoing"
             />
             <TransactionItem 
+              index={1}
               icon="💰"
               title="Refund Received"
               date="Yesterday, 10:15 AM"
@@ -79,6 +88,7 @@ function Wallet() {
               type="incoming"
             />
             <TransactionItem 
+              index={2}
               icon="🎭"
               title="Choreography Booking"
               date="2 days ago"
@@ -86,6 +96,7 @@ function Wallet() {
               type="outgoing"
             />
             <TransactionItem 
+              index={3}
               icon="💵"
               title="Top Up"
               date="3 days ago"
@@ -93,13 +104,63 @@ function Wallet() {
               type="incoming"
             />
           </View>
-        </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+interface AnimatedActionButtonProps {
+  index: number;
+  icon: string;
+  label: string;
+}
+
+const AnimatedActionButton: React.FC<AnimatedActionButtonProps> = ({ index, icon, label }) => {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+    };
+  });
+
+  const handlePressIn = () => {
+    scale.value = withTiming(0.95, { 
+      duration: 150,
+      easing: Easing.out(Easing.ease)
+    });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withTiming(1, { 
+      duration: 150,
+      easing: Easing.out(Easing.ease)
+    });
+  };
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(300 + index * 50).duration(250)}
+      style={animatedStyle}
+    >
+      <TouchableOpacity
+        style={styles.actionButton}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={0.8}
+      >
+        <Animated.View style={styles.actionIcon}>
+          <Text style={styles.actionIconText}>{icon}</Text>
+        </Animated.View>
+        <Text style={styles.actionLabel}>{label}</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
 interface TransactionItemProps {
+  index: number;
   icon: string;
   title: string;
   date: string;
@@ -107,23 +168,82 @@ interface TransactionItemProps {
   type: 'incoming' | 'outgoing';
 }
 
-const TransactionItem: React.FC<TransactionItemProps> = ({ icon, title, date, amount, type }) => {
+const TransactionItem: React.FC<TransactionItemProps> = ({ index, icon, title, date, amount, type }) => {
+  const scale = useSharedValue(1);
+  const translateX = useSharedValue(30);
+  const opacity = useSharedValue(0);
+
+  useEffect(() => {
+    const delay = 500 + index * 50;
+    translateX.value = withDelay(
+      delay,
+      withTiming(0, {
+        duration: 300,
+        easing: Easing.out(Easing.ease),
+      })
+    );
+    opacity.value = withDelay(
+      delay,
+      withTiming(1, {
+        duration: 300,
+        easing: Easing.out(Easing.ease),
+      })
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { translateX: translateX.value },
+        { scale: scale.value },
+      ],
+      opacity: opacity.value,
+    };
+  });
+
+  const handlePressIn = () => {
+    scale.value = withTiming(0.98, { 
+      duration: 150,
+      easing: Easing.out(Easing.ease)
+    });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withTiming(1, { 
+      duration: 150,
+      easing: Easing.out(Easing.ease)
+    });
+  };
+
   return (
-    <TouchableOpacity style={styles.transactionItem}>
-      <View style={styles.transactionIconContainer}>
-        <Text style={styles.transactionIcon}>{icon}</Text>
-      </View>
-      <View style={styles.transactionInfo}>
-        <Text style={styles.transactionTitle}>{title}</Text>
-        <Text style={styles.transactionDate}>{date}</Text>
-      </View>
-      <Text style={[
-        styles.transactionAmount,
-        type === 'incoming' ? styles.amountIncoming : styles.amountOutgoing
-      ]}>
-        {amount} đ
-      </Text>
-    </TouchableOpacity>
+    <Animated.View style={animatedStyle}>
+      <TouchableOpacity
+        style={styles.transactionItem}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={0.8}
+      >
+        <Animated.View
+          style={styles.transactionIconContainer}
+          entering={FadeIn.delay(550 + index * 50).duration(250)}
+        >
+          <Text style={styles.transactionIcon}>{icon}</Text>
+        </Animated.View>
+        <View style={styles.transactionInfo}>
+          <Text style={styles.transactionTitle}>{title}</Text>
+          <Text style={styles.transactionDate}>{date}</Text>
+        </View>
+        <Animated.Text
+          style={[
+            styles.transactionAmount,
+            type === 'incoming' ? styles.amountIncoming : styles.amountOutgoing
+          ]}
+          entering={FadeIn.delay(600 + index * 50).duration(250)}
+        >
+          {amount} đ
+        </Animated.Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 

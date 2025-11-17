@@ -84,12 +84,19 @@ export const createChoreographerBooking = (payload: ChoreographerBooking) => {
 export const getChoreographerBookings = () => {
   return api.get(`/booking/choreographer`);
 };
+
+export const getBookingById = (bookingId: string | number) => {
+  return api.get(`/booking`, {
+    params: { bookingId },
+  });
+};
+
 // Accept a choreographer booking
 export const acceptChoreographerBooking = (
   bookingId: string,
   statusName: string = "BOOKING_ACTIVATE"
 ) => {
-  console.log("acceptChoreographerBooking request", { bookingId, statusName });
+  // console.log("acceptChoreographerBooking request", { bookingId, statusName });
   return api.patch(`/booking/choreographer/status`, {
     params: { bookingId, statusName },
   });
@@ -119,4 +126,9 @@ export interface UpdateUserProfilePayload {
 
 export const updateUserProfile = (payload: UpdateUserProfilePayload) => {
   return api.patch(`/users/profile`, payload);
+};
+
+// Check wallet balance
+export const checkUserBalance = () => {
+  return api.post(`/wallets/check-balance`);
 };

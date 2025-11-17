@@ -49,6 +49,17 @@ export default function BookingList() {
   }, [data, selectedStatus]);
 
   const openDetail = (booking: any) => {
+    const bookingId = booking?.id;
+
+    if (bookingId) {
+      router.push({
+        pathname: '/BookingDetail',
+        params: { bookingId: String(bookingId) },
+      });
+      return;
+    }
+
+    // Fallback to old behavior if booking id is missing
     try {
       const serialized = encodeURIComponent(JSON.stringify(booking));
       router.push({ pathname: '/BookingDetail', params: { booking: serialized } });
@@ -104,6 +115,7 @@ const STATUS_CHIP_VALUES = [
   'Tất cả',
   'Đơn đặt chờ xác nhận',
   'Đơn đặt đã kích hoạt',
+  'Đơn đặt hoàn tất'
 ];
 
 function StatusChips({ selected, onSelect }: { selected: string; onSelect: (v: string) => void }) {
@@ -135,6 +147,9 @@ function BookingCard({ booking, onPress }: { booking: any; onPress?: () => void 
   const totalPrice = booking.price;
   const title = booking.choreography?.username || 'Khách hàng';
   const subtitle = `${booking.area?.ward || ''}${booking.area?.ward ? ', ' : ''}${booking.area?.city || ''}`;
+  const hasFeedback = Array.isArray(booking.bookingFeedbacks) && booking.bookingFeedbacks.length > 0;
+  const isCompleted = (booking?.statusName || '').trim() === 'Đơn đặt hoàn tất';
+  const showFeedbackRow = hasFeedback || isCompleted;
 
   return (
     <TouchableOpacity activeOpacity={0.8} style={styles.card} onPress={onPress}>
@@ -152,6 +167,17 @@ function BookingCard({ booking, onPress }: { booking: any; onPress?: () => void 
         <Text style={styles.totalLabel}>Tổng số tiền ({qty} buổi): </Text>
         <Text style={styles.totalValue}>{formatNumber(totalPrice)}đ</Text>
       </View>
+
+      {showFeedbackRow && (
+        <View style={styles.feedbackRow}>
+          <Text style={[styles.feedbackBadge, hasFeedback ? styles.feedbackPositive : styles.feedbackMuted]}>
+            {hasFeedback ? 'Đã đánh giá' : 'Chưa đánh giá'}
+          </Text>
+          {hasFeedback && (
+            <Text style={styles.feedbackCount}>{booking.bookingFeedbacks.length} đánh giá</Text>
+          )}
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
@@ -297,6 +323,33 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '900',
     marginLeft: 8,
+    fontFamily: 'Roboto',
+  },
+  feedbackRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  feedbackBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    fontSize: 11,
+    fontFamily: 'Roboto',
+    overflow: 'hidden',
+  },
+  feedbackPositive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    color: '#0F9D58',
+  },
+  feedbackMuted: {
+    backgroundColor: '#F3F4F6',
+    color: '#6B7280',
+  },
+  feedbackCount: {
+    fontSize: 12,
+    color: '#6B7280',
     fontFamily: 'Roboto',
   },
 });

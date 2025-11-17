@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { acceptChoreographerBooking } from '../service/api';
+import { acceptChoreographerBooking, getBookingById } from '../service/api';
 import { useRouter } from 'expo-router';
 import { useConversationStore } from '../states/conversationStore';
 
@@ -12,17 +12,93 @@ const GREEN = '#0F9D58';
 
 export default function BookingDetail() {
   const params = useLocalSearchParams();
-  const booking = useMemo(() => {
+  const bookingIdParam = params.bookingId;
+  const bookingParam = params.booking;
+
+  const bookingId = useMemo(() => {
+    if (Array.isArray(bookingIdParam)) {
+      return bookingIdParam[0];
+    }
+    if (typeof bookingIdParam === 'string') {
+      return bookingIdParam;
+    }
+    return undefined;
+  }, [bookingIdParam]);
+
+  const fallbackBooking = useMemo(() => {
     try {
-      if (typeof params.booking === 'string') {
-        const raw = decodeURIComponent(params.booking);
+      if (typeof bookingParam === 'string') {
+        const raw = decodeURIComponent(bookingParam);
         return JSON.parse(raw);
       }
-      return params.booking || null;
+      return bookingParam || null;
     } catch {
       return null;
     }
-  }, [params.booking]);
+  }, [bookingParam]);
+
+  const [booking, setBooking] = useState<any | null>(fallbackBooking);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+
+    const load = async () => {
+      if (!bookingId) {
+        if (fallbackBooking) {
+          if (active) {
+            setBooking(fallbackBooking);
+            setError(null);
+            setLoading(false);
+          }
+        } else if (active) {
+          setBooking(null);
+          setError('Không tìm thấy mã đơn đặt lịch.');
+          setLoading(false);
+        }
+        return;
+      }
+
+      if (active) {
+        setLoading(true);
+        setError(null);
+      }
+
+      try {
+        const res = await getBookingById(bookingId);
+        const payload = Array.isArray(res.data) ? res.data[0] : res.data;
+
+        if (!payload) {
+          throw new Error('Không tìm thấy đơn đặt lịch.');
+        }
+
+        if (active) {
+          setBooking(payload);
+        }
+      } catch (err: any) {
+        if (active) {
+          setError(err?.response?.data?.message || err?.message || 'Không thể tải đơn đặt lịch');
+          if (!fallbackBooking) {
+            setBooking(null);
+          }
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      active = false;
+    };
+  }, [bookingId, fallbackBooking, reloadToken]);
+
+  const handleRetry = () => setReloadToken((token) => token + 1);
 
   const [acceptLoading, setAcceptLoading] = useState(false);
   const [acceptSuccess, setAcceptSuccess] = useState<boolean|undefined>();
@@ -32,11 +108,32 @@ export default function BookingDetail() {
   const router = useRouter();
   const { createConversation } = useConversationStore();
 
+  if (loading) {
+    return (
+      <View style={styles.stateContainer}>
+        <ActivityIndicator size="large" color={ORANGE2} />
+        <Text style={styles.stateMessage}>Đang tải đơn đặt lịch...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.stateContainer}>
+        <Text style={styles.stateMessage}>{error}</Text>
+        {bookingId && (
+          <TouchableOpacity style={styles.retryButton} onPress={handleRetry} activeOpacity={0.85}>
+            <Text style={styles.retryButtonText}>Thử lại</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  }
+
   if (!booking) {
     return (
-      <View style={styles.root}> 
-        <Text style={styles.header}>Thông tin đơn hàng</Text>
-        <Text style={{ textAlign: 'center', marginTop: 20 }}>Không tìm thấy dữ liệu đơn đặt.</Text>
+      <View style={styles.stateContainer}>
+        <Text style={styles.stateMessage}>Không tìm thấy dữ liệu đơn đặt.</Text>
       </View>
     );
   }
@@ -45,6 +142,8 @@ export default function BookingDetail() {
   const totalPrice = booking.price;
   const perSessionPrice = booking?.choreography?.price;
   const status = booking.statusName;
+  const feedbacks = Array.isArray(booking.bookingFeedbacks) ? booking.bookingFeedbacks : [];
+  const hasFeedback = feedbacks.length > 0;
 
   // Determine status color
   let statusBg = '#E7F5EF';
@@ -164,6 +263,41 @@ export default function BookingDetail() {
             })}
           </View>
         )}
+
+        {/* Feedback */}
+        {status === "Đơn đặt hoàn tất" && (
+          <View style={styles.feedbackBlock}>
+            <Text style={styles.feedbackTitle}>Đánh giá</Text>
+            {hasFeedback ? (
+              feedbacks.map((fb: any, idx: number) => (
+                <View key={fb.id || idx} style={styles.feedbackCard}>
+                  <View style={styles.feedbackHeader}>
+                    <Text style={styles.feedbackAuthor}>{fb.fromUser || 'Người dùng'}</Text>
+                    <Text style={styles.feedbackRating}>{'★'.repeat(fb.rating || 0)}</Text>
+                  </View>
+                  {fb.comment ? <Text style={styles.feedbackComment}>{fb.comment}</Text> : null}
+                </View>
+              ))
+            ) : (
+              <View style={styles.feedbackEmptyState}>
+                <Text style={styles.feedbackEmpty}>Bạn hãy đánh giá cho biên đạo.</Text>
+                <TouchableOpacity
+                  style={styles.feedbackButton}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/BookingFeedback',
+                      params: { bookingId: booking.id },
+                    })
+                  }
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.feedbackButtonText}>Đánh giá ngay</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+       
       </ScrollView>
       {/* Floating action buttons */}
       {/* {status === 'Đơn đặt chờ xác nhận' && (
@@ -472,6 +606,68 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontFamily: 'RobotoMono_700Bold',
   },
+  feedbackBlock: {
+    marginHorizontal: 12,
+    marginBottom: 28,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#EEE',
+  },
+  feedbackTitle: {
+    color: ORANGE2,
+    fontSize: 15,
+    marginBottom: 10,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  feedbackCard: {
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F1EFEA',
+  },
+  feedbackHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  feedbackAuthor: {
+    fontSize: 14,
+    color: '#111827',
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  feedbackRating: {
+    fontSize: 14,
+    color: '#F59E0B',
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  feedbackComment: {
+    fontSize: 13,
+    color: '#4B5563',
+    fontFamily: 'RobotoMono_400Regular',
+  },
+  feedbackEmpty: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontFamily: 'RobotoMono_400Regular',
+  },
+  feedbackEmptyState: {
+    paddingVertical: 8,
+    gap: 12,
+  },
+  feedbackButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: ORANGE2,
+  },
+  feedbackButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontFamily: 'RobotoMono_700Bold',
+  },
   msgBtn: {
     backgroundColor: ORANGE2,
     marginTop: 12,
@@ -622,6 +818,32 @@ const styles = StyleSheet.create({
   checkinBtnText: {
     color: '#fff',
     fontSize: 16,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  stateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    backgroundColor: '#fff',
+  },
+  stateMessage: {
+    marginTop: 16,
+    textAlign: 'center',
+    color: '#6B7280',
+    fontSize: 15,
+    fontFamily: 'RobotoMono_400Regular',
+  },
+  retryButton: {
+    marginTop: 20,
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+    borderRadius: 24,
+    backgroundColor: ORANGE2,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 15,
     fontFamily: 'RobotoMono_700Bold',
   },
 });

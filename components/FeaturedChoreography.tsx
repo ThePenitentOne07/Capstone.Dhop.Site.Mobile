@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { getChoreographyUsers } from '../service/api';
+import { useFormatCurrency } from '../hooks/useFormatCurrency';
 
 interface Role { name: string }
 
@@ -43,6 +44,8 @@ const fallbackImages = [
 
 const categories = ['Nổi bật', 'Mới nhất', 'Tất cả'];
 
+
+
 export const FeaturedChoreography: React.FC<FeaturedChoreographyProps> = ({ 
   onShowMore,
   onCategoryChange,
@@ -52,6 +55,7 @@ export const FeaturedChoreography: React.FC<FeaturedChoreographyProps> = ({
   const [data, setData] = React.useState<ApiChoreographyItem[]>([]);
   const [loading, setLoading] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string | null>(null);
+  const {formatCurrency}= useFormatCurrency()
 
   const fetchData = async () => {
     try {
@@ -118,45 +122,99 @@ export const FeaturedChoreography: React.FC<FeaturedChoreographyProps> = ({
             </TouchableOpacity>
           </View>
         ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardsContainer}>
-            {data.map((item, index) => {
-              const title = item.choreography?.nickname || item.name;
-              const artist = item.name;
-              const imageSource = item.avatar
-                ? { uri: item.avatar }
-                : fallbackImages[index % fallbackImages.length];
-
-              return (
-                <TouchableOpacity 
-                  key={item.id}
-                  style={styles.choreographyCard}
-                  onPress={() => onItemPress?.({
-                    // map to a minimal shape for consumer code
-                    // @ts-ignore allow consumer to decide
-                    id: String(item.choreography.choreographyId),
-                    title,
-                    artist,
-                    image: imageSource,
-                    avatar: item.avatar,
-                    price: item.choreography?.price,
-                    yearExperience: item.choreography?.yearExperience,
-                    about: item.choreography?.about,
-                    area: item.choreography?.area,
-                    danceType: item.choreography?.danceType,
-                  }
-                )}
-                >
-                  <Image 
-                    source={imageSource} 
-                    style={styles.cardImage}
-                    resizeMode="cover"
-                  />
-                  <Text style={styles.cardTitle}>{title}</Text>
-                  {/* <Text style={styles.cardSubtitle}>by {artist}</Text> */}
+          <View>
+            {data.length === 0 ? (
+              <View style={styles.loadingContainer}>
+                <Text style={styles.emptyStateText}>Hiện chưa có biên đạo nổi bật.</Text>
+                <TouchableOpacity onPress={fetchData}>
+                  <Text style={styles.retryText}>Tải lại</Text>
                 </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+              </View>
+            ) : (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardsContainer}>
+                {data.map((item, index) => {
+                  const title = item.choreography?.nickname || item.name;
+                  const imageSource = item.avatar
+                    ? { uri: item.avatar }
+                    : fallbackImages[index % fallbackImages.length];
+                  const price = item.choreography?.price;
+                  const years = item.choreography?.yearExperience;
+
+                  // danceType from API can be string, object, or array of objects
+                  const rawDanceType: any = item.choreography?.danceType;
+                  let danceTypeLabel = 'Đa phong cách';
+
+                  if (typeof rawDanceType === 'string') {
+                    danceTypeLabel = rawDanceType;
+                  } else if (Array.isArray(rawDanceType)) {
+                    const parts = rawDanceType
+                      .map((dt) => dt?.type || dt?.description)
+                      .filter(Boolean);
+                    if (parts.length > 0) {
+                      danceTypeLabel = parts.join(', ');
+                    }
+                  } else if (rawDanceType && typeof rawDanceType === 'object') {
+                    danceTypeLabel =
+                      rawDanceType.type ||
+                      rawDanceType.description ||
+                      danceTypeLabel;
+                  }
+
+                  const formattedPrice =
+                    typeof price === 'number'
+                      ? `${formatCurrency(price)}`
+                      : 'Liên hệ';
+
+                  return (
+                    <TouchableOpacity 
+                      key={item.id}
+                      style={styles.choreographyCard}
+                      onPress={() => onItemPress?.({
+                        // map to a minimal shape for consumer code
+                        // @ts-ignore allow consumer to decide
+                        id: String(item.choreography?.choreographyId || item.id),
+                        title,
+                        artist: item.name,
+                        image: imageSource,
+                        avatar: item.avatar,
+                        price: item.choreography?.price,
+                        yearExperience: years,
+                        about: item.choreography?.about,
+                        area: item.choreography?.area,
+                        danceType: item.choreography?.danceType,
+                      }
+                    )}
+                    >
+                      <View style={styles.cardImageWrap}>
+                        <Image 
+                          source={imageSource} 
+                          style={styles.cardImage}
+                          resizeMode="contain"
+                        />
+                        {typeof years === 'number' && years > 0 && (
+                          <View style={styles.experienceBadge}>
+                            <Text style={styles.experienceText}>{years}+ năm kinh nghiệm</Text>
+                          </View>
+                        )}
+                      </View>
+                      <View style={styles.cardBody}>
+                        <Text numberOfLines={1} style={styles.cardTitle}>{title}</Text>
+                        <Text numberOfLines={1} style={styles.cardSubtitle}>{danceTypeLabel}</Text>
+                        <View style={styles.cardFooter}>
+                          <View>
+                            <Text style={styles.priceLabel}>Từ</Text>
+                            <Text style={styles.priceValue}>{formattedPrice}</Text>
+                            <Text style={styles.priceUnit}>/ buổi</Text>
+                          </View>
+                         
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            )}
+          </View>
         )}
       </View>
     </View>
@@ -209,13 +267,17 @@ const styles = StyleSheet.create({
     paddingRight: 20,
   },
   choreographyCard: {
-    width: 160,
+    width: 200,
     marginRight: 16,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   loadingContainer: {
     height: 140,
@@ -227,25 +289,80 @@ const styles = StyleSheet.create({
     color: '#DC2626',
     marginBottom: 8,
   },
+  emptyStateText: {
+    color: '#6B7280',
+    marginBottom: 4,
+  },
   retryText: {
     color: '#FF7A00',
     fontWeight: '600',
   },
+  cardImageWrap: {
+    width: '100%',
+    height: 140,
+    position: 'relative',
+    backgroundColor: '#FFF7ED',
+  },
   cardImage: {
     width: '100%',
-    height: 120,
+    height: '100%',
+  },
+  experienceBadge: {
+    position: 'absolute',
+    left: 10,
+    bottom: 10,
+    backgroundColor: 'rgba(17, 24, 39, 0.8)',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+  },
+  experienceText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  cardBody: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 6,
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#111827",
-    paddingHorizontal: 12,
-    paddingTop: 8,
   },
   cardSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#6B7280",
-    paddingHorizontal: 12,
-    paddingBottom: 12,
+  },
+  cardFooter: {
+    marginTop: 6,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  priceLabel: {
+    fontSize: 11,
+    color: '#9CA3AF',
+  },
+  priceValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FF7A00',
+  },
+  priceUnit: {
+    fontSize: 11,
+    color: '#9CA3AF',
+  },
+  bookTag: {
+    backgroundColor: '#FFEDE1',
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+  },
+  bookTagText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FF7A00',
   },
 });

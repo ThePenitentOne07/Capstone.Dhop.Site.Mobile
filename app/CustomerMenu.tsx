@@ -21,7 +21,7 @@ export default function CustomerMenu(){
       router.push('/CustomerProfile');
     };
     // @ts-ignore: walletBalance might not be defined
-    const coin = (user && typeof user.walletBalance !== 'undefined') ? user.walletBalance : 1200;
+    // const coin = (user && typeof user.walletBalance !== 'undefined') ? user.walletBalance : 1200;
   
     return (
       <View style={styles.root}>

@@ -8,7 +8,7 @@ interface UserInfo {
   email: string;
   avatar?: string;
   phone?: string;
-  walletBalance?: number;
+
   // Add other user properties as needed
 }
 
