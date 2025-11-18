@@ -37,16 +37,18 @@ const PAGE_SIZE = 10;
 
 const defaultFilters: FilterState = {
   areas: null,
+  name: "",
   // minExperience: "",
   // maxExperience: "",
-  // minPrice: "",
-  // maxPrice: "",
 };
 
 const ExploreChoreographersScreen = () => {
   const { areas, loading: areasLoading } = useArea();
 
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
+  const [debouncedName, setDebouncedName] = useState(
+    defaultFilters.name ?? ""
+  );
   const [items, setItems] = useState<ChoreographerListItem[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -63,15 +65,21 @@ const ExploreChoreographersScreen = () => {
     return Number.isNaN(parsed) ? undefined : parsed;
   }, []);
 
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setDebouncedName(filters.name?.trim() ?? "");
+    }, 1000);
+    return () => clearTimeout(handle);
+  }, [filters.name]);
+
   const queryFilters: ChoreographyUsersQuery = useMemo(
     () => ({
       areas: filters.areas,
       // minExperience: safeParseNumber(filters.minExperience),
       // maxExperience: safeParseNumber(filters.maxExperience),
-      // minPrice: safeParseNumber(filters.minPrice),
-      // maxPrice: safeParseNumber(filters.maxPrice),
+      name: debouncedName || undefined,
     }),
-    [filters, safeParseNumber]
+    [filters.areas, debouncedName /* safeParseNumber */]
   );
 
   useEffect(() => {

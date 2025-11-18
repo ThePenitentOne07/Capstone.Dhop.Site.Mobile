@@ -25,6 +25,7 @@ export interface ChoreographyUsersQuery {
   maxExperience?: number | null;
   minPrice?: number | null;
   maxPrice?: number | null;
+  name?: string;
 }
 
 export const getChoreographyUsers = ({
@@ -35,6 +36,7 @@ export const getChoreographyUsers = ({
   maxExperience,
   minPrice,
   maxPrice,
+  name,
 }: ChoreographyUsersQuery = {}) => {
   const params = {
     pageNo,
@@ -44,6 +46,7 @@ export const getChoreographyUsers = ({
     maxExperience: maxExperience ?? undefined,
     minPrice: minPrice ?? undefined,
     maxPrice: maxPrice ?? undefined,
+    name: name?.trim() || undefined,
   };
   console.log("API getChoreographyUsers params:", params);
   return api.get(`/users/CHOREOGRAPHY`, { params });
@@ -97,9 +100,13 @@ export const acceptChoreographerBooking = (
   statusName: string = "BOOKING_ACTIVATE"
 ) => {
   // console.log("acceptChoreographerBooking request", { bookingId, statusName });
-  return api.patch(`/booking/choreographer/status`, {
-    params: { bookingId, statusName },
-  });
+  return api.patch(
+    `/booking/choreographer/status`,
+    null,
+    {
+      params: { bookingId, statusName },
+    }
+  );
 };
 // Check-in training session via QR
 export const qrTrainingSession = (
@@ -116,6 +123,16 @@ export const generateTrainingSessionQR = (trainingSessionId: number) => {
   return api.get(`/training_session/generating-QR`, {
     params: { trainingSessionId },
   });
+};
+
+export interface BookingFeedbackPayload {
+  comment: string;
+  rating: number;
+  bookingId: number;
+}
+
+export const createBookingFeedback = (payload: BookingFeedbackPayload) => {
+  return api.post(`/bookingfeedback`, payload);
 };
 
 export interface UpdateUserProfilePayload {

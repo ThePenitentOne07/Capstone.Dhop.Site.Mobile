@@ -36,6 +36,7 @@ export default function Layout() {
       />
       <Stack.Screen name="BookingList"  />
       <Stack.Screen name="BookingDetail" options={{ headerShown: true, title: "Chi tiết đơn đặt" }} />
+      <Stack.Screen name="BookingFeedback" options={{ headerShown: true, title: "Đánh giá" }} />
       <Stack.Screen name="Choreographer/ChoreographerHome" options={{ headerShown: false }} />
       <Stack.Screen name="Choreographer/RequestBookingList" options={{ headerShown: true, title: "Đơn đặt lịch" }} />
       <Stack.Screen name="Choreographer/BookingDetailOnHold" options={{ headerShown: true, title: "Chi tiết đơn đặt" }} />

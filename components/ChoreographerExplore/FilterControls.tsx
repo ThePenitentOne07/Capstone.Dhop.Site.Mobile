@@ -34,12 +34,13 @@ const FilterControls: React.FC<FilterControlsProps> = ({
     return selected ? `${selected.city} - ${selected.ward}` : "Tất cả khu vực";
   }, [areas, filters.areas]);
 
-  const handleNumberInputChange = (
-    key: keyof FilterState,
-    value: string
-  ) => {
+  const handleNumberInputChange = (key: keyof FilterState, value: string) => {
     const sanitized = value.replace(/[^0-9]/g, "");
     onChangeFilters({ [key]: sanitized } as Partial<FilterState>);
+  };
+
+  const handleNameChange = (value: string) => {
+    onChangeFilters({ name: value });
   };
 
   const handleAreaSelect = (areaId: number | null) => {
@@ -88,22 +89,14 @@ const FilterControls: React.FC<FilterControlsProps> = ({
 
       <View style={styles.row}>
         <View style={styles.filterColumn}>
-          <Text style={styles.label}>Giá (VND)</Text>
-          <View style={styles.inlineInputs}>
+          <Text style={styles.label}>Tìm theo tên</Text>
+          <View style={styles.searchInputWrapper}>
             <TextInput
-              keyboardType="number-pad"
-              placeholder="Từ"
-              style={styles.numberInput}
-              value={filters.minPrice}
-              onChangeText={(value) => handleNumberInputChange("minPrice", value)}
-            />
-            <Text style={styles.toLabel}>-</Text>
-            <TextInput
-              keyboardType="number-pad"
-              placeholder="Đến"
-              style={styles.numberInput}
-              value={filters.maxPrice}
-              onChangeText={(value) => handleNumberInputChange("maxPrice", value)}
+              placeholder="Nhập tên biên đạo"
+              style={styles.searchInput}
+              value={filters.name}
+              onChangeText={handleNameChange}
+              placeholderTextColor="#9CA3AF"
             />
           </View>
         </View>
@@ -213,6 +206,17 @@ const styles = StyleSheet.create({
   toLabel: {
     paddingHorizontal: 6,
     color: "#6B7280",
+  },
+  searchInputWrapper: {
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  searchInput: {
+    fontSize: 15,
+    color: "#111827",
   },
   clearButton: {
     borderWidth: 1,

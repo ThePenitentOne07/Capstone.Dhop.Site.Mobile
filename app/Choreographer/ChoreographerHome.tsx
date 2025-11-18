@@ -126,8 +126,8 @@ export default function ChoreographerHome() {
         <View style={styles.menuSection}>
           <MenuButton index={0} icon="📜" label="Lịch đặt" onPress={()=>{router.push('/Choreographer/RequestBookingList')}} />
           <MenuButton index={1} icon="💳" label="Ví tiền" />
-          <MenuButton index={2} icon="📈" label="Lịch sử giao dịch" />
-          <MenuButton index={3} icon="" label="Chat" onPress={()=>{router.push('/ChatList')}} />
+          {/* <MenuButton index={2} icon="📈" label="Lịch sử giao dịch" /> */}
+          <MenuButton index={2} icon="" label="Chat" onPress={()=>{router.push('/ChatList')}} />
 
           <MenuButton index={3} icon="📅" label="Lịch" showLast={true} />
         </View>

@@ -7,6 +7,7 @@ import Step2 from '../../components/ChoreoGrapherBooking/Step2';
 import Step3 from '../../components/ChoreoGrapherBooking/Step3';
 import Step4 from '../../components/ChoreoGrapherBooking/Step4';
 import Step5 from '../../components/ChoreoGrapherBooking/Step5';
+import type { OccupiedSession } from '../../components/ChoreoGrapherBooking/Step2';
 
 
 export default function ChoreographerBookingScreen() {
@@ -41,8 +42,11 @@ export default function ChoreographerBookingScreen() {
     setBookingData({ ...bookingData, numberOfDays });
     setCurrentStep(2);
   };
-  const handleStep2Next = (selectedDatesISO: string[]) => {
-    setBookingData({ ...bookingData, selectedDatesISO });
+  const handleStep2Next = (
+    selectedDatesISO: string[],
+    occupiedSessionsByDate: Record<string, OccupiedSession[]>
+  ) => {
+    setBookingData({ ...bookingData, selectedDatesISO, occupiedSessionsByDate });
     setCurrentStep(3);
   };
   const handleStep3Next = (sessions: { dateISO: string; startTime: string; durationMinutes: number }[]) => {
@@ -103,7 +107,11 @@ export default function ChoreographerBookingScreen() {
           />
         )}
         {currentStep === 3 && (
-          <Step3 selectedDatesISO={bookingData.selectedDatesISO || []} onSubmit={handleStep3Next} />
+          <Step3
+            selectedDatesISO={bookingData.selectedDatesISO || []}
+            occupiedSessionsByDate={bookingData.occupiedSessionsByDate || {}}
+            onSubmit={handleStep3Next}
+          />
         )}
         {currentStep === 4 && (
           <Step4 sessions={bookingData.sessions || []} onSubmit={handleStep4Submit} />

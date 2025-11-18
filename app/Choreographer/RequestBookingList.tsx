@@ -102,7 +102,7 @@ export default function RequestBookingList() {
           contentContainerStyle={{ paddingBottom: 36 }}
         >
           {filteredData.length === 0 ? (
-            <Text style={styles.emptyText}>Không có đơn đặt lịch nào.</Text>
+            <Text style={styles.emptyText}>Không có đơn nào.</Text>
           ) : (
             filteredData.map((item, idx) =>
               <BookingCard key={idx} booking={item} onPress={() => openDetail(item)} />

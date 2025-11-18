@@ -6,7 +6,10 @@ import { getChoreographySchedule } from '../../service/api';
 interface Step2Props {
   choreographerId: string;
   numberOfDays: number;
-  onNext: (selectedDatesISO: string[]) => void;
+  onNext: (
+    selectedDatesISO: string[],
+    occupiedSessionsByDate: Record<string, OccupiedSession[]>
+  ) => void;
 }
 
 interface ChoreographyScheduleItem {
@@ -16,6 +19,14 @@ interface ChoreographyScheduleItem {
   endTime: string;
   sessionNo: number;
   statusName: string;
+}
+
+export interface OccupiedSession {
+  scheduledTime: string;
+  endTime?: string;
+  durationMinutes?: number;
+  sessionNo?: number;
+  statusName?: string;
 }
 
 function getDaysInMonth(year: number, monthIndex0: number) {
@@ -39,7 +50,7 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
   const [visibleMonth, setVisibleMonth] = useState<number>(today.getMonth());
   const [visibleYear, setVisibleYear] = useState<number>(today.getFullYear());
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
-  const [sessionsByDate, setSessionsByDate] = useState<Record<string, number>>({});
+  const [sessionsByDate, setSessionsByDate] = useState<Record<string, OccupiedSession[]>>({});
   const [sessionsError, setSessionsError] = useState<string | null>(null);
 
   const monthMatrix = useMemo(() => {
@@ -76,10 +87,17 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
         const items: ChoreographyScheduleItem[] = Array.isArray(response.data)
           ? response.data
           : [];
-        const grouped = items.reduce<Record<string, number>>((acc, session) => {
+        const grouped = items.reduce<Record<string, OccupiedSession[]>>((acc, session) => {
           if (!session?.scheduledTime) return acc;
           const key = session.scheduledTime.split('T')[0];
-          acc[key] = (acc[key] || 0) + 1;
+          if (!acc[key]) acc[key] = [];
+          acc[key].push({
+            scheduledTime: session.scheduledTime,
+            endTime: session.endTime,
+            durationMinutes: session.durationMinutes,
+            sessionNo: session.sessionNo,
+            statusName: session.statusName,
+          });
           return acc;
         }, {});
         console.log('Fetched schedule sessions:', {
@@ -187,7 +205,7 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
               const disabled = isPast(cell);
               const isSelected = selectedDates.some((d) => sameDay(d, cell));
               const dateKey = formatDateKey(cell);
-              const sessionCount = sessionsByDate[dateKey] ?? 0;
+              const sessionCount = sessionsByDate[dateKey]?.length ?? 0;
 
               return (
                 <TouchableOpacity
@@ -259,7 +277,17 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
       <Animated.View entering={FadeInUp.delay(200)} style={styles.nextButtonContainer}>
         <TouchableOpacity
           style={[styles.nextButton, !canProceed && styles.nextButtonDisabled]}
-          onPress={() => onNext(selectedDatesISO)}
+          onPress={() => {
+            const occupiedSessionsByDate = selectedDatesISO.reduce<Record<string, OccupiedSession[]>>(
+              (acc, dateISO) => {
+                const key = dateISO.split('T')[0];
+                acc[key] = sessionsByDate[key] || [];
+                return acc;
+              },
+              {}
+            );
+            onNext(selectedDatesISO, occupiedSessionsByDate);
+          }}
           disabled={!canProceed}
           activeOpacity={0.8}
         >
