@@ -6,6 +6,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Introduction, ChoreographerProject } from "../../components/ChoreographerDetail/index";
 import { getChoreographerById } from "../../service/api";
 
+interface Profile {
+  profileId: number;
+  videos: string[];
+  images: string[];
+  achievements: string[];
+}
+
 interface ChoreographerData {
   id: string;
   title?: string;
@@ -18,6 +25,8 @@ interface ChoreographerData {
   yearExperience?: number;
   danceType?: any[];
   area?: any[];
+  averageRating?: number;
+  profiles?: Profile[];
 }
 
 export default function DetailsScreen() {
@@ -74,6 +83,8 @@ export default function DetailsScreen() {
   const yearExperience = choreographerData?.yearExperience;
   const danceType = choreographerData?.danceType || [];
   const area = choreographerData?.area || [];
+  const averageRating= choreographerData?.averageRating ;
+  const profiles = choreographerData?.profiles || [];
 
   const imageSource = avatar
     ? { uri: avatar }
@@ -104,10 +115,11 @@ export default function DetailsScreen() {
           yearExperience: yearExperience || 0, 
           about: about || "",
           area: area || [],
-          danceType: danceType || []
+          danceType: danceType || [],
+          averageRating: averageRating || 0
         }} />;
       case "My Account":
-        return <ChoreographerProject />;
+        return <ChoreographerProject profiles={profiles} />;
       default:
         return <Introduction props={{ 
           title, 
@@ -116,7 +128,8 @@ export default function DetailsScreen() {
           yearExperience: yearExperience || 0, 
           about: about || "",
           area: area || [],
-          danceType: danceType || []
+          danceType: danceType || [],
+          averageRating: averageRating || 0
         }} />;
     }
   };

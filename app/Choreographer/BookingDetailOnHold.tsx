@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { acceptChoreographerBooking, getBookingById } from '../../service/api';
+import { acceptChoreographerBooking, cancelChoreographerBooking, getBookingById } from '../../service/api';
 import { useRouter } from 'expo-router';
 import { useConversationStore } from '../../states/conversationStore';
+import { useAppModal } from '../../hooks/useAppModal';
 
 
 const YELLOW = '#FFD540';
@@ -102,22 +103,13 @@ export default function BookingDetailOnHold() {
   const handleRetry = () => setReloadToken((token) => token + 1);
 
   const [acceptLoading, setAcceptLoading] = useState(false);
-  const [acceptSuccess, setAcceptSuccess] = useState<boolean|undefined>();
+  const [declineLoading, setDeclineLoading] = useState(false);
   const [acceptError, setAcceptError] = useState<string|undefined>();
   const [chatLoading, setChatLoading] = useState(false);
 
   const router = useRouter();
   const { createConversation } = useConversationStore();
-
-  // Navigate after showing modal
-  useEffect(() => {
-    if (acceptSuccess === true) {
-      const timer = setTimeout(() => {
-        router.push('/Choreographer/RequestBookingList');
-      }, 2000); // Show modal for 2 seconds before navigating
-      return () => clearTimeout(timer);
-    }
-  }, [acceptSuccess, router]);
+  const { showModal, modal } = useAppModal();
 
   if (loading) {
     return (
@@ -189,7 +181,11 @@ export default function BookingDetailOnHold() {
             activeOpacity={0.86} 
             onPress={async () => {
               if (!booking.customer?.userUUID) {
-                Alert.alert('Lỗi', 'Không tìm thấy thông tin khách hàng');
+                showModal({
+                  title: 'Lỗi',
+                  message: 'Không tìm thấy thông tin khách hàng',
+                  status: 'error',
+                });
                 return;
               }
 
@@ -208,7 +204,11 @@ export default function BookingDetailOnHold() {
                 });
               } catch (error: any) {
                 console.error('Failed to create conversation:', error);
-                Alert.alert('Lỗi', error?.message || 'Không thể tạo cuộc trò chuyện');
+                showModal({
+                  title: 'Lỗi',
+                  message: error?.message || 'Không thể tạo cuộc trò chuyện',
+                  status: 'error',
+                });
               } finally {
                 setChatLoading(false);
               }
@@ -296,22 +296,57 @@ export default function BookingDetailOnHold() {
       {status === 'Đơn đặt chờ xác nhận' && (
         <>
           <View style={styles.actionBar}>
-            <TouchableOpacity style={styles.declineBtn} onPress={() => {}} disabled={acceptLoading}>
-              <Text style={styles.declineBtnText}>Từ chối</Text>
+            <TouchableOpacity
+              style={styles.declineBtn}
+              onPress={async () => {
+                if (!booking?.id || declineLoading) return;
+                try {
+                  setDeclineLoading(true);
+                  await cancelChoreographerBooking(booking.id);
+                  showModal({
+                    title: 'Thành công',
+                    message: 'Đã từ chối đơn.',
+                    status: 'success',
+                    autoCloseAfter: 2000,
+                    onAutoClose: () => router.replace('/Choreographer/RequestBookingList'),
+                  });
+                } catch (e: any) {
+                  showModal({
+                    title: 'Lỗi',
+                    message: e?.response?.data?.message || e?.message || 'Không thể từ chối đơn.',
+                    status: 'error',
+                  });
+                } finally {
+                  setDeclineLoading(false);
+                }
+              }}
+              disabled={acceptLoading || declineLoading}
+            >
+              {declineLoading ? (
+                <ActivityIndicator color={ORANGE2} />
+              ) : (
+                <Text style={styles.declineBtnText}>Từ chối</Text>
+              )}
             </TouchableOpacity>
             <TouchableOpacity style={styles.acceptBtn} onPress={async () => {
-              setAcceptLoading(true); setAcceptSuccess(undefined); setAcceptError(undefined);
+              setAcceptLoading(true); setAcceptError(undefined);
               try {
                 console.log('acceptChoreographerBooking request:', {
                   bookingId: booking.id,
                   statusName: 'BOOKING_ACTIVATE',
                 });
                 await acceptChoreographerBooking(booking.id, 'BOOKING_ACTIVATE');
-                setAcceptSuccess(true);
+                showModal({
+                  title: 'Thành công',
+                  message: 'Đơn đã được chấp nhận.',
+                  status: 'success',
+                  autoCloseAfter: 2000,
+                  onAutoClose: () => router.replace('/Choreographer/RequestBookingList'),
+                });
               } catch(e:any) {
                 setAcceptError(e?.response?.data?.message || e?.message || 'Lỗi khi xác nhận');
               } finally { setAcceptLoading(false); }
-            }} disabled={acceptLoading}>
+            }} disabled={acceptLoading || declineLoading}>
               {acceptLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
@@ -331,22 +366,7 @@ export default function BookingDetailOnHold() {
         </View>
       )}
 
-      {/* Success Modal */}
-      <Modal
-        visible={acceptSuccess === true}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => {}}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalIconCircle}>
-              <Text style={styles.modalIcon}>✓</Text>
-            </View>
-            <Text style={styles.modalTitle}>Đơn đã được chấp nhận</Text>
-          </View>
-        </View>
-      </Modal>
+      {modal}
     </View>
   );
 }
@@ -823,44 +843,6 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#fff',
     fontSize: 15,
-    fontFamily: 'RobotoMono_700Bold',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    minWidth: 280,
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  modalIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#ECFDF5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  modalIcon: {
-    fontSize: 32,
-    color: '#10B981',
-    fontWeight: '900',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-    textAlign: 'center',
     fontFamily: 'RobotoMono_700Bold',
   },
 });

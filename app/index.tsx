@@ -1,8 +1,10 @@
-import { View, Text, Image, TouchableOpacity, SafeAreaView, StyleSheet, Dimensions, ScrollView } from "react-native";
+import { View, Text, Image, TouchableOpacity, SafeAreaView, StyleSheet, Dimensions, ScrollView, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import Animated, { FadeIn, FadeOut, SlideInUp, SlideInDown, BounceIn } from "react-native-reanimated";
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getUserInfo } from "../service/api";
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 const { width, height } = Dimensions.get('window');
@@ -33,6 +35,41 @@ export default function HomeScreen() {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // On first app open, if we already have a valid token,
+  // skip the intro and go directly to the correct home screen.
+  useEffect(() => {
+    const checkExistingLogin = async () => {
+      try {
+        const token = await AsyncStorage.getItem("token");
+        if (!token) {
+          setCheckingAuth(false);
+          return;
+        }
+
+        // Verify token by calling user info.
+        const userRes = await getUserInfo();
+        const role = userRes?.data?.role;
+
+        if (String(role).toUpperCase() === "CHOREOGRAPHY" || String(role).toUpperCase() === "CHOREOGRAPHER") {
+          router.replace("/Choreographer/ChoreographerHome");
+        } else {
+          router.replace("/Home");
+        }
+      } catch (err: any) {
+        // If token is invalid/expired, clear it and stay on intro
+        if (err?.response?.status === 401) {
+          await AsyncStorage.removeItem("token");
+          await AsyncStorage.removeItem("user");
+        }
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+
+    checkExistingLogin();
+  }, [router]);
 
   const handleScroll = (event: any) => {
     const slideSize = event.nativeEvent.layoutMeasurement.width;
@@ -46,6 +83,14 @@ export default function HomeScreen() {
       animated: true,
     });
   };
+
+  if (checkingAuth) {
+    return (
+      <SafeAreaView style={[styles.screenRoot, styles.centerContent]}>
+        <ActivityIndicator size="large" color="#FF7A00" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.screenRoot}>
@@ -149,6 +194,10 @@ const styles = StyleSheet.create({
   screenRoot: {
     flex: 1,
     backgroundColor: "#000000",
+  },
+  centerContent: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   scrollView: {
     flex: 1,

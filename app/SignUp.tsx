@@ -1,10 +1,11 @@
-import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native'
+import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native'
 import React, { useState } from 'react'
 import Animated from 'react-native-reanimated';
 import { SlideInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { signUpUser } from '../service/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppModal } from '../hooks/useAppModal';
 export default function signUp() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -13,6 +14,7 @@ export default function signUp() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { showModal, modal } = useAppModal();
 
   const onSubmit = async () => {
     if (!email || !fullName || !password || !confirmPassword) {
@@ -33,12 +35,27 @@ export default function signUp() {
       if (token) {
         await AsyncStorage.setItem("token", token);
       }
-      Alert.alert("Thành công", "Đăng ký thành công", [{ text: "OK", onPress: () => router.push({ pathname: "/otpSignUp", params: { email } }) }]);
+      showModal({
+        title: "Thành công",
+        message: "Đăng ký thành công",
+        status: "success",
+        buttons: [
+          {
+            text: "OK",
+            variant: "primary",
+            onPress: () => router.push({ pathname: "/otpSignUp", params: { email } }),
+          },
+        ],
+      });
     } catch (e: any) {
       console.log("signup error:", e?.response?.data ?? e);
       const message = e?.response?.data?.message || e?.message || "Đăng ký thất bại";
       setError(message);
-      Alert.alert("Đăng ký thất bại", message);
+      showModal({
+        title: "Đăng ký thất bại",
+        message,
+        status: "error",
+      });
     } finally {
       setLoading(false);
       
@@ -121,6 +138,7 @@ export default function signUp() {
         </View>
 
       </Animated.View>
+      {modal}
    </SafeAreaView>
   )
 }

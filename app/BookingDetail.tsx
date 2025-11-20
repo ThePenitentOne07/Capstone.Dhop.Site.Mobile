@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { acceptChoreographerBooking, getBookingById } from '../service/api';
 import { useRouter } from 'expo-router';
 import { useConversationStore } from '../states/conversationStore';
+import { useAppModal } from '../hooks/useAppModal';
 
 const YELLOW = '#FFD540';
 const ORANGE = '#FF7120';
@@ -107,6 +108,7 @@ export default function BookingDetail() {
 
   const router = useRouter();
   const { createConversation } = useConversationStore();
+  const { showModal, modal } = useAppModal();
 
   if (loading) {
     return (
@@ -182,7 +184,11 @@ export default function BookingDetail() {
               const choreographerUUID = booking.choreography?.userUUID || booking.choreographerId;
               
               if (!choreographerUUID) {
-                Alert.alert('Lỗi', 'Không tìm thấy thông tin biên đạo');
+                showModal({
+                  title: 'Lỗi',
+                  message: 'Không tìm thấy thông tin biên đạo',
+                  status: 'error',
+                });
                 return;
               }
 
@@ -201,7 +207,11 @@ export default function BookingDetail() {
                 });
               } catch (error: any) {
                 console.error('Failed to create conversation:', error);
-                Alert.alert('Lỗi', error?.message || 'Không thể tạo cuộc trò chuyện');
+                showModal({
+                  title: 'Lỗi',
+                  message: error?.message || 'Không thể tạo cuộc trò chuyện',
+                  status: 'error',
+                });
               } finally {
                 setChatLoading(false);
               }
@@ -352,6 +362,7 @@ export default function BookingDetail() {
           </TouchableOpacity>
         </View>
       )}
+      {modal}
     </View>
   );
 }

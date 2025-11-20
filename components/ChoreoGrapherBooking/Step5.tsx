@@ -15,11 +15,9 @@ interface Step5Props {
 }
 
 function toScheduledISO(dateISO: string, hhmm: string): string {
-  const base = new Date(dateISO);
-  const [hh, mm] = hhmm.split(':').map((v) => parseInt(v, 10));
-  const scheduled = new Date(base);
-  scheduled.setHours(hh, mm, 0, 0);
-  return scheduled.toISOString();
+  const datePart = dateISO.split('T')[0];
+  const [hh, mm] = hhmm.split(':');
+  return `${datePart}T${hh}:${mm}:00`;
 }
 
 export default function Step5({ choreographerId, areaId, location, detail, sessions }: Step5Props) {
@@ -63,6 +61,7 @@ export default function Step5({ choreographerId, areaId, location, detail, sessi
 
   useEffect(() => {
     handleCalculate();
+    console.log("payload booking",payload);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payload]);
 
@@ -76,6 +75,8 @@ export default function Step5({ choreographerId, areaId, location, detail, sessi
     setBookingSuccess(null);
     try {
       await createChoreographerBooking(payload);
+      
+      
       setBookingSuccess(true);
     } catch (e: any) {
       setError(e?.response?.data?.message || 'Đặt lịch thất bại.');

@@ -1,8 +1,9 @@
-import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native"
+import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from "react-native"
 import React, { useState, useRef, useEffect } from "react"
 import Animated from "react-native-reanimated";
 import { SlideInDown } from "react-native-reanimated";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useAppModal } from "../hooks/useAppModal";
 
 export default function OtpSignUp() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function OtpSignUp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRefs = useRef<TextInput[]>([]);
+  const { showModal, modal } = useAppModal();
 
   const handleOtpChange = (value: string, index: number) => {
     if (value.length > 1) return; // Prevent multiple characters
@@ -50,15 +52,22 @@ export default function OtpSignUp() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      Alert.alert(
-        "Thành công", 
-        "Xác thực OTP thành công!", 
-        [{ text: "OK", onPress: () => router.replace("/login") }]
-      );
+      showModal({
+        title: "Thành công",
+        message: "Xác thực OTP thành công!",
+        status: "success",
+        buttons: [
+          { text: "OK", variant: "primary", onPress: () => router.replace("/login") },
+        ],
+      });
     } catch (error: any) {
       const message = error?.response?.data?.message || error?.message || "Xác thực OTP thất bại";
       setError(message);
-      Alert.alert("Lỗi", message);
+      showModal({
+        title: "Lỗi",
+        message,
+        status: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -69,12 +78,20 @@ export default function OtpSignUp() {
       // TODO: Implement resend OTP API call
       // const response = await resendOtp({ email });
       
-      Alert.alert("Thành công", "Mã OTP đã được gửi lại!");
+      showModal({
+        title: "Thành công",
+        message: "Mã OTP đã được gửi lại!",
+        status: "success",
+      });
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     } catch (error: any) {
       const message = error?.response?.data?.message || error?.message || "Gửi lại OTP thất bại";
-      Alert.alert("Lỗi", message);
+      showModal({
+        title: "Lỗi",
+        message,
+        status: "error",
+      });
     }
   };
 
@@ -150,6 +167,7 @@ export default function OtpSignUp() {
           </TouchableOpacity>
         </View>
       </Animated.View>
+      {modal}
     </SafeAreaView>
   );
 }

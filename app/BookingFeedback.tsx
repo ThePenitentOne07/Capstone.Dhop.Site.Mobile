@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -13,12 +12,14 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { createBookingFeedback } from "../service/api";
+import { useAppModal } from "../hooks/useAppModal";
 
 const RATING_OPTIONS = [1, 2, 3, 4, 5];
 
 export default function BookingFeedback() {
   const router = useRouter();
   const { bookingId } = useLocalSearchParams();
+  const { showModal, modal } = useAppModal();
   const normalizedBookingId = useMemo(() => {
     if (typeof bookingId === "string") return Number(bookingId);
     if (Array.isArray(bookingId)) return Number(bookingId[0]);
@@ -53,12 +54,18 @@ export default function BookingFeedback() {
         comment: comment.trim(),
       });
       setSuccess(true);
-      Alert.alert("Cảm ơn bạn!", "Đánh giá đã được gửi thành công.", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]);
+      showModal({
+        title: "Cảm ơn bạn!",
+        message: "Đánh giá đã được gửi thành công.",
+        status: "success",
+        buttons: [
+          {
+            text: "OK",
+            variant: "primary",
+            onPress: () => router.back(),
+          },
+        ],
+      });
     } catch (err: any) {
       setError(
         err?.response?.data?.message ||
@@ -130,6 +137,7 @@ export default function BookingFeedback() {
           )}
         </TouchableOpacity>
       </ScrollView>
+      {modal}
     </KeyboardAvoidingView>
   );
 }

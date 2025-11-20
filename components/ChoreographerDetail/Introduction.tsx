@@ -5,7 +5,7 @@ import Animated, { FadeInUp, FadeInLeft, FadeInRight } from 'react-native-reanim
 
 const { width } = Dimensions.get('window');
 
-export default function Introduction({ props }: { props: { title: string, name: string, price: number, yearExperience: number, about: string, area: Array<{ id: number, city: string, ward: string }>, danceType: Array<{ id: number, type: string, description: string }> } }) {
+export default function Introduction({ props }: { props: { title: string, name: string, price: number, yearExperience: number, about: string, area: Array<{ id: number, city: string, ward: string }>, danceType: Array<{ id: number, type: string, description: string }>, averageRating: number  } }) {
   console.log("props", props);
   return (
     <View style={styles.container}>
@@ -93,7 +93,7 @@ export default function Introduction({ props }: { props: { title: string, name: 
           <View style={styles.statIcon}>
             <Text style={styles.statIconText}>⭐</Text>
           </View>
-          <Text style={styles.statNumber}>5.0</Text>
+          <Text style={styles.statNumber}>{props.averageRating || 0}</Text>
           <Text style={styles.statLabel}>Đánh giá</Text>
         </View>
       </Animated.View>

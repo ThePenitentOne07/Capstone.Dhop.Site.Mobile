@@ -108,6 +108,12 @@ export const acceptChoreographerBooking = (
     }
   );
 };
+
+export const cancelChoreographerBooking = (bookingId: string | number) => {
+  return api.patch(`/booking/cancel`, null, {
+    params: { bookingId },
+  });
+};
 // Check-in training session via QR
 export const qrTrainingSession = (
   trainingSessionId: number,

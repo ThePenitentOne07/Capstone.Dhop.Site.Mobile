@@ -150,6 +150,7 @@ function BookingCard({ booking, onPress }: { booking: any; onPress?: () => void 
   const hasFeedback = Array.isArray(booking.bookingFeedbacks) && booking.bookingFeedbacks.length > 0;
   const isCompleted = (booking?.statusName || '').trim() === 'Đơn đặt hoàn tất';
   const showFeedbackRow = hasFeedback || isCompleted;
+  const ava= booking.choreography?.avatarUrl
 
   return (
     <TouchableOpacity activeOpacity={0.8} style={styles.card} onPress={onPress}>

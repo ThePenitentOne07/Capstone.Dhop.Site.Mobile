@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Alert } from "react-native";
+import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ActivityIndicator } from "react-native";
 import Animated, { SlideInDown,  BounceIn, Easing, CSSAnimationKeyframes} from "react-native-reanimated";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { loginUser, getUserInfo } from "../service/api";
+import { useAppModal } from "../hooks/useAppModal";
 
 
 export default function LoginScreen() {
@@ -13,6 +14,7 @@ export default function LoginScreen() {
   const [startPulse, setStartPulse] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showModal, modal } = useAppModal();
 
   useEffect(() => {
     const t = setTimeout(() => setStartPulse(true), 1000);
@@ -62,7 +64,11 @@ export default function LoginScreen() {
       console.log("login error:", e?.response?.data ?? e);
       const message = e?.response?.data?.message || e?.message || "Đăng nhập thất bại";
       setError(message);
-      Alert.alert("Đăng nhập thất bại", message);
+      showModal({
+        title: "Đăng nhập thất bại",
+        message,
+        status: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -148,6 +154,7 @@ export default function LoginScreen() {
         </View>
 
       </Animated.View>
+      {modal}
     </SafeAreaView>
   );
 }

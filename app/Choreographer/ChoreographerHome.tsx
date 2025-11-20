@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIn
 import { useRouter, Stack } from 'expo-router';
 import { useUserInfo } from '../../hooks/useUserInfo';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, Easing, withDelay } from 'react-native-reanimated';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppModal } from '../../hooks/useAppModal';
 
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
@@ -10,8 +12,30 @@ const ORANGE2 = '#FF7A00';
 export default function ChoreographerHome() {
   const router = useRouter();
   const { user, loading } = useUserInfo();
+  const { showModal, modal } = useAppModal();
   const avatar = require('../../assets/vecteezy_man-using-smartphone-device_24096847.png');
   const username = user?.name || 'Choreographer';
+  const handleLogout = () => {
+    showModal({
+      title: 'Đăng xuất',
+      message: 'Bạn chắc chắn muốn đăng xuất?',
+      status: 'info',
+      buttons: [
+        {
+          text: 'Hủy',
+          variant: 'secondary',
+        },
+        {
+          text: 'Đăng xuất',
+          destructive: true,
+          onPress: async () => {
+            await AsyncStorage.multiRemove(['token', 'user']);
+            router.replace('/Login');
+          },
+        },
+      ],
+    });
+  };
   // @ts-ignore: walletBalance might not be defined
   const coin = (user && typeof user.walletBalance !== 'undefined') ? user.walletBalance : 1200;
 
@@ -129,10 +153,12 @@ export default function ChoreographerHome() {
           {/* <MenuButton index={2} icon="📈" label="Lịch sử giao dịch" /> */}
           <MenuButton index={2} icon="" label="Chat" onPress={()=>{router.push('/ChatList')}} />
 
-          <MenuButton index={3} icon="📅" label="Lịch" showLast={true} />
+          <MenuButton index={3} icon="📅" label="Lịch" />
+          <MenuButton index={4} icon="🚪" label="Đăng xuất" showLast={true} onPress={handleLogout} />
         </View>
         {loading && <ActivityIndicator color={ORANGE2} style={{marginTop:20}} />}
       </ScrollView>
+      {modal}
     </View>
   );
 }

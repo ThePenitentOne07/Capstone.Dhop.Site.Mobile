@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Stack } from 'expo-router';
 import { useUserInfo } from '../hooks/useUserInfo';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,6 +7,7 @@ import { BlurView } from 'expo-blur';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uploadImageToCloudinary } from '../service/cloudinaryService';
 import { updateUserProfile } from '../service/api';
+import { useAppModal } from '../hooks/useAppModal';
 
 const ORANGE2 = '#FF7A00';
 const ORANGE = '#FF7120';
@@ -22,6 +23,7 @@ export default function CustomerProfile() {
   // @ts-ignore: optional fields may not exist on user
   const phone = user?.phone || 'Cập nhật số điện thoại';
   const avatarInitial = name?.[0]?.toUpperCase() || 'U';
+  const { showModal, modal } = useAppModal();
 
   useEffect(() => {
     setLocalAvatarUri(avatarUri);
@@ -32,7 +34,11 @@ export default function CustomerProfile() {
       // Request permission
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Quyền truy cập', 'Cần quyền truy cập thư viện ảnh để chọn ảnh đại diện.');
+        showModal({
+          title: 'Quyền truy cập',
+          message: 'Cần quyền truy cập thư viện ảnh để chọn ảnh đại diện.',
+          status: 'info',
+        });
         return;
       }
 
@@ -60,7 +66,11 @@ export default function CustomerProfile() {
         await updateUserProfile(payload);
         await refetch();
 
-        Alert.alert('Thành công', 'Ảnh đại diện đã được cập nhật.');
+        showModal({
+          title: 'Thành công',
+          message: 'Ảnh đại diện đã được cập nhật.',
+          status: 'success',
+        });
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -68,7 +78,11 @@ export default function CustomerProfile() {
         error instanceof Error
           ? error.message
           : 'Không thể cập nhật ảnh đại diện. Vui lòng thử lại.';
-      Alert.alert('Lỗi', message);
+      showModal({
+        title: 'Lỗi',
+        message,
+        status: 'error',
+      });
     } finally {
       setUploading(false);
     }
@@ -134,6 +148,7 @@ export default function CustomerProfile() {
         </View>
       
       </View>
+      {modal}
     </ScrollView>
   );
 }

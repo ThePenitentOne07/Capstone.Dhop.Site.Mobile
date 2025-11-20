@@ -5,6 +5,8 @@ import { useRouter, Stack } from 'expo-router';
 import { useUserInfo } from '../hooks/useUserInfo';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming, Easing } from 'react-native-reanimated';
 import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppModal } from '../hooks/useAppModal';
 
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
@@ -14,8 +16,28 @@ const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpaci
 export default function CustomerMenu(){
     const router = useRouter();
     const { user, loading } = useUserInfo();
+    const { showModal, modal } = useAppModal();
     const username = user?.name || 'Choreographer';
     const avatarInitial = username?.[0]?.toUpperCase() || 'U';
+
+    const handleLogout = async () => {
+      showModal({
+        title: 'Đăng xuất',
+        message: 'Bạn chắc chắn muốn đăng xuất?',
+        status: 'info',
+        buttons: [
+          { text: 'Hủy', variant: 'secondary' },
+          {
+            text: 'Đăng xuất',
+            destructive: true,
+            onPress: async () => {
+              await AsyncStorage.multiRemove(['token', 'user']);
+              router.replace('/Login');
+            },
+          },
+        ],
+      });
+    };
 
     const handleProfilePress = () => {
       router.push('/CustomerProfile');
@@ -69,10 +91,12 @@ export default function CustomerMenu(){
             <MenuButton index={1} icon="" label="Ví tiền" onPress={()=>{router.push('/Wallet')}} />
             {/* <MenuButton index={2} icon="" label="Lịch sử giao dịch" /> */}
             <MenuButton index={2} icon="" label="Chat" onPress={()=>{router.push('/ChatList')}} />
-            <MenuButton index={3} icon="" label="Lịch" showLast={true} />
+            <MenuButton index={3} icon="" label="Lịch" />
+            <MenuButton index={4} icon="🚪" label="Đăng xuất" showLast={true} onPress={handleLogout} />
           </View>
-          {loading && <ActivityIndicator color={ORANGE2} style={{marginTop:20}} />}
+        {loading && <ActivityIndicator color={ORANGE2} style={{marginTop:20}} />}
         </ScrollView>
+        {modal}
       </View>
     );
   }

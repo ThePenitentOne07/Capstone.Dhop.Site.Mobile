@@ -1,12 +1,33 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image, Linking, Alert } from 'react-native'
-import React, { useState } from 'react'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image, Linking, Modal } from 'react-native'
+import React, { useMemo, useState } from 'react'
 import Animated, { FadeInUp, FadeInLeft } from 'react-native-reanimated'
+import { useAppModal } from '../../hooks/useAppModal'
 
 const { width } = Dimensions.get('window');
 
+// ⚠️ Suggestion: Update your Profile interface to pass video titles
+interface Experience {
+  id: number;
+  title: string;
+  subject: string;
+  years: string;
+}
+
+interface Profile {
+  profileId: number;
+  // Videos should ideally be an array of objects: { url: string, title: string }
+  videos: string[] | { url: string, title: string }[]; 
+  images: string[];
+  achievements: string[];
+  experiences?: Experience[];
+}
+
+interface ChoreographerProjectProps {
+  profiles?: Profile[];
+}
+
 // Function to extract YouTube video ID and generate thumbnail URL
 const getYouTubeThumbnail = (url: string): string => {
-  // Extract video ID from various YouTube URL formats
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
   const match = url.match(regExp);
   
@@ -16,61 +37,76 @@ const getYouTubeThumbnail = (url: string): string => {
     return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
   }
   
-  // Fallback thumbnail if URL parsing fails
   return "https://via.placeholder.com/300x200/FF7A00/FFFFFF?text=Video+Thumbnail";
 };
 
-// Mock project data - in real app, this would come from API
-const mockProjects = [
-  {
-    id: 1,
-    title: "Contemporary Dance Performance",
-    description: "A beautiful contemporary piece showcasing modern dance techniques",
-    videoUrl: "https://youtu.be/U8lJRcUeEMs?si=mjvMOdsBQ4waLUsl",
-    thumbnail: getYouTubeThumbnail("https://youtu.be/U8lJRcUeEMs?si=mjvMOdsBQ4waLUsl"),
-    duration: "3:45",
-    views: "125K",
-    date: "2024-01-15"
-  },
-  {
-    id: 2,
-    title: "Ballet Masterclass",
-    description: "Professional ballet training session with advanced techniques",
-    videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    thumbnail: getYouTubeThumbnail("https://www.youtube.com/watch?v=dQw4w9WgXcQ"),
-    duration: "8:20",
-    views: "89K",
-    date: "2024-01-10"
-  },
-  {
-    id: 3,
-    title: "Jazz Dance Workshop",
-    description: "High-energy jazz dance workshop for all skill levels",
-    videoUrl: "https://www.youtube.com/watch?v=jNQXAC9IVRw",
-    thumbnail: getYouTubeThumbnail("https://www.youtube.com/watch?v=jNQXAC9IVRw"),
-    duration: "5:30",
-    views: "67K",
-    date: "2024-01-05"
-  },
-  {
-    id: 4,
-    title: "Hip Hop Choreography",
-    description: "Urban hip hop dance routine with street style moves",
-    videoUrl: "https://www.youtube.com/watch?v=9bZkp7q19f0",
-    thumbnail: getYouTubeThumbnail("https://www.youtube.com/watch?v=9bZkp7q19f0"),
-    duration: "4:15",
-    views: "156K",
-    date: "2023-12-28"
-  }
-];
+interface ProjectItem {
+  id: string;
+  type: 'video' | 'image';
+  title: string; // This will hold the actual video title
+  url: string;
+  thumbnail: string;
+  profileId: number;
+}
 
-export default function ChoreographerProject() {
-  const [activeFilter, setActiveFilter] = useState('All');
+export default function ChoreographerProject({ profiles = [] }: ChoreographerProjectProps) {
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const { showModal, modal } = useAppModal();
+  
+  // Transform profiles into separated displayable items
+  const { allVideos, allImages, allAchievements, allExperiences } = useMemo(() => {
+    const videos: ProjectItem[] = [];
+    const images: ProjectItem[] = [];
+    const achievements: string[] = [];
+    const experiences: Experience[] = [];
+
+    profiles.forEach((profile) => {
+      // 1. Process Achievements
+      if (profile.achievements && Array.isArray(profile.achievements)) {
+        achievements.push(...profile.achievements);
+      }
+      
+      // 2. Process Experiences
+      if (profile.experiences && Array.isArray(profile.experiences)) {
+        experiences.push(...profile.experiences);
+      }
+      
+      // 3. Process Videos
+      profile.videos?.forEach((videoData, index) => {
+        // Handle both string[] (old) and { url: string, title: string }[] (new) format
+        const isObject = typeof videoData === 'object' && videoData !== null && 'url' in videoData;
+        const videoUrl = isObject ? videoData.url : videoData;
+        const videoTitle = isObject ? videoData.title : `Video ${index + 1}`; // Use provided title or fallback
+
+        videos.push({
+          id: `video-${profile.profileId}-${index}`,
+          type: 'video',
+          title: videoTitle,
+          url: videoUrl,
+          thumbnail: getYouTubeThumbnail(videoUrl),
+          profileId: profile.profileId,
+        });
+      });
+      
+      // 4. Process Images
+      profile.images?.forEach((imageUrl, index) => {
+        images.push({
+          id: `image-${profile.profileId}-${index}`,
+          type: 'image',
+          title: `Hình ảnh ${index + 1}`,
+          url: imageUrl,
+          thumbnail: imageUrl,
+          profileId: profile.profileId,
+        });
+      });
+    });
+    
+    return { allVideos: videos, allImages: images, allAchievements: achievements, allExperiences: experiences };
+  }, [profiles]);
 
   // Function to open YouTube video in app or browser
   const openYouTubeVideo = async (videoUrl: string) => {
     try {
-      // Extract video ID from URL
       const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
       const match = videoUrl.match(regExp);
       
@@ -83,65 +119,61 @@ export default function ChoreographerProject() {
         if (canOpenYouTubeApp) {
           await Linking.openURL(youtubeAppUrl);
         } else {
-          // Fallback to browser
           await Linking.openURL(videoUrl);
         }
       } else {
-        // If we can't extract video ID, just open in browser
         await Linking.openURL(videoUrl);
       }
     } catch (error) {
-      // Show alert if opening fails
-      Alert.alert(
-        'Không thể mở video',
-        'Không thể mở video. Vui lòng thử lại.',
-        [{ text: 'OK' }]
-      );
+      showModal({
+        title: 'Không thể mở video',
+        message: 'Không thể mở video. Vui lòng thử lại.',
+        status: 'error',
+      });
     }
   };
 
-  
+  const handleImagePress = (imageUrl: string) => {
+    setPreviewImage(imageUrl);
+  };
 
-  const filteredProjects = activeFilter === 'All' 
-    ? mockProjects 
-    : mockProjects.filter(project => 
-        project.title.toLowerCase().includes(activeFilter.toLowerCase())
-      );
-
-  const ProjectCard = ({ project, index }: { project: typeof mockProjects[0], index: number }) => (
+  const ProjectCard = ({ project, index }: { project: ProjectItem, index: number }) => (
     <Animated.View 
       entering={FadeInUp.delay(index * 100)}
       style={styles.projectCard}
     >
       <TouchableOpacity 
         style={styles.projectContent}
-        onPress={() => openYouTubeVideo(project.videoUrl)}
+        onPress={() => {
+          if (project.type === 'video') {
+            openYouTubeVideo(project.url);
+          } else {
+            handleImagePress(project.url);
+          }
+        }}
         activeOpacity={0.8}
       >
         <View style={styles.thumbnailContainer}>
           <Image
             source={{ uri: project.thumbnail }}
             style={styles.thumbnail}
-            resizeMode="cover"
+            resizeMode="contain"
           />
-          <View style={styles.durationBadge}>
-            <Text style={styles.durationText}>{project.duration}</Text>
-          </View>
-          <View style={styles.playButton}>
-            <Text style={styles.playIcon}>▶</Text>
-          </View>
+          {project.type === 'video' && (
+            <View style={styles.playButton}>
+              <Text style={styles.playIcon}>▶</Text>
+            </View>
+          )}
         </View>
-        
+{/*         
         <View style={styles.projectInfo}>
           <Text style={styles.projectTitle}>{project.title}</Text>
-          <Text style={styles.projectDescription}>{project.description}</Text>
-          
-          <View style={styles.projectStats}>
-            <Text style={styles.statText}>👁 {project.views}</Text>
-            <Text style={styles.statDot}>•</Text>
-            <Text style={styles.statText}>{project.date}</Text>
+          <View style={styles.typeBadge}>
+            <Text style={styles.typeText}>
+              {project.type === 'video' ? '🎬 Video' : '🖼️ Hình ảnh'}
+            </Text>
           </View>
-        </View>
+        </View> */}
       </TouchableOpacity>
     </Animated.View>
   );
@@ -152,19 +184,127 @@ export default function ChoreographerProject() {
       {/* Header */}
       <Animated.View entering={FadeInLeft.delay(200)} style={styles.header}>
         <Text style={styles.headerTitle}>🎬 Dự án</Text>
-        <Text style={styles.headerSubtitle}>{mockProjects.length} video projects</Text>
+        <Text style={styles.headerSubtitle}>
+          {allVideos.length + allImages.length} {allVideos.length + allImages.length === 1 ? 'dự án' : 'dự án'} 
+          {allAchievements.length > 0 && ` • ${allAchievements.length} thành tích`}
+          {allExperiences.length > 0 && ` • ${allExperiences.length} kinh nghiệm`}
+        </Text>
       </Animated.View>
 
-      {/* Filters */}
-     
+      {/* Achievements Section */}
+      {allAchievements.length > 0 && (
+        <Animated.View entering={FadeInUp.delay(300)} style={styles.achievementsSection}>
+          <Text style={styles.achievementsTitle}>🏆 Thành tích</Text>
+          <View style={styles.achievementsContainer}>
+            {allAchievements.map((achievement, index) => (
+              <View key={index} style={styles.achievementBadge}>
+                <Text style={styles.achievementText}>{achievement}</Text>
+              </View>
+            ))}
+          </View>
+        </Animated.View>
+      )}
 
       {/* Projects Grid */}
       <ScrollView style={styles.projectsContainer} showsVerticalScrollIndicator={false}>
-        {filteredProjects.map((project, index) => (
-          <ProjectCard key={project.id} project={project} index={index} />
-        ))}
+        
+        {/* === Experiences Section === */}
+        {allExperiences.length > 0 && (
+          <View>
+            <Animated.Text entering={FadeInLeft.delay(350)} style={styles.sectionTitle}>
+              💼 Kinh nghiệm ({allExperiences.length})
+            </Animated.Text>
+            <View style={styles.sectionSeparator} />
+            {allExperiences.map((experience, index) => (
+              <Animated.View
+                key={experience.id}
+                entering={FadeInUp.delay(350 + index * 50)}
+                style={styles.experienceCard}
+              >
+                <View style={styles.experienceHeader}>
+                  <Text style={styles.experienceTitle}>{experience.title}</Text>
+                  <View style={styles.experienceYearBadge}>
+                    <Text style={styles.experienceYear}>{experience.years}</Text>
+                  </View>
+                </View>
+                <Text style={styles.experienceSubject}>{experience.subject}</Text>
+              </Animated.View>
+            ))}
+          </View>
+        )}
+        
+        
+        {/* === Video Section === */}
+        {allVideos.length > 0 && (
+          <View>
+            <Animated.Text entering={FadeInLeft.delay(400)} style={[styles.sectionTitle, { marginTop: allExperiences.length > 0 ? 20 : 0 }]}>
+              🎥 Các video dự án ({allVideos.length})
+            </Animated.Text>
+            <View style={styles.sectionSeparator} />
+            {allVideos.map((project, index) => (
+              <ProjectCard key={project.id} project={project} index={index} />
+            ))}
+          </View>
+        )}
+        
+        {/* === Image Section === */}
+        {allImages.length > 0 && (
+          <View>
+            <Animated.Text entering={FadeInLeft.delay(500)} style={[styles.sectionTitle, { marginTop: allVideos.length > 0 ? 20 : 0 }]}>
+              🖼️ Hình ảnh các buổi diễn ({allImages.length})
+            </Animated.Text>
+            <View style={styles.sectionSeparator} />
+            {allImages.map((project, index) => (
+              <ProjectCard key={project.id} project={project} index={index} />
+            ))}
+          </View>
+        )}
+
+        {/* Empty State */}
+        {allVideos.length === 0 && allImages.length === 0 && allExperiences.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>Chưa có dự án nào</Text>
+          </View>
+        )}
+        
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* Image Preview Modal */}
+      <Modal
+        visible={previewImage !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setPreviewImage(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setPreviewImage(null)}
+        >
+          <View style={styles.modalContent}>
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={(e) => e.stopPropagation()}
+            >
+              {previewImage && (
+                <Image
+                  source={{ uri: previewImage }}
+                  style={styles.previewImage}
+                  resizeMode="contain"
+                />
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setPreviewImage(null)}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+      {modal}
     </View>
   )
 }
@@ -190,33 +330,16 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontWeight: '500',
   },
-  filtersContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 10,
   },
-  filtersScroll: {
-    flexDirection: 'row',
-  },
-  filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  filterButtonActive: {
-    backgroundColor: '#FF7A00',
-    borderColor: '#FF7A00',
-  },
-  filterText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  filterTextActive: {
-    color: '#FFFFFF',
+  sectionSeparator: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginBottom: 15,
   },
   projectsContainer: {
     flex: 1,
@@ -237,24 +360,13 @@ const styles = StyleSheet.create({
     position: 'relative',
     height: 200,
     backgroundColor: '#F3F4F6',
+    alignItems: 'center', // Added for centering content when using 'contain'
+    justifyContent: 'center', // Added for centering content when using 'contain'
   },
   thumbnail: {
     width: '100%',
     height: '100%',
-  },
-  durationBadge: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  durationText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
+    resizeMode: 'contain', // Changed from 'cover' to 'contain'
   },
   playButton: {
     position: 'absolute',
@@ -284,27 +396,128 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     lineHeight: 22,
   },
-  projectDescription: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-    marginBottom: 12,
+  typeBadge: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
   },
-  projectStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statText: {
+  typeText: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: '#6B7280',
     fontWeight: '500',
   },
-  statDot: {
-    fontSize: 12,
+  achievementsSection: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  achievementsTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 12,
+  },
+  achievementsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  achievementBadge: {
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  achievementText: {
+    fontSize: 13,
+    color: '#92400E',
+    fontWeight: '500',
+  },
+  emptyState: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
     color: '#9CA3AF',
-    marginHorizontal: 8,
+    fontWeight: '500',
   },
   bottomSpacer: {
     height: 20,
   },
-})
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  previewImage: {
+    width: width,
+    height: '100%',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  closeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  experienceCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  experienceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  experienceTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
+    flex: 1,
+    marginRight: 12,
+    lineHeight: 22,
+  },
+  experienceYearBadge: {
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  experienceYear: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4F46E5',
+  },
+  experienceSubject: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+});
