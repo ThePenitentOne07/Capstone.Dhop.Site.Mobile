@@ -114,7 +114,11 @@ export default function ChoreographerBookingScreen() {
           />
         )}
         {currentStep === 4 && (
-          <Step4 sessions={bookingData.sessions || []} onSubmit={handleStep4Submit} />
+          <Step4 
+            sessions={bookingData.sessions || []} 
+            onSubmit={handleStep4Submit}
+            choreographerAreas={area}
+          />
         )}
         {currentStep === 5 && (
           <Step5

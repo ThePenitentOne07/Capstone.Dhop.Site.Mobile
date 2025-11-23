@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { getChoreographerBookings } from '../service/api';
 import { useRefetchOnFocus } from './hooks';
@@ -150,13 +150,22 @@ function BookingCard({ booking, onPress }: { booking: any; onPress?: () => void 
   const hasFeedback = Array.isArray(booking.bookingFeedbacks) && booking.bookingFeedbacks.length > 0;
   const isCompleted = (booking?.statusName || '').trim() === 'Đơn đặt hoàn tất';
   const showFeedbackRow = hasFeedback || isCompleted;
-  const ava= booking.choreography?.avatarUrl
+  const avatarUrl = booking.choreography?.avatarUrl;
+  const avatarInitial = title?.[0]?.toUpperCase() || 'U';
 
   return (
     <TouchableOpacity activeOpacity={0.8} style={styles.card} onPress={onPress}>
       <View style={styles.rowTop}>
         <View style={styles.thumb}>
-          <Text style={styles.thumbEmoji}></Text>
+          {avatarUrl ? (
+            <Image 
+              source={{ uri: avatarUrl }} 
+              style={styles.thumbImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={styles.thumbInitial}>{avatarInitial}</Text>
+          )}
         </View>
         <View style={styles.titleWrap}>
           <Text numberOfLines={1} style={styles.title}>{title}</Text>
@@ -279,8 +288,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFD8B4',
   },
-  thumbEmoji: {
+  thumbImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  thumbInitial: {
     fontSize: 28,
+    color: ORANGE2,
+    fontWeight: '700',
   },
   titleWrap: {
     flex: 1,

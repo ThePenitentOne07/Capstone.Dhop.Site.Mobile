@@ -93,22 +93,7 @@ export const FeaturedChoreography: React.FC<FeaturedChoreographyProps> = ({
       </View>
       
       <View style={styles.choreographyContainer}>
-        <View style={styles.categoryNav}>
-          {categories.map((category) => (
-            <TouchableOpacity 
-              key={category}
-              style={styles.categoryButton}
-              onPress={() => handleCategoryPress(category)}
-            >
-              <Text style={[
-                styles.categoryText,
-                activeCategory === category && styles.categoryTextActive
-              ]}>
-                {category}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+       
 
         {loading ? (
           <View style={styles.loadingContainer}>

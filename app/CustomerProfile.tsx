@@ -4,7 +4,7 @@ import { Stack } from 'expo-router';
 import { useUserInfo } from '../hooks/useUserInfo';
 import * as ImagePicker from 'expo-image-picker';
 import { BlurView } from 'expo-blur';
-import { MaterialIcons } from '@expo/vector-icons';
+// import { MaterialIcons } from '@expo/vector-icons';
 import { uploadImageToCloudinary } from '../service/cloudinaryService';
 import { updateUserProfile } from '../service/api';
 import { useAppModal } from '../hooks/useAppModal';
@@ -25,6 +25,7 @@ export default function CustomerProfile() {
   const avatarInitial = name?.[0]?.toUpperCase() || 'U';
   const { showModal, modal } = useAppModal();
 
+   
   useEffect(() => {
     setLocalAvatarUri(avatarUri);
   }, [avatarUri]);

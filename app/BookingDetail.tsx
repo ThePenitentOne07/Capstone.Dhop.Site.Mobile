@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { acceptChoreographerBooking, getBookingById } from '../service/api';
 import { useRouter } from 'expo-router';
@@ -229,7 +229,17 @@ export default function BookingDetail() {
         {/* Item block */}
         <View style={styles.itemBlock}>
           <View style={styles.itemRow}>
-            <View style={styles.thumb}><Text style={{fontSize:26}}></Text></View>
+            <View style={styles.thumb}>
+              {booking.choreography?.avatarUrl ? (
+                <Image 
+                  source={{ uri: booking.choreography.avatarUrl }} 
+                  style={styles.thumbImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={styles.thumbInitial}>{(booking.choreography?.username || 'U')[0].toUpperCase()}</Text>
+              )}
+            </View>
             <View style={{flex:1}}>
               <Text numberOfLines={1} style={styles.itemTitle}>{booking.choreography?.username}</Text>
               <Text numberOfLines={1} style={styles.itemSubtitle}>{booking.detail || 'Đặt lịch biên đạo'}</Text>
@@ -513,6 +523,16 @@ const styles = StyleSheet.create({
     marginRight: 10,
     borderWidth: 1,
     borderColor: '#FFD8B4',
+  },
+  thumbImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  thumbInitial: {
+    fontSize: 26,
+    color: ORANGE2,
+    fontWeight: '700',
   },
   itemTitle: {
     fontSize: 16,

@@ -7,15 +7,22 @@ import useArea, { Area } from '../../hooks/useArea';
 interface Step4Props {
   sessions: { dateISO: string; startTime: string; durationMinutes: number }[];
   onSubmit: (data: { location: string; description?: string; areaId: number }) => void;
+  choreographerAreas?: Array<{ id: number; city: string; ward: string }>;
 }
 
-export default function Step4({ sessions, onSubmit }: Step4Props) {
+export default function Step4({ sessions, onSubmit, choreographerAreas = [] }: Step4Props) {
   const { areas, loading } = useArea();
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
   const [areaId, setAreaId] = useState<number | null>(null);
 
-  const areaOptions = useMemo(() => areas.map(a => ({ value: String(a.id), label: `${a.ward} - ${a.city}` })), [areas]);
+  // Filter areas to only include those that the choreographer has
+  const areaOptions = useMemo(() => {
+    const choreographerAreaIds = new Set(choreographerAreas.map(a => a.id));
+    return areas
+      .filter(a => choreographerAreaIds.has(a.id))
+      .map(a => ({ value: String(a.id), label: `${a.ward} - ${a.city}` }));
+  }, [areas, choreographerAreas]);
 
   const isValid = location.trim().length > 0 && !!areaId;
 //   console.log("Areas:", areas);

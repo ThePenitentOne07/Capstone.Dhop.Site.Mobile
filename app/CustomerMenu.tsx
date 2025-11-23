@@ -91,8 +91,8 @@ export default function CustomerMenu(){
             <MenuButton index={1} icon="" label="Ví tiền" onPress={()=>{router.push('/Wallet')}} />
             {/* <MenuButton index={2} icon="" label="Lịch sử giao dịch" /> */}
             <MenuButton index={2} icon="" label="Chat" onPress={()=>{router.push('/ChatList')}} />
-            <MenuButton index={3} icon="" label="Lịch" />
-            <MenuButton index={4} icon="🚪" label="Đăng xuất" showLast={true} onPress={handleLogout} />
+            
+            <MenuButton index={3} icon="🚪" label="Đăng xuất" showLast={true} onPress={handleLogout} />
           </View>
         {loading && <ActivityIndicator color={ORANGE2} style={{marginTop:20}} />}
         </ScrollView>
