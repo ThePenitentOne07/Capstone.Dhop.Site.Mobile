@@ -38,11 +38,10 @@ interface FeaturedChoreographyProps {
 }
 
 const fallbackImages = [
-  require('../assets/girl-dancing-2830024-2357254.webp'),
-  require('../assets/energetic-dance-performance-given-by-lady-illustration-svg-download-png-11526278.webp'),
+  require('../assets/logo-icon.png'),
 ];
 
-const categories = ['Nổi bật', 'Mới nhất', 'Tất cả'];
+// const categories = ['Nổi bật', 'Mới nhất', 'Tất cả'];
 
 
 

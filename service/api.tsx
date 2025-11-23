@@ -9,7 +9,7 @@ export const signUpUser = (values: SignUpFormValues) => {
   return apiNoToken.post("/auth/register", values);
 };
 export const otpSignUp = (email: string, otp: string) => {
-  return apiNoToken.post("/auth/otp", { email, otp });
+  return apiNoToken.post("/auth/verify-otp", { email, otp });
 };
 
 export const getUserInfo = () => {

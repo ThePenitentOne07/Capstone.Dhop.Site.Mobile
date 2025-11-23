@@ -43,7 +43,7 @@ export default function signUp() {
           {
             text: "OK",
             variant: "primary",
-            onPress: () => router.push({ pathname: "/otpSignUp", params: { email } }),
+            onPress: () => router.push({ pathname: "/OtpSignUp", params: { email } }),
           },
         ],
       });
@@ -132,7 +132,7 @@ export default function signUp() {
         </TouchableOpacity>
         <View style={styles.signupContainer}>
           <Text style={styles.signupText}>Đã có tài khoản? </Text>
-          <TouchableOpacity onPress={() => router.replace("/login")}>
+          <TouchableOpacity onPress={() => router.replace("/Login")}>
             <Text style={styles.signupLink}>Đăng nhập</Text>
           </TouchableOpacity>
         </View>

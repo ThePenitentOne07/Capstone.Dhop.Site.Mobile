@@ -4,10 +4,12 @@ import Animated from "react-native-reanimated";
 import { SlideInDown } from "react-native-reanimated";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useAppModal } from "../hooks/useAppModal";
+import { otpSignUp } from "../service/api";
 
 export default function OtpSignUp() {
   const router = useRouter();
   const { email } = useLocalSearchParams();
+  const emailValue = Array.isArray(email) ? email[0] : email || "";
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +37,12 @@ export default function OtpSignUp() {
   };
 
   const handleVerifyOtp = async () => {
+    // Validate email
+    if (!emailValue || emailValue.trim() === "") {
+      setError("Email không hợp lệ");
+      return;
+    }
+
     const otpCode = otp.join("");
     
     if (otpCode.length !== 6) {
@@ -42,26 +50,49 @@ export default function OtpSignUp() {
       return;
     }
 
+    // Validate OTP contains only numbers
+    if (!/^\d{6}$/.test(otpCode)) {
+      setError("Mã OTP chỉ được chứa số");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      // TODO: Implement actual OTP verification API call
-      // const response = await verifyOtp({ email, otp: otpCode });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await otpSignUp(emailValue, otpCode);
       
       showModal({
         title: "Thành công",
         message: "Xác thực OTP thành công!",
         status: "success",
         buttons: [
-          { text: "OK", variant: "primary", onPress: () => router.replace("/login") },
+          { text: "OK", variant: "primary", onPress: () => router.replace("/Login") },
         ],
       });
     } catch (error: any) {
-      const message = error?.response?.data?.message || error?.message || "Xác thực OTP thất bại";
+      let message = "Xác thực OTP thất bại";
+      
+      // Extract error message from different possible response formats
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        message = errorData.message || errorData.error || errorData.msg || message;
+        
+        // Handle validation errors
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          message = errorData.errors.map((e: any) => e.message || e.msg).join(", ");
+        }
+      } else if (error?.message) {
+        message = error.message;
+      } else if (typeof error === "string") {
+        message = error;
+      }
+      
+      // Handle network errors
+      if (error?.code === "NETWORK_ERROR" || error?.message?.includes("Network")) {
+        message = "Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng của bạn.";
+      }
+      
       setError(message);
       showModal({
         title: "Lỗi",
@@ -74,6 +105,14 @@ export default function OtpSignUp() {
   };
 
   const handleResendOtp = async () => {
+    // Validate email
+    if (!emailValue || emailValue.trim() === "") {
+      setError("Email không hợp lệ");
+      return;
+    }
+
+    setError(null);
+    
     try {
       // TODO: Implement resend OTP API call
       // const response = await resendOtp({ email });
@@ -86,7 +125,29 @@ export default function OtpSignUp() {
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     } catch (error: any) {
-      const message = error?.response?.data?.message || error?.message || "Gửi lại OTP thất bại";
+      let message = "Gửi lại OTP thất bại";
+      
+      // Extract error message from different possible response formats
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        message = errorData.message || errorData.error || errorData.msg || message;
+        
+        // Handle validation errors
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          message = errorData.errors.map((e: any) => e.message || e.msg).join(", ");
+        }
+      } else if (error?.message) {
+        message = error.message;
+      } else if (typeof error === "string") {
+        message = error;
+      }
+      
+      // Handle network errors
+      if (error?.code === "NETWORK_ERROR" || error?.message?.includes("Network")) {
+        message = "Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng của bạn.";
+      }
+      
+      setError(message);
       showModal({
         title: "Lỗi",
         message,
@@ -108,7 +169,7 @@ export default function OtpSignUp() {
         <Text style={styles.headerTitle}>Xác thực OTP</Text>
         <Text style={styles.headerSubtitle}>
           Chúng tôi đã gửi mã xác thực đến{"\n"}
-          <Text style={styles.emailText}>{email}</Text>
+          <Text style={styles.emailText}>{emailValue}</Text>
         </Text>
       </View>
       
@@ -139,7 +200,11 @@ export default function OtpSignUp() {
           </View>
         </View>
 
-        {!!error && <Text style={styles.errorText}>{error}</Text>}
+        {!!error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
 
         <TouchableOpacity 
           style={[styles.verifyButton, loading && { opacity: 0.7 }]} 
@@ -267,11 +332,19 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: "RobotoMono_400Regular",
   },
-  errorText: {
-    color: "#DC2626",
+  errorContainer: {
+    backgroundColor: "#FEE2E2",
+    borderRadius: 12,
+    padding: 12,
     marginTop: 8,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#DC2626",
+  },
+  errorText: {
+    color: "#DC2626",
     textAlign: "center",
+    fontSize: 14,
     fontFamily: "RobotoMono_400Regular",
   },
   resendContainer: {

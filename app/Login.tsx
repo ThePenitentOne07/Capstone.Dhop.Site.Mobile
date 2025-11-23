@@ -148,7 +148,7 @@ export default function LoginScreen() {
         </TouchableOpacity>
         <View style={styles.signupContainer}>
           <Text style={styles.signupText}>Chưa có tài khoản? </Text>
-          <TouchableOpacity onPress={() => router.push("/signUp")}>
+          <TouchableOpacity onPress={() => router.push("/SignUp")}>
             <Text style={styles.signupLink}>Tạo tài khoản</Text>
           </TouchableOpacity>
         </View>
