@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, TouchableOpacity, TextInput, Modal } from 'react-native';
 import { Stack } from 'expo-router';
 import { useUserInfo } from '../hooks/useUserInfo';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,13 +15,16 @@ const ORANGE = '#FF7120';
 export default function CustomerProfile() {
   const { user, loading, refetch } = useUserInfo();
   const [uploading, setUploading] = useState(false);
+  const [updatingPhone, setUpdatingPhone] = useState(false);
 //   const placeholderAvatar = require('../assets/vecteezy_man-using-smartphone-device_24096847.png');
   const avatarUri = user?.avatar as string | undefined;
   const [localAvatarUri, setLocalAvatarUri] = useState<string | undefined>(avatarUri);
   const name = user?.name || 'Chưa có tên';
   const email = user?.email || 'Chưa cập nhật email';
   // @ts-ignore: optional fields may not exist on user
-  const phone = user?.phone || 'Cập nhật số điện thoại';
+  const phone = user?.phone || '';
+  const [phoneValue, setPhoneValue] = useState<string>(phone);
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
   const avatarInitial = name?.[0]?.toUpperCase() || 'U';
   const { showModal, modal } = useAppModal();
 
@@ -29,6 +32,10 @@ export default function CustomerProfile() {
   useEffect(() => {
     setLocalAvatarUri(avatarUri);
   }, [avatarUri]);
+
+  useEffect(() => {
+    setPhoneValue(phone);
+  }, [phone]);
 
   const handleImagePicker = async () => {
     try {
@@ -89,6 +96,57 @@ export default function CustomerProfile() {
     }
   };
 
+  const handleOpenPhoneModal = () => {
+    setPhoneValue(phone);
+    setShowPhoneModal(true);
+  };
+
+  const handleClosePhoneModal = () => {
+    setPhoneValue(phone);
+    setShowPhoneModal(false);
+  };
+
+  const handleUpdatePhone = async () => {
+    if (phoneValue.trim() === phone) {
+      setShowPhoneModal(false);
+      return;
+    }
+
+    try {
+      setUpdatingPhone(true);
+      const payload = {
+        avatar: user?.avatar ?? '',
+        name: user?.name ?? '',
+        phone: phoneValue.trim(),
+      };
+
+      await updateUserProfile(payload);
+      await refetch();
+
+      setShowPhoneModal(false);
+      showModal({
+        title: 'Thành công',
+        message: 'Số điện thoại đã được cập nhật.',
+        status: 'success',
+      });
+    } catch (error) {
+      console.error('Error updating phone:', error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Không thể cập nhật số điện thoại. Vui lòng thử lại.';
+      showModal({
+        title: 'Lỗi',
+        message,
+        status: 'error',
+      });
+      // Revert to original phone value on error
+      setPhoneValue(phone);
+    } finally {
+      setUpdatingPhone(false);
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.root}>
       <Stack.Screen
@@ -145,11 +203,60 @@ export default function CustomerProfile() {
         </View>
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Số điện thoại</Text>
-          <Text style={styles.detailValue}>{phone}</Text>
+          <TouchableOpacity
+            onPress={handleOpenPhoneModal}
+            style={styles.phoneValueContainer}
+          >
+            <Text style={styles.detailValue}>
+              {phone || 'Cập nhật số điện thoại'}
+            </Text>
+          </TouchableOpacity>
         </View>
       
       </View>
       {modal}
+      
+      <Modal
+        visible={showPhoneModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleClosePhoneModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Cập nhật số điện thoại</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={phoneValue}
+              onChangeText={setPhoneValue}
+              placeholder="Nhập số điện thoại"
+              keyboardType="phone-pad"
+              autoFocus
+              editable={!updatingPhone}
+            />
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                onPress={handleClosePhoneModal}
+                disabled={updatingPhone}
+                style={[styles.modalButton, styles.modalCancelButton]}
+              >
+                <Text style={styles.modalCancelButtonText}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleUpdatePhone}
+                disabled={updatingPhone}
+                style={[styles.modalButton, styles.modalSaveButton]}
+              >
+                {updatingPhone ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.modalSaveButtonText}>Lưu</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -287,6 +394,75 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 15,
     color: '#111827',
+    fontWeight: '600',
+  },
+  phoneValueContainer: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    maxWidth: 360,
+    borderWidth: 1,
+    borderColor: '#FFE1BC',
+    shadowColor: ORANGE2,
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: ORANGE2,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: ORANGE2,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#111827',
+    backgroundColor: '#FFFFFF',
+    marginBottom: 20,
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCancelButton: {
+    backgroundColor: '#E5E7EB',
+  },
+  modalCancelButtonText: {
+    color: '#6B7280',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalSaveButton: {
+    backgroundColor: ORANGE2,
+  },
+  modalSaveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '600',
   },
 });

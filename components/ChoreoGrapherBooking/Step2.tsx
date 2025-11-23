@@ -117,10 +117,26 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
     fetchSchedule();
   }, [choreographerId, visibleMonth, visibleYear]);
 
+  const isWithin48Hours = (date: Date) => {
+    const now = new Date();
+    const minBookingTime = new Date(now.getTime() + 48 * 60 * 60 * 1000); // 48 hours from now
+    const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const startOfMinBookingDate = new Date(
+      minBookingTime.getFullYear(),
+      minBookingTime.getMonth(),
+      minBookingTime.getDate()
+    );
+    return startOfDate < startOfMinBookingDate;
+  };
+
   const isPast = (date: Date) => {
     const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     return startOfDate < startOfToday;
+  };
+
+  const isDisabled = (date: Date) => {
+    return isPast(date) || isWithin48Hours(date);
   };
 
   const handlePrevMonth = () => {
@@ -148,7 +164,7 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
   );
 
   const handleSelectDate = (date: Date) => {
-    if (isPast(date)) return;
+    if (isDisabled(date)) return;
     const exists = selectedDates.find((d) => sameDay(d, date));
     if (exists) {
       setSelectedDates(selectedDates.filter((d) => !sameDay(d, date)));
@@ -169,6 +185,7 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
       <View style={styles.header}>
         <Text style={styles.title}>Chọn ngày</Text>
         <Text style={styles.subtitle}>Chọn {numberOfDays} ngày riêng lẻ để đặt lịch</Text>
+        <Text style={styles.warningText}>⚠️ Phải đặt lịch trước ít nhất 48 giờ</Text>
         {sessionsError ? <Text style={styles.errorText}>{sessionsError}</Text> : null}
       </View>
 
@@ -202,7 +219,8 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
           <View key={rowIdx} style={styles.weekRow}>
             {row.map((cell, colIdx) => {
               if (!cell) return <View key={colIdx} style={styles.dayCellEmpty} />;
-              const disabled = isPast(cell);
+              const disabled = isDisabled(cell);
+              const within48Hours = isWithin48Hours(cell) && !isPast(cell);
               const isSelected = selectedDates.some((d) => sameDay(d, cell));
               const dateKey = formatDateKey(cell);
               const sessionCount = sessionsByDate[dateKey]?.length ?? 0;
@@ -214,6 +232,7 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
                     styles.dayCell,
                     isSelected && styles.dayCellSelected,
                     disabled && styles.dayCellDisabled,
+                    within48Hours && styles.dayCellWithin48Hours,
                   ]}
                   onPress={() => handleSelectDate(cell)}
                   activeOpacity={disabled ? 1 : 0.7}
@@ -325,6 +344,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#DC2626',
   },
+  warningText: {
+    marginTop: 6,
+    fontSize: 12,
+    color: '#F59E0B',
+    fontWeight: '600',
+  },
   calendarCard: {
     backgroundColor: '#F9FAFB',
     borderRadius: 12,
@@ -393,6 +418,10 @@ const styles = StyleSheet.create({
   },
   dayCellDisabled: {
     backgroundColor: '#F3F4F6',
+  },
+  dayCellWithin48Hours: {
+    borderColor: '#FCD34D',
+    borderWidth: 2,
   },
   dayText: {
     fontSize: 14,

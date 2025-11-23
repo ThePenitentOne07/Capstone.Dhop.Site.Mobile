@@ -126,7 +126,7 @@ export const FeaturedChoreography: React.FC<FeaturedChoreographyProps> = ({
 
                   // danceType from API can be string, object, or array of objects
                   const rawDanceType: any = item.choreography?.danceType;
-                  let danceTypeLabel = 'Đa phong cách';
+                  let danceTypeLabel = '';
 
                   if (typeof rawDanceType === 'string') {
                     danceTypeLabel = rawDanceType;

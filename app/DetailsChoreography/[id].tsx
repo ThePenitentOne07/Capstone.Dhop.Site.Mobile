@@ -5,6 +5,8 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } f
 import { LinearGradient } from 'expo-linear-gradient';
 import { Introduction, ChoreographerProject } from "../../components/ChoreographerDetail/index";
 import { getChoreographerById } from "../../service/api";
+import { useConversationStore } from "../../states/conversationStore";
+import { useAppModal } from "../../hooks/useAppModal";
 
 interface Profile {
   profileId: number;
@@ -15,6 +17,8 @@ interface Profile {
 
 interface ChoreographerData {
   id: string;
+  userId?: string;
+  userUUID?: string;
   title?: string;
   nickname?: string;
   name?: string;
@@ -37,6 +41,9 @@ export default function DetailsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState("")
   const [choreographerData, setChoreographerData] = useState<ChoreographerData | null>(null);
+  const [chatLoading, setChatLoading] = useState(false);
+  const { createConversation } = useConversationStore();
+  const { showModal, modal } = useAppModal();
 
   // Get screen dimensions for responsive animation
   const screenWidth = Dimensions.get('window').width;
@@ -169,6 +176,52 @@ export default function DetailsScreen() {
             locations={[0, 0.3, 0.7, 1]}
             style={styles.imageGradient}
           />
+          <TouchableOpacity 
+            style={styles.msgBtnFab} 
+            activeOpacity={0.86} 
+            onPress={async () => {
+              const userUUID = choreographerData?.userUUID || choreographerData?.userId;
+              if (!userUUID) {
+                showModal({
+                  title: 'Lỗi',
+                  message: 'Không tìm thấy thông tin người dùng',
+                  status: 'error',
+                });
+                return;
+              }
+
+              setChatLoading(true);
+              try {
+                const conversation = await createConversation({
+                  type: 'DIRECT',
+                  participantIds: [userUUID],
+                });
+
+                router.push({
+                  pathname: '/ChatDetail',
+                  params: {
+                    conversation: JSON.stringify(conversation),
+                  },
+                });
+              } catch (error: any) {
+                console.error('Failed to create conversation:', error);
+                showModal({
+                  title: 'Lỗi',
+                  message: error?.message || 'Không thể tạo cuộc trò chuyện',
+                  status: 'error',
+                });
+              } finally {
+                setChatLoading(false);
+              }
+            }}
+            disabled={chatLoading}
+          >
+            {chatLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.msgBtnFabLabel}>Nhắn tin</Text>
+            )}
+          </TouchableOpacity>
         </View>
 
         
@@ -225,6 +278,7 @@ export default function DetailsScreen() {
           <Text style={styles.primaryBtnText}>Đặt lịch ngay!</Text>
         </TouchableOpacity>
       </View>
+      {modal}
     </View>
   );
 }
@@ -436,5 +490,26 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
+  },
+  msgBtnFab: {
+    position: 'absolute',
+    right: 14,
+    bottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: "#FF7A00",
+    borderRadius: 32,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    shadowColor: "#FF7120",
+    shadowOpacity: 0.14,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  msgBtnFabLabel: {
+    color: '#fff',
+    fontSize: 15,
+    textAlign: 'center',
+    fontFamily: 'RobotoMono_700Bold',
   },
 });
