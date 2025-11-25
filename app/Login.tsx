@@ -159,8 +159,7 @@ export default function LoginScreen() {
   );
 }
 
-const PURPLE = "#7C5CFC";
-const YELLOW = "#F2B200"; // close to mock's button
+
 
 const styles = StyleSheet.create({
   screenRoot: {

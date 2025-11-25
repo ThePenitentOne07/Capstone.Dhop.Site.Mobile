@@ -260,6 +260,21 @@ export default function BookingDetail() {
           </View>
         </View>
 
+        {/* Extra Services */}
+        {Array.isArray(booking.bookingExtraServices) && booking.bookingExtraServices.length > 0 && (
+          <View style={styles.extraServicesBlock}>
+            <Text style={styles.extraServicesTitle}>Dịch vụ bổ sung</Text>
+            {booking.bookingExtraServices.map((service: any, idx: number) => (
+              <View key={idx} style={styles.extraServiceCard}>
+                <View style={styles.extraServiceRow}>
+                  <Text style={styles.extraServiceName}>{service.name || 'Dịch vụ'}</Text>
+                </View>
+                <Text style={styles.extraServicePrice}>{formatNumber(service.price || 0)}đ</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
         {/* Training Sessions */}
         {Array.isArray(booking.trainingSessions) && booking.trainingSessions.length > 0 && (
           <View style={styles.sessionsBlock}>
@@ -317,6 +332,24 @@ export default function BookingDetail() {
             )}
           </View>
         )}
+
+        {/* Complaint Button */}
+        <View style={styles.complaintBlock}>
+          <TouchableOpacity
+            style={styles.complaintButton}
+            onPress={() => {
+              // TODO: Navigate to complaint screen or show complaint modal
+              showModal({
+                title: 'Khiếu nại',
+                message: 'Tính năng khiếu nại đang được phát triển. Vui lòng liên hệ hỗ trợ qua chat.',
+                status: 'info',
+              });
+            }}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.complaintButtonText}>Khiếu nại</Text>
+          </TouchableOpacity>
+        </View>
        
       </ScrollView>
       {/* Floating action buttons */}
@@ -589,6 +622,52 @@ const styles = StyleSheet.create({
     color: ORANGE2,
     fontSize: 20,
     
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  extraServicesBlock: {
+    marginHorizontal: 12,
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#FFECD0',
+  },
+  extraServicesTitle: {
+    color: ORANGE2,
+    fontSize: 15,
+    marginBottom: 10,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  extraServiceCard: {
+    backgroundColor: '#FFF9EF',
+    borderRadius: 9,
+    padding: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#FFD8B4',
+  },
+  extraServiceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  extraServiceName: {
+    flex: 1,
+    color: '#111827',
+    fontSize: 14,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  extraServiceQty: {
+    color: '#6B7280',
+    fontSize: 14,
+    fontFamily: 'RobotoMono_400Regular',
+    marginLeft: 8,
+  },
+  extraServicePrice: {
+    color: ORANGE2,
+    fontSize: 15,
     fontFamily: 'RobotoMono_700Bold',
   },
   sessionsBlock: {
@@ -874,6 +953,26 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     color: '#fff',
+    fontSize: 15,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  complaintBlock: {
+    marginHorizontal: 12,
+    marginBottom: 20,
+    marginTop: 8,
+  },
+  complaintButton: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderWidth: 1.5,
+    borderColor: '#DC2626',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  complaintButtonText: {
+    color: '#DC2626',
     fontSize: 15,
     fontFamily: 'RobotoMono_700Bold',
   },

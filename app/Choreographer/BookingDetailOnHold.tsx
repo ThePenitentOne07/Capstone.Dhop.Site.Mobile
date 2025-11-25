@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { acceptChoreographerBooking, cancelChoreographerBooking, getBookingById } from '../../service/api';
 import { useRouter } from 'expo-router';
@@ -147,6 +147,7 @@ export default function BookingDetailOnHold() {
   const status = booking.statusName;
   const feedbacks = Array.isArray(booking.bookingFeedbacks) ? booking.bookingFeedbacks : [];
   const hasFeedback = feedbacks.length > 0;
+  
 
   // Determine status color
   let statusBg = '#E7F5EF';
@@ -226,7 +227,17 @@ export default function BookingDetailOnHold() {
         {/* Item block */}
         <View style={styles.itemBlock}>
           <View style={styles.itemRow}>
-            <View style={styles.thumb}><Text style={{fontSize:26}}></Text></View>
+            <View style={styles.thumb}>
+              {booking.customer?.avatar ? (
+                <Image 
+                  source={{ uri: booking.customer.avatar }} 
+                  style={styles.thumbImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={styles.thumbInitial}>{(booking.customer?.name || 'K')[0].toUpperCase()}</Text>
+              )}
+            </View>
             <View style={{flex:1}}>
               <Text numberOfLines={1} style={styles.itemTitle}>{booking.customer?.name}</Text>
               <Text numberOfLines={1} style={styles.itemSubtitle}>{booking.detail || 'Đặt lịch biên đạo'}</Text>
@@ -246,6 +257,21 @@ export default function BookingDetailOnHold() {
             <Text style={styles.totalValue}>{formatNumber(totalPrice)}đ</Text>
           </View>
         </View>
+
+        {/* Extra Services */}
+        {Array.isArray(booking.bookingExtraServices) && booking.bookingExtraServices.length > 0 && (
+          <View style={styles.extraServicesBlock}>
+            <Text style={styles.extraServicesTitle}>Dịch vụ bổ sung</Text>
+            {booking.bookingExtraServices.map((service: any, idx: number) => (
+              <View key={idx} style={styles.extraServiceCard}>
+                <View style={styles.extraServiceRow}>
+                  <Text style={styles.extraServiceName}>{service.name || 'Dịch vụ'}</Text>
+                </View>
+                <Text style={styles.extraServicePrice}>{formatNumber(service.price || 0)}đ</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Training Sessions */}
         {Array.isArray(booking.trainingSessions) && booking.trainingSessions.length > 0 && (
@@ -290,6 +316,24 @@ export default function BookingDetailOnHold() {
            )}
          </View>
         )}
+
+        {/* Complaint Button */}
+        <View style={styles.complaintBlock}>
+          <TouchableOpacity
+            style={styles.complaintButton}
+            onPress={() => {
+              // TODO: Navigate to complaint screen or show complaint modal
+              showModal({
+                title: 'Khiếu nại',
+                message: 'Tính năng khiếu nại đang được phát triển. Vui lòng liên hệ hỗ trợ qua chat.',
+                status: 'info',
+              });
+            }}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.complaintButtonText}>Khiếu nại</Text>
+          </TouchableOpacity>
+        </View>
        
       </ScrollView>
       {/* Floating action buttons */}
@@ -518,6 +562,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFD8B4',
   },
+  thumbImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  thumbInitial: {
+    fontSize: 26,
+    color: ORANGE2,
+    fontWeight: '700',
+  },
   itemTitle: {
     fontSize: 16,
     fontWeight: '700',
@@ -573,6 +627,52 @@ const styles = StyleSheet.create({
     color: ORANGE2,
     fontSize: 20,
     
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  extraServicesBlock: {
+    marginHorizontal: 12,
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#FFECD0',
+  },
+  extraServicesTitle: {
+    color: ORANGE2,
+    fontSize: 15,
+    marginBottom: 10,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  extraServiceCard: {
+    backgroundColor: '#FFF9EF',
+    borderRadius: 9,
+    padding: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#FFD8B4',
+  },
+  extraServiceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  extraServiceName: {
+    flex: 1,
+    color: '#111827',
+    fontSize: 14,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  extraServiceQty: {
+    color: '#6B7280',
+    fontSize: 14,
+    fontFamily: 'RobotoMono_400Regular',
+    marginLeft: 8,
+  },
+  extraServicePrice: {
+    color: ORANGE2,
+    fontSize: 15,
     fontFamily: 'RobotoMono_700Bold',
   },
   sessionsBlock: {
@@ -842,6 +942,26 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     color: '#fff',
+    fontSize: 15,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  complaintBlock: {
+    marginHorizontal: 12,
+    marginBottom: 20,
+    marginTop: 8,
+  },
+  complaintButton: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderWidth: 1.5,
+    borderColor: '#DC2626',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  complaintButtonText: {
+    color: '#DC2626',
     fontSize: 15,
     fontFamily: 'RobotoMono_700Bold',
   },

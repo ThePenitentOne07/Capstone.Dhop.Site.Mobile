@@ -7,4 +7,8 @@ export interface ChoreographerBooking {
         durationMinutes: number;
         scheduledTime: string;
     }[];
+    bookingExtraServiceRequests?: {
+        extraServiceId: number;
+        quantity: number;
+    }[];
 }

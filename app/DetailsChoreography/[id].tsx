@@ -31,6 +31,7 @@ interface ChoreographerData {
   area?: any[];
   averageRating?: number;
   profiles?: Profile[];
+  extraServices?: Array<{ id: number; name: string; description: string; price: number }>;
 }
 
 export default function DetailsScreen() {
@@ -92,6 +93,7 @@ export default function DetailsScreen() {
   const area = choreographerData?.area || [];
   const averageRating= choreographerData?.averageRating ;
   const profiles = choreographerData?.profiles || [];
+  const extraServices = choreographerData?.extraServices || [];
 
   const imageSource = avatar
     ? { uri: avatar }
@@ -123,7 +125,9 @@ export default function DetailsScreen() {
           about: about || "",
           area: area || [],
           danceType: danceType || [],
-          averageRating: averageRating || 0
+          averageRating: averageRating || 0,
+          extraServices,
+          
         }} />;
       case "My Account":
         return <ChoreographerProject profiles={profiles} />;
@@ -136,7 +140,8 @@ export default function DetailsScreen() {
           about: about || "",
           area: area || [],
           danceType: danceType || [],
-          averageRating: averageRating || 0
+          averageRating: averageRating || 0,
+          extraServices
         }} />;
     }
   };
@@ -271,7 +276,8 @@ export default function DetailsScreen() {
               about, 
               yearExperience: String(yearExperience || 0), 
               danceType: JSON.stringify(danceType || []), 
-              area: JSON.stringify(area || [])
+              area: JSON.stringify(area || []),
+              extraServices: JSON.stringify(extraServices || [])
             }
           })}
         >

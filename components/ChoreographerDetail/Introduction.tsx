@@ -5,7 +5,7 @@ import Animated, { FadeInUp, FadeInLeft, FadeInRight } from 'react-native-reanim
 
 const { width } = Dimensions.get('window');
 
-export default function Introduction({ props }: { props: { title: string, name: string, price: number, yearExperience: number, about: string, area: Array<{ id: number, city: string, ward: string }>, danceType: Array<{ id: number, type: string, description: string }>, averageRating: number  } }) {
+export default function Introduction({ props }: { props: { title: string, name: string, price: number, yearExperience: number, about: string, area: Array<{ id: number, city: string, ward: string }>, danceType: Array<{ id: number, type: string, description: string }>, averageRating: number, extraServices?: Array<{ id: number, name: string, description: string, price: number }> } }) {
   console.log("props", props);
   return (
     <View style={styles.container}>
@@ -72,6 +72,30 @@ export default function Introduction({ props }: { props: { title: string, name: 
           </Text>
         </View>
       </Animated.View>
+
+      {/* Extra services */}
+      {!!props.extraServices?.length && (
+        <Animated.View entering={FadeInUp.delay(1300)} style={styles.section}>
+          <Text style={styles.sectionTitle}>Dịch vụ bổ sung</Text>
+          <View style={styles.servicesContainer}>
+            {props.extraServices.map((service, index) => (
+              <Animated.View
+                key={service.id || index}
+                entering={FadeInRight.delay(1400 + index * 100)}
+                style={styles.serviceCard}
+              >
+                <View style={styles.serviceHeader}>
+                  <Text style={styles.serviceName}>{service.name}</Text>
+                  <Text style={styles.servicePrice}>
+                    {service.price?.toLocaleString('vi-VN')}₫
+                  </Text>
+                </View>
+                <Text style={styles.serviceDescription}>{service.description}</Text>
+              </Animated.View>
+            ))}
+          </View>
+        </Animated.View>
+      )}
 
       {/* Stats Cards - Spotify-style */}
       <Animated.View entering={FadeInUp.delay(1400)} style={styles.statsContainer}>
@@ -209,6 +233,44 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     borderLeftWidth: 3,
     borderLeftColor: '#FF7A00', // Orange accent
+  },
+  servicesContainer: {
+    gap: 12,
+  },
+  serviceCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  serviceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  serviceName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
+    flex: 1,
+    paddingRight: 12,
+  },
+  servicePrice: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FF7A00',
+  },
+  serviceDescription: {
+    fontSize: 13,
+    color: '#4B5563',
+    lineHeight: 18,
   },
   paragraph: {
     fontSize: 14,
