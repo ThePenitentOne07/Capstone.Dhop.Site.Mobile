@@ -1,6 +1,11 @@
 import { Stack } from "expo-router";
 import { useFonts, RobotoMono_400Regular, RobotoMono_700Bold } from "@expo-google-fonts/roboto-mono";
 import { useUserInfo } from "../hooks/useUserInfo";
+import { useEffect, useCallback } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSocketStore } from "../states/socketStore";
+import { useNotificationStore } from "../states/notificationStore";
+import { getNotifications } from "../service/api";
 
 export default function Layout() {
   const [loaded] = useFonts({
@@ -10,7 +15,94 @@ export default function Layout() {
   
   // Call the hook on every screen
   const { user, loading, error } = useUserInfo();
+  const { socket, initSocket, disconnectSocket } = useSocketStore();
+  const { addNotification, setNotifications } = useNotificationStore();
+
+  const mapServerNotification = useCallback((item) => ({
+    id: item.id,
+    title: item.title ?? "Notification",
+    message: item.message ?? "",
+    type: item.type === "success" || item.type === "warning" || item.type === "error" ? item.type : "info",
+    timestamp: new Date(item.createdAt),
+    read: !!item.read,
+    data: {
+      link: item.link,
+      userUUID: item.userUUID,
+    },
+  }), []);
+
+  const fetchInitialNotifications = useCallback(async () => {
+    try {
+      const response = await getNotifications();
+      const items = response.data?.items ?? [];
+      const mapped = items.map(mapServerNotification);
+      setNotifications(mapped);
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    }
+  }, [mapServerNotification, setNotifications]);
+
+  // Initialize socket when user is authenticated
+  useEffect(() => {
+    const initializeSocket = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (token && user) {
+          console.log('Initializing socket for user:', user.id);
+          initSocket(token);
+        }
+      } catch (err) {
+        console.error('Error initializing socket:', err);
+      }
+    };
+
+    if (user && !loading) {
+      initializeSocket();
+    }
+
+    // Cleanup when user logs out
+    return () => {
+      if (!user) {
+        console.log('User logged out, disconnecting socket');
+        disconnectSocket();
+      }
+    };
+  }, [user, loading, initSocket, disconnectSocket]);
+
+  // Listen for NEW_BOOKING events when socket is ready
+  useEffect(() => {
+    if (!socket) return;
+
+    const handler = (data) => {
+      addNotification({
+        title: 'New Booking',
+        message: data.message || 'You have a new booking!',
+        type: 'info',
+        data: data
+      });
+
+      console.log('Received NEW_BOOKING:', data);
+    };
+
+    socket.on('NEW_BOOKING', handler);
+    socket.on('BOOKING_ACCEPTED', handler);
+    socket.on('BOOKING_CANCELLED', handler);
+    socket.on('BOOKING_COMPLETED', handler);
+
+    return () => {
+      socket.off('NEW_BOOKING', handler);
+      socket.off('BOOKING_ACCEPTED', handler);
+      socket.off('BOOKING_CANCELLED', handler);
+      socket.off('BOOKING_COMPLETED', handler);
+    };
+  }, [socket, addNotification]);
   
+  useEffect(() => {
+    if (user && !loading) {
+      fetchInitialNotifications();
+    }
+  }, [user, loading, fetchInitialNotifications]);
+
   if (!loaded) return null;
 
   return (
@@ -89,6 +181,20 @@ export default function Layout() {
         options={{ 
           headerShown: true,
           title: "Chat",
+          headerStyle: {
+            backgroundColor: "#FF7A00",
+          },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: {
+            fontWeight: "600",
+          }
+        }} 
+      />
+      <Stack.Screen 
+        name="NotificationList" 
+        options={{ 
+          headerShown: true,
+          title: "Thông báo",
           headerStyle: {
             backgroundColor: "#FF7A00",
           },

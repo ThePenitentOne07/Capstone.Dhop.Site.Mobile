@@ -5,6 +5,7 @@ import { useUserInfo } from '../../hooks/useUserInfo';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, Easing, withDelay } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppModal } from '../../hooks/useAppModal';
+import { useNotificationStore } from '../../states/notificationStore';
 
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
@@ -13,6 +14,7 @@ export default function ChoreographerHome() {
   const router = useRouter();
   const { user, loading } = useUserInfo();
   const { showModal, modal } = useAppModal();
+  const { unreadCount } = useNotificationStore();
   const avatar = require('../../assets/vecteezy_man-using-smartphone-device_24096847.png');
   const username = user?.name || 'Choreographer';
   const handleLogout = () => {
@@ -132,8 +134,18 @@ export default function ChoreographerHome() {
             <Text style={styles.greeting}>{username ? displayText : 'Hi, ...'}</Text>
           </View>
           <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.iconButton}>
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={() => router.push('/NotificationList')}
+            >
               <Text style={styles.iconText}>🔔</Text>
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
             
           </View>
@@ -241,6 +253,26 @@ const styles = StyleSheet.create({
   iconText: {
     fontSize: 18,
     color: '#374151',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+    fontFamily: 'RobotoMono_700Bold',
   },
   profileSection: {
     flexDirection: 'row',

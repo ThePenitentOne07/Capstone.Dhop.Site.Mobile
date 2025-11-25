@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useNotificationStore } from '../states/notificationStore';
 
 interface HeaderProps {
   userName?: string;
@@ -16,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const [hasStartedAnimation, setHasStartedAnimation] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { unreadCount } = useNotificationStore();
   
   // Debug: Log the userName prop
   console.log('Header userName prop:', userName);
@@ -120,6 +122,13 @@ export const Header: React.FC<HeaderProps> = ({
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconButton} onPress={onNotificationPress}>
             <Text style={styles.iconText}>🔔</Text>
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton} onPress={onMenuPress}>
             <Text style={styles.iconText}>☰</Text>
@@ -179,6 +188,26 @@ const styles = StyleSheet.create({
   iconText: {
     fontSize: 18,
     color: "#374151",
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+    fontFamily: 'RobotoMono_700Bold',
   },
 });
 

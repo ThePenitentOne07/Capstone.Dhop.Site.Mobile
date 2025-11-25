@@ -16,6 +16,47 @@ export const getUserInfo = () => {
   return api.get("/users/info");
 };
 
+export interface NotificationListParams {
+  pageNo?: number;
+  pageSize?: number;
+}
+
+export interface NotificationItemResponse {
+  id: string;
+  userUUID: string;
+  title: string;
+  message: string;
+  type: "info" | "success" | "warning" | "error";
+  link?: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface NotificationListResponse {
+  pageNo: number;
+  pageSize: number;
+  totalPage: number;
+  totalElements: number;
+  items: NotificationItemResponse[];
+}
+
+export const getNotifications = ({
+  pageNo = 1,
+  pageSize = 20,
+}: NotificationListParams = {}) => {
+  return api.get<NotificationListResponse>("/notifications", {
+    params: { pageNo, pageSize },
+  });
+};
+
+export const markNotificationAsRead = (notificationId: string) => {
+  return api.patch(`/notifications/${notificationId}/read`);
+};
+
+export const markAllNotificationsAsRead = () => {
+  return api.patch("/notifications/read-all");
+};
+
 // Fetch list of users with CHOREOGRAPHY role
 export interface ChoreographyUsersQuery {
   pageNo?: number;

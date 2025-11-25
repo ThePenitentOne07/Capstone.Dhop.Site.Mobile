@@ -21,7 +21,7 @@ export default function HomeScreen() {
   console.log("Home user name:", user?.name);
 
   const handleNotificationPress = () => {
-    console.log("Notification pressed");
+    router.push("/NotificationList");
   };
 
   const handleMenuPress = () => {
