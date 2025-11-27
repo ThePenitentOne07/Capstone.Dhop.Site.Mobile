@@ -317,23 +317,45 @@ export default function BookingDetailOnHold() {
          </View>
         )}
 
+        {/* Cancle Button */}
+        {status === "Đơn đặt chờ xác nhận" && (
+            <View style={styles.complaintBlock}>
+            <TouchableOpacity
+              style={styles.complaintButton}
+              onPress={() => {
+                // TODO: Navigate to complaint screen or show complaint modal
+                showModal({
+                  title: 'Hủy đơn',
+                  message: 'Tính năng hủy đơn đang được phát triển. Vui lòng liên hệ hỗ trợ qua chat.',
+                  status: 'info',
+                });
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.complaintButtonText}>Hủy đơn</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Complaint Button */}
-        <View style={styles.complaintBlock}>
-          <TouchableOpacity
-            style={styles.complaintButton}
-            onPress={() => {
-              // TODO: Navigate to complaint screen or show complaint modal
-              showModal({
-                title: 'Khiếu nại',
-                message: 'Tính năng khiếu nại đang được phát triển. Vui lòng liên hệ hỗ trợ qua chat.',
-                status: 'info',
-              });
-            }}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.complaintButtonText}>Khiếu nại</Text>
-          </TouchableOpacity>
-        </View>
+          {status !== "Đơn đặt chờ xác nhận" && (
+            <View style={styles.complaintBlock}>
+            <TouchableOpacity
+              style={styles.complaintButton}
+              onPress={() => {
+                router.push({
+                  pathname: '/Complaint',
+                  params: {
+                    bookingId: booking.id,
+                  },
+                });
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.complaintButtonText}>Khiếu nại</Text>
+            </TouchableOpacity>
+          </View>
+        )}
        
       </ScrollView>
       {/* Floating action buttons */}

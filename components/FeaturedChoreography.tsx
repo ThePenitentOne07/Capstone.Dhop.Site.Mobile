@@ -109,7 +109,7 @@ export const FeaturedChoreography: React.FC<FeaturedChoreographyProps> = ({
           <View>
             {data.length === 0 ? (
               <View style={styles.loadingContainer}>
-                <Text style={styles.emptyStateText}>Hiện chưa có biên đạo nổi bật.</Text>
+                <Text style={styles.emptyStateText}>Hiện chưa có biên đạo nào.</Text>
                 <TouchableOpacity onPress={fetchData}>
                   <Text style={styles.retryText}>Tải lại</Text>
                 </TouchableOpacity>

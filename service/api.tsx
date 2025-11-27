@@ -196,3 +196,61 @@ export const updateUserProfile = (payload: UpdateUserProfilePayload) => {
 export const checkUserBalance = () => {
   return api.post(`/wallets/check-balance`);
 };
+
+export interface ComplaintTypeResponse {
+  type: string;
+  description: string;
+  roles?: string[];
+}
+
+export const getComplaintTypes = () => {
+  return api.get<ComplaintTypeResponse[]>(`/api/complain/types`);
+};
+
+export interface SubmitComplaintPayload {
+  bookingId: number | string;
+  content: string;
+  complainType: string;
+  evidenceUrls?: string[];
+}
+
+export const submitBookingComplaint = (payload: SubmitComplaintPayload) => {
+  return api.post(`/api/complain/booking`, payload);
+};
+
+export interface UserComplaintItem {
+  id: number;
+  bookingId: number;
+  content: string;
+  statusCode: string;
+  statusName: string;
+  complainTypeCode: string;
+  complainTypeName: string;
+  complainTypeDescription: string;
+  evidenceUrls?: string[];
+  fromUserName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserComplaintsResponse {
+  pageNo: number;
+  pageSize: number;
+  totalPage: number;
+  totalElements: number;
+  items: UserComplaintItem[];
+}
+
+export interface UserComplaintsQuery {
+  pageNo?: number;
+  pageSize?: number;
+}
+
+export const getUserComplaints = ({
+  pageNo = 0,
+  pageSize = 20,
+}: UserComplaintsQuery = {}) => {
+  return api.get<UserComplaintsResponse>(`/api/complain/user`, {
+    params: { pageNo, pageSize },
+  });
+};

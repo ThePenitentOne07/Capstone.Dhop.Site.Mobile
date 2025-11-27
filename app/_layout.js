@@ -204,6 +204,20 @@ export default function Layout() {
           }
         }} 
       />
+      <Stack.Screen 
+        name="Complaint" 
+        options={{ 
+          headerShown: true,
+          title: "Khiếu nại",
+          headerStyle: {
+            backgroundColor: "#FF7A00",
+          },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: {
+            fontWeight: "600",
+          }
+        }} 
+      />
     </Stack>
   );
 }

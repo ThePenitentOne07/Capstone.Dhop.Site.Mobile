@@ -1,15 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { acceptChoreographerBooking, getBookingById } from '../service/api';
+import {  getBookingById } from '../service/api';
 import { useRouter } from 'expo-router';
 import { useConversationStore } from '../states/conversationStore';
 import { useAppModal } from '../hooks/useAppModal';
+import { useRefetchOnFocus } from './hooks/useRefetchOnFocus';
 
-const YELLOW = '#FFD540';
+
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
-const GREEN = '#0F9D58';
+
 
 export default function BookingDetail() {
   const params = useLocalSearchParams();
@@ -43,18 +44,16 @@ export default function BookingDetail() {
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
-  useEffect(() => {
-    let active = true;
-
-    const load = async () => {
+  const loadBooking = useCallback(
+    async (isActive: () => boolean = () => true) => {
       if (!bookingId) {
         if (fallbackBooking) {
-          if (active) {
+          if (isActive()) {
             setBooking(fallbackBooking);
             setError(null);
             setLoading(false);
           }
-        } else if (active) {
+        } else if (isActive()) {
           setBooking(null);
           setError('Không tìm thấy mã đơn đặt lịch.');
           setLoading(false);
@@ -62,7 +61,7 @@ export default function BookingDetail() {
         return;
       }
 
-      if (active) {
+      if (isActive()) {
         setLoading(true);
         setError(null);
       }
@@ -75,35 +74,41 @@ export default function BookingDetail() {
           throw new Error('Không tìm thấy đơn đặt lịch.');
         }
 
-        if (active) {
+        if (isActive()) {
           setBooking(payload);
         }
       } catch (err: any) {
-        if (active) {
+        if (isActive()) {
           setError(err?.response?.data?.message || err?.message || 'Không thể tải đơn đặt lịch');
           if (!fallbackBooking) {
             setBooking(null);
           }
         }
       } finally {
-        if (active) {
+        if (isActive()) {
           setLoading(false);
         }
       }
-    };
+    },
+    [bookingId, fallbackBooking]
+  );
 
-    load();
-
+  useEffect(() => {
+    let active = true;
+    const checkActive = () => active;
+    loadBooking(checkActive);
     return () => {
       active = false;
     };
-  }, [bookingId, fallbackBooking, reloadToken]);
+  }, [loadBooking, reloadToken]);
+
+  useRefetchOnFocus(loadBooking);
 
   const handleRetry = () => setReloadToken((token) => token + 1);
 
-  const [acceptLoading, setAcceptLoading] = useState(false);
-  const [acceptSuccess, setAcceptSuccess] = useState<boolean|undefined>();
-  const [acceptError, setAcceptError] = useState<string|undefined>();
+  // const [acceptLoading, setAcceptLoading] = useState(false);
+  // const [acceptSuccess, setAcceptSuccess] = useState<boolean|undefined>();
+  // const [acceptError, setAcceptError] = useState<string|undefined>();
   const [chatLoading, setChatLoading] = useState(false);
 
   const router = useRouter();
@@ -131,7 +136,7 @@ export default function BookingDetail() {
       </View>
     );
   }
-
+  
   if (!booking) {
     return (
       <View style={styles.stateContainer}>
@@ -144,6 +149,7 @@ export default function BookingDetail() {
   const totalPrice = booking.price;
   const perSessionPrice = booking?.choreography?.price;
   const status = booking.statusName;
+  const isComplaintStatus = status === 'Đơn trong trạng thái khiếu nại';
   const feedbacks = Array.isArray(booking.bookingFeedbacks) ? booking.bookingFeedbacks : [];
   const hasFeedback = feedbacks.length > 0;
 
@@ -166,6 +172,14 @@ export default function BookingDetail() {
           <Text style={styles.shipStatus}>Ngày đặt</Text>
           <Text style={styles.shipTime}>{formatDateTime(booking.bookingDate)}</Text>
         </View>
+
+        {isComplaintStatus && (
+          <View style={styles.complaintNotice}>
+            <Text style={styles.complaintNoticeText}>
+              Đơn này đang bị khiếu nại. Xin chờ đợi xử lý
+            </Text>
+          </View>
+        )}
 
         {/* Address / Customer */}
         <View style={[styles.block, {position:'relative', paddingBottom:52}]}> 
@@ -282,15 +296,15 @@ export default function BookingDetail() {
             {booking.trainingSessions.map((s: any, idx: number) => {
               const statusName = s.statusName || '';
               const statusColor = getStatusColor(statusName);
-              const statusText = translateStatus(statusName);
+              // const statusText = translateStatus(statusName);
               
               return (
                 <View style={styles.sessionCard} key={idx}>
                   <Text style={styles.sessionHeading}>Buổi #{s.sessionNo || (idx + 1)}</Text>
                   <Text style={styles.sessionDate}>{sessionSummary(s)}</Text>
-                  {statusText && (
+                  {statusName && (
                     <Text style={[styles.sessionStatus, { color: statusColor }]}>
-                      {statusText}
+                      {statusName}
                     </Text>
                   )}
                 </View>
@@ -333,23 +347,46 @@ export default function BookingDetail() {
           </View>
         )}
 
+        {/* Cancle Button */}
+        {status === "Đơn đặt chờ xác nhận" && (
+            <View style={styles.complaintBlock}>
+            <TouchableOpacity
+              style={styles.complaintButton}
+              onPress={() => {
+                // TODO: Navigate to complaint screen or show complaint modal
+                showModal({
+                  title: 'Hủy đơn',
+                  message: 'Tính năng hủy đơn đang được phát triển. Vui lòng liên hệ hỗ trợ qua chat.',
+                  status: 'info',
+                });
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.complaintButtonText}>Hủy đơn</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Complaint Button */}
-        <View style={styles.complaintBlock}>
-          <TouchableOpacity
-            style={styles.complaintButton}
-            onPress={() => {
-              // TODO: Navigate to complaint screen or show complaint modal
-              showModal({
-                title: 'Khiếu nại',
-                message: 'Tính năng khiếu nại đang được phát triển. Vui lòng liên hệ hỗ trợ qua chat.',
-                status: 'info',
-              });
-            }}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.complaintButtonText}>Khiếu nại</Text>
-          </TouchableOpacity>
-        </View>
+          {status !== 'Đơn đặt chờ xác nhận' && status !== 'Đơn trong trạng thái khiếu nại' && (
+            <View style={styles.complaintBlock}>
+            <TouchableOpacity
+              style={styles.complaintButton}
+              onPress={() => {
+                router.push({
+                  pathname: '/Complaint',
+                  params: {
+                    bookingId: booking.id,
+                  },
+                });
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.complaintButtonText}>Khiếu nại</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        
        
       </ScrollView>
       {/* Floating action buttons */}
@@ -975,6 +1012,21 @@ const styles = StyleSheet.create({
     color: '#DC2626',
     fontSize: 15,
     fontFamily: 'RobotoMono_700Bold',
+  },
+  complaintNotice: {
+    marginHorizontal: 12,
+    marginBottom: 12,
+    backgroundColor: '#FEF3C7',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+  },
+  complaintNoticeText: {
+    color: '#B45309',
+    fontSize: 14,
+    fontFamily: 'RobotoMono_700Bold',
+    textAlign: 'center',
   },
 });
 
