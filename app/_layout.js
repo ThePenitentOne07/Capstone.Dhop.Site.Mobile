@@ -88,12 +88,18 @@ export default function Layout() {
     socket.on('BOOKING_ACCEPTED', handler);
     socket.on('BOOKING_CANCELLED', handler);
     socket.on('BOOKING_COMPLETED', handler);
+    socket.on('CHAT_MESSAGE', handler);
+    socket.on('STAFF_APPROVED', handler);
+    socket.on('STAFF_REJECTED', handler);
 
     return () => {
       socket.off('NEW_BOOKING', handler);
       socket.off('BOOKING_ACCEPTED', handler);
       socket.off('BOOKING_CANCELLED', handler);
       socket.off('BOOKING_COMPLETED', handler);
+      socket.off('CHAT_MESSAGE', handler);
+      socket.off('STAFF_APPROVED', handler);
+      socket.off('STAFF_REJECTED', handler);
     };
   }, [socket, addNotification]);
   

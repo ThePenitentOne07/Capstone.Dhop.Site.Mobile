@@ -33,6 +33,8 @@ export default function NotificationList() {
       try {
         const response = await getNotifications();
         const serverItems = response.data?.items ?? [];
+        console.log("notfications", serverItems);
+        
         const normalized = serverItems.map<Notification>((item) => ({
           id: item.id,
           title: item.title ?? 'Notification',

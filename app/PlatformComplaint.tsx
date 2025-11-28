@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Stack } from 'expo-router';
 import { getUserComplaints, UserComplaintItem } from '../service/api';
 import { useRefetchOnFocus } from './hooks/useRefetchOnFocus';
 
@@ -59,8 +60,16 @@ export default function PlatformComplaint() {
 
   useRefetchOnFocus(refetchOnFocus);
 
+  const sortedComplaints = useMemo(() => {
+    return [...complaints].sort((a, b) => {
+      const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return dateB - dateA; // Descending order (newest first)
+    });
+  }, [complaints]);
+
   const stateContent = useMemo(() => {
-    if (loading && !complaints.length) {
+    if (loading && !sortedComplaints.length) {
       return (
         <View style={styles.stateContainer}>
           <ActivityIndicator size="large" color={ORANGE2} />
@@ -69,7 +78,7 @@ export default function PlatformComplaint() {
       );
     }
 
-    if (error && !complaints.length) {
+    if (error && !sortedComplaints.length) {
       return (
         <View style={styles.stateContainer}>
           <Text style={styles.stateMessage}>{error}</Text>
@@ -78,7 +87,7 @@ export default function PlatformComplaint() {
       );
     }
 
-    if (!complaints.length) {
+    if (!sortedComplaints.length) {
       return (
         <View style={styles.stateContainer}>
           <Text style={styles.stateMessage}>Bạn chưa có khiếu nại nào.</Text>
@@ -87,10 +96,23 @@ export default function PlatformComplaint() {
     }
 
     return null;
-  }, [complaints.length, error, loading]);
+  }, [sortedComplaints.length, error, loading]);
 
   return (
     <View style={styles.container}>
+      <Stack.Screen 
+        options={{ 
+          headerShown: true,
+          title: 'Khiếu nại đơn đặt',
+          headerStyle: {
+            backgroundColor: "#FF7A00",
+          },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: {
+            fontWeight: "600",
+          }
+        }} 
+      />
       {stateContent && (
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -104,13 +126,12 @@ export default function PlatformComplaint() {
           contentContainerStyle={[styles.scrollContent, { paddingBottom: 32 }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={ORANGE2} />}
         >
-          <Text style={styles.screenTitle}>Khiếu nại đơn đặt</Text>
           {error && (
             <View style={styles.errorBanner}>
               <Text style={styles.errorBannerText}>{error}</Text>
             </View>
           )}
-          {complaints.map((complaint) => (
+          {sortedComplaints.map((complaint) => (
             <ComplaintCard key={complaint.id} complaint={complaint} />
           ))}
         </ScrollView>
@@ -219,13 +240,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 20,
     flexGrow: 1,
-  },
-  screenTitle: {
-    fontSize: 22,
-    fontFamily: 'RobotoMono_700Bold',
-    color: '#111827',
-    textAlign: 'center',
-    marginBottom: 16,
   },
   errorBanner: {
     backgroundColor: '#FEF3C7',
