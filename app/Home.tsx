@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { SafeAreaView, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { useUserInfo } from "../hooks/useUserInfo";
@@ -11,10 +11,14 @@ import {
 } from "../components";
 import { sharedStyles } from "../styles/shared";
 import Animated, { FadeIn } from "react-native-reanimated";
+import { useRefetchOnFocus } from "./hooks/useRefetchOnFocus";
+import { getNotifications } from "../service/api";
+import { useNotificationStore } from "../states/notificationStore";
 
 export default function HomeScreen() {
   const { user, loading, error } = useUserInfo();
   const router = useRouter();
+  const { setNotifications } = useNotificationStore();
 
   // Debug: Log user data
   console.log("Home user data:", user);
@@ -85,6 +89,34 @@ export default function HomeScreen() {
   const handleClassPress = (classItem: any) => {
     console.log("Class pressed:", classItem);
   };
+
+  // Refetch notifications when screen comes into focus
+  const refetchNotifications = useCallback(async () => {
+    try {
+      const response = await getNotifications();
+      const items = response.data?.items ?? [];
+      const mapped = items.map((item) => ({
+        id: item.id,
+        title: item.title ?? "Notification",
+        message: item.message ?? "",
+        type: (item.type === "success" || item.type === "warning" || item.type === "error" 
+          ? item.type 
+          : "info") as "info" | "success" | "warning" | "error",
+        timestamp: new Date(item.createdAt),
+        read: !!item.read,
+        data: {
+          link: item.link,
+          userUUID: item.userUUID,
+        },
+      }));
+      setNotifications(mapped);
+    } catch (error) {
+      console.error("Failed to refetch notifications:", error);
+    }
+  }, [setNotifications]);
+
+  // Refetch notifications when screen is focused
+  useRefetchOnFocus(refetchNotifications);
 
   return (
     <SafeAreaView style={sharedStyles.screenRoot}>

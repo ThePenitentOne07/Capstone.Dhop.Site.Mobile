@@ -93,6 +93,31 @@ export const getChoreographyUsers = ({
   return api.get(`/users/CHOREOGRAPHY`, { params });
 };
 
+// Fetch list of users with DANCER role
+export const getDancerUsers = ({
+  pageNo = 1,
+  pageSize = 10,
+  areas,
+  minExperience,
+  maxExperience,
+  minPrice,
+  maxPrice,
+  name,
+}: ChoreographyUsersQuery = {}) => {
+  const params = {
+    pageNo,
+    pageSize,
+    areas: areas ?? undefined,
+    minExperience: minExperience ?? undefined,
+    maxExperience: maxExperience ?? undefined,
+    minPrice: minPrice ?? undefined,
+    maxPrice: maxPrice ?? undefined,
+    name: name?.trim() || undefined,
+  };
+  console.log("API getDancerUsers params:", params);
+  return api.get(`/users/DANCER`, { params });
+};
+
 export interface GetChoreographyScheduleParams {
   id: number | string;
   startTime: string;

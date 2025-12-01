@@ -1,10 +1,11 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { acceptChoreographerBooking, cancelChoreographerBooking, getBookingById } from '../../service/api';
 import { useRouter } from 'expo-router';
 import { useConversationStore } from '../../states/conversationStore';
 import { useAppModal } from '../../hooks/useAppModal';
+import { useRefetchOnFocus } from '../hooks/useRefetchOnFocus';
 
 
 const YELLOW = '#FFD540';
@@ -44,61 +45,47 @@ export default function BookingDetailOnHold() {
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
-  useEffect(() => {
-    let active = true;
-
-    const load = async () => {
-      if (!bookingId) {
-        if (fallbackBooking) {
-          if (active) {
-            setBooking(fallbackBooking);
-            setError(null);
-            setLoading(false);
-          }
-        } else if (active) {
-          setBooking(null);
-          setError('Không tìm thấy mã đơn đặt lịch.');
-          setLoading(false);
-        }
-        return;
-      }
-
-      if (active) {
-        setLoading(true);
+  const load = useCallback(async () => {
+    if (!bookingId) {
+      if (fallbackBooking) {
+        setBooking(fallbackBooking);
         setError(null);
+        setLoading(false);
+      } else {
+        setBooking(null);
+        setError('Không tìm thấy mã đơn đặt lịch.');
+        setLoading(false);
+      }
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await getBookingById(bookingId);
+      const payload = Array.isArray(res.data) ? res.data[0] : res.data;
+
+      if (!payload) {
+        throw new Error('Không tìm thấy đơn đặt lịch.');
       }
 
-      try {
-        const res = await getBookingById(bookingId);
-        const payload = Array.isArray(res.data) ? res.data[0] : res.data;
-
-        if (!payload) {
-          throw new Error('Không tìm thấy đơn đặt lịch.');
-        }
-
-        if (active) {
-          setBooking(payload);
-        }
-      } catch (err: any) {
-        if (active) {
-          setError(err?.response?.data?.message || err?.message || 'Không thể tải đơn đặt lịch');
-          if (!fallbackBooking) {
-            setBooking(null);
-          }
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
+      setBooking(payload);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Không thể tải đơn đặt lịch');
+      if (!fallbackBooking) {
+        setBooking(null);
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  }, [bookingId, fallbackBooking]);
 
-    load();
+  useEffect(() => {
+    void load();
+  }, [load, reloadToken]);
 
-    return () => {
-      active = false;
-    };
-  }, [bookingId, fallbackBooking, reloadToken]);
+  useRefetchOnFocus(load);
 
   const handleRetry = () => setReloadToken((token) => token + 1);
 
@@ -374,7 +361,7 @@ export default function BookingDetailOnHold() {
                     message: 'Đã từ chối đơn.',
                     status: 'success',
                     autoCloseAfter: 2000,
-                    onAutoClose: () => router.replace('/Choreographer/RequestBookingList'),
+                    onAutoClose: () => router.back(),
                   });
                 } catch (e: any) {
                   showModal({
@@ -407,7 +394,7 @@ export default function BookingDetailOnHold() {
                   message: 'Đơn đã được chấp nhận.',
                   status: 'success',
                   autoCloseAfter: 2000,
-                  onAutoClose: () => router.replace('/Choreographer/RequestBookingList'),
+                  onAutoClose: () => load(),
                 });
               } catch(e:any) {
                 setAcceptError(e?.response?.data?.message || e?.message || 'Lỗi khi xác nhận');

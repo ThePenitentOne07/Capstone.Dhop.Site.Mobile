@@ -69,39 +69,89 @@ export default function Layout() {
     };
   }, [user, loading, initSocket, disconnectSocket]);
 
-  // Listen for NEW_BOOKING events when socket is ready
+  // Listen for notification events when socket is ready
   useEffect(() => {
     if (!socket) return;
 
-    const handler = (data) => {
+    // Generic notification handler - handles server-sent notification objects
+    const notificationHandler = (data) => {
+      console.log('Received notification event:', data);
+      
+      // If data is already a notification object from server
+      if (data && (data.title || data.message)) {
+        const mapped = mapServerNotification(data);
+        addNotification({
+          title: mapped.title,
+          message: mapped.message,
+          type: mapped.type,
+          data: mapped.data
+        });
+        // Refetch notifications to ensure count is accurate
+        fetchInitialNotifications();
+      } else {
+        // Fallback for simple message data
+        addNotification({
+          title: data.title || 'Notification',
+          message: data.message || 'You have a new notification!',
+          type: data.type || 'info',
+          data: data
+        });
+        fetchInitialNotifications();
+      }
+    };
+
+    // Specific event handlers with better titles
+    const bookingHandler = (data) => {
       addNotification({
-        title: 'New Booking',
+        title: data.title || 'New Booking',
         message: data.message || 'You have a new booking!',
         type: 'info',
         data: data
       });
-
-      console.log('Received NEW_BOOKING:', data);
+      fetchInitialNotifications();
+      console.log('Received booking event:', data);
     };
 
-    socket.on('NEW_BOOKING', handler);
-    socket.on('BOOKING_ACCEPTED', handler);
-    socket.on('BOOKING_CANCELLED', handler);
-    socket.on('BOOKING_COMPLETED', handler);
-    socket.on('CHAT_MESSAGE', handler);
-    socket.on('STAFF_APPROVED', handler);
-    socket.on('STAFF_REJECTED', handler);
+    const chatHandler = (data) => {
+      addNotification({
+        title: data.title || 'New Message',
+        message: data.message || 'You have a new message!',
+        type: 'info',
+        data: data
+      });
+      fetchInitialNotifications();
+      console.log('Received chat event:', data);
+    };
+
+    // Listen for generic notification events (most common)
+    socket.on('NOTIFICATION', notificationHandler);
+    socket.on('notification', notificationHandler);
+    socket.on('new_notification', notificationHandler);
+
+    // Listen for specific booking events
+    socket.on('NEW_BOOKING', bookingHandler);
+    socket.on('BOOKING_ACCEPTED', bookingHandler);
+    socket.on('BOOKING_CANCELLED', bookingHandler);
+    socket.on('BOOKING_COMPLETED', bookingHandler);
+    socket.on('STAFF_APPROVED', bookingHandler);
+    socket.on('STAFF_REJECTED', bookingHandler);
+
+    // Listen for chat events
+    socket.on('CHAT_MESSAGE', chatHandler);
 
     return () => {
-      socket.off('NEW_BOOKING', handler);
-      socket.off('BOOKING_ACCEPTED', handler);
-      socket.off('BOOKING_CANCELLED', handler);
-      socket.off('BOOKING_COMPLETED', handler);
-      socket.off('CHAT_MESSAGE', handler);
-      socket.off('STAFF_APPROVED', handler);
-      socket.off('STAFF_REJECTED', handler);
+      socket.off('NOTIFICATION', notificationHandler);
+      socket.off('notification', notificationHandler);
+      socket.off('new_notification', notificationHandler);
+      socket.off('NEW_BOOKING', bookingHandler);
+      socket.off('BOOKING_ACCEPTED', bookingHandler);
+      socket.off('BOOKING_CANCELLED', bookingHandler);
+      socket.off('BOOKING_COMPLETED', bookingHandler);
+      socket.off('CHAT_MESSAGE', chatHandler);
+      socket.off('STAFF_APPROVED', bookingHandler);
+      socket.off('STAFF_REJECTED', bookingHandler);
     };
-  }, [socket, addNotification]);
+  }, [socket, addNotification, mapServerNotification, fetchInitialNotifications]);
   
   useEffect(() => {
     if (user && !loading) {

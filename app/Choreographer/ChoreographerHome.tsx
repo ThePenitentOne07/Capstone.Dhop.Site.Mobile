@@ -15,7 +15,9 @@ export default function ChoreographerHome() {
   const { user, loading } = useUserInfo();
   const { showModal, modal } = useAppModal();
   const { unreadCount } = useNotificationStore();
-  const avatar = require('../../assets/vecteezy_man-using-smartphone-device_24096847.png');
+  const avatarSource = user?.avatar
+    ? { uri: user.avatar }
+    : require('../../assets/vecteezy_man-using-smartphone-device_24096847.png');
   const username = user?.name || 'Choreographer';
   const handleLogout = () => {
     showModal({
@@ -152,7 +154,7 @@ export default function ChoreographerHome() {
         </View>
         {/* PROFILE SECTION */}
         <Animated.View style={[styles.profileSection, profileAnimatedStyle]}>
-          <Image source={avatar} style={styles.profilePic} />
+          <Image source={avatarSource} style={styles.profilePic} />
           <View style={{flex:1}}>
             <Text style={styles.name}>{username}</Text>
           </View>

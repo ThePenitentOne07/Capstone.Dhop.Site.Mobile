@@ -49,7 +49,7 @@ export default function CheckInQr() {
 
       await qrTrainingSession(sessionId, userId);
       setModalVisible(false);
-      router.push("/Choreographer/RequestBookingList");
+      router.back();
     } catch (e) {
       // keep modal open to let user retry or cancel
     } finally {
@@ -87,7 +87,7 @@ export default function CheckInQr() {
 
       {/* Top bar */}
       <View style={styles.topBar}>
-        <TouchableOpacity style={styles.topBtn} onPress={() => router.push('/Choreographer/RequestBookingList')}>
+      <TouchableOpacity style={styles.topBtn} onPress={() => router.back()}>
           <Text style={styles.topBtnText}>Đóng</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Quét mã QR</Text>

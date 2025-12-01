@@ -2,7 +2,6 @@ import { View, Text, Button, Image, ScrollView, StyleSheet, TouchableOpacity, Di
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } from "react-native-reanimated";
-import { LinearGradient } from 'expo-linear-gradient';
 import { Introduction, ChoreographerProject } from "../../components/ChoreographerDetail/index";
 import { getChoreographerById } from "../../service/api";
 import { useConversationStore } from "../../states/conversationStore";
@@ -175,12 +174,7 @@ export default function DetailsScreen() {
     <View style={styles.screenRoot}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.imageContainer}>
-          <Image source={imageSource} style={styles.coverImage} resizeMode="cover" />
-          <LinearGradient
-            colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.3)', 'rgba(255, 255, 255, 0.8)', '#FFFFFF']}
-            locations={[0, 0.3, 0.7, 1]}
-            style={styles.imageGradient}
-          />
+          <Image source={imageSource} style={styles.coverImage} resizeMode="contain" />
           <TouchableOpacity 
             style={styles.msgBtnFab} 
             activeOpacity={0.86} 
@@ -329,21 +323,12 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
     width: "100%",
-    height: 220,
+    minHeight: 300,
   },
   coverImage: {
     width: "100%",
-    height: 220,
+    height: 300,
     backgroundColor: "#F3F4F6",
-  },
-  imageGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: "100%",
-    height: 220,
   },
   profileSection: {
     flexDirection: "row",
