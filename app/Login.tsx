@@ -50,11 +50,20 @@ export default function LoginScreen() {
         const userRes = await getUserInfo();
         // FIX: role is an array property 'role', not 'roles', each element has a 'name'
         const role = userRes?.data?.role;
+        const roleUpper = String(role).toUpperCase();
         console.log("role:", userRes?.data);
-        if (String(role).toUpperCase() === 'CHOREOGRAPHY' || String(role).toUpperCase() === 'CHOREOGRAPHER') {
-          router.replace("/Choreographer/ChoreographerHome");
-        } else {
-          router.replace("/Home");
+
+        switch (roleUpper) {
+          case "CHOREOGRAPHY":
+          case "CHOREOGRAPHER":
+            router.replace("/Choreographer/ChoreographerHome");
+            break;
+          case "DANCER":
+            router.replace("/Dancer/DancerHome");
+            break;
+          default:
+            router.replace("/Home");
+            break;
         }
       } catch {
         // fallback to Home if role cannot be fetched

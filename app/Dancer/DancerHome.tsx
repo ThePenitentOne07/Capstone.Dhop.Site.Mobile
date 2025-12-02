@@ -10,7 +10,7 @@ import { useNotificationStore } from '../../states/notificationStore';
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
 
-export default function ChoreographerHome() {
+export default function DancerHome() {
   const router = useRouter();
   const { user, loading } = useUserInfo();
   const { showModal, modal } = useAppModal();
@@ -18,7 +18,8 @@ export default function ChoreographerHome() {
   const avatarSource = user?.avatar
     ? { uri: user.avatar }
     : require('../../assets/vecteezy_man-using-smartphone-device_24096847.png');
-  const username = user?.name || 'Choreographer';
+  const username = user?.name || 'Dancer';
+
   const handleLogout = () => {
     showModal({
       title: 'Đăng xuất',
@@ -40,19 +41,20 @@ export default function ChoreographerHome() {
       ],
     });
   };
+
   // @ts-ignore: walletBalance might not be defined
   const coin = (user && typeof user.walletBalance !== 'undefined') ? user.walletBalance : 1200;
 
-  // Greeting randomizer (ported from Header)
+  // Greeting randomizer (same as ChoreographerHome)
   const [displayText, setDisplayText] = useState('Hi, ...');
   const [isAnimating, setIsAnimating] = useState(false);
   const [hasStartedAnimation, setHasStartedAnimation] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const displayName = username && username !== 'Choreographer' ? username : 'Guest';
+  const displayName = username && username !== 'Dancer' ? username : 'Guest';
   const originalText = `Hi, ${displayName}`;
 
   useEffect(() => {
-    if (username && username !== 'Choreographer' && !hasStartedAnimation) {
+    if (username && username !== 'Dancer' && !hasStartedAnimation) {
       setDisplayText('');
       setHasStartedAnimation(true);
     } else if (!username) {
@@ -101,7 +103,7 @@ export default function ChoreographerHome() {
   };
 
   useEffect(() => {
-    if (username && username !== 'Choreographer' && hasStartedAnimation) {
+    if (username && username !== 'Dancer' && hasStartedAnimation) {
       startAnimation();
     }
   }, [username, hasStartedAnimation]);
@@ -115,11 +117,12 @@ export default function ChoreographerHome() {
   // Profile section entry animation
   const profileOpacity = useSharedValue(0);
   const profileTranslateY = useSharedValue(18);
+
   useEffect(() => {
-    // Start immediately on mount
     profileOpacity.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) });
     profileTranslateY.value = withTiming(0, { duration: 700, easing: Easing.out(Easing.cubic) });
   }, [profileOpacity, profileTranslateY]);
+
   const profileAnimatedStyle = useAnimatedStyle(() => ({
     opacity: profileOpacity.value,
     transform: [{ translateY: profileTranslateY.value }],
@@ -127,7 +130,7 @@ export default function ChoreographerHome() {
 
   return (
     <View style={styles.root}>
-            <Stack.Screen options={{ headerShown: false }} />
+      <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         {/* TOP GREETING */}
@@ -136,7 +139,7 @@ export default function ChoreographerHome() {
             <Text style={styles.greeting}>{username ? displayText : 'Hi, ...'}</Text>
           </View>
           <View style={styles.headerIcons}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.iconButton}
               onPress={() => router.push('/NotificationList')}
             >
@@ -149,45 +152,81 @@ export default function ChoreographerHome() {
                 </View>
               )}
             </TouchableOpacity>
-            
           </View>
         </View>
+
         {/* PROFILE SECTION */}
         <Animated.View style={[styles.profileSection, profileAnimatedStyle]}>
           <Image source={avatarSource} style={styles.profilePic} />
-          <View style={{flex:1}}>
+          <View style={{ flex: 1 }}>
             <Text style={styles.name}>{username}</Text>
           </View>
         </Animated.View>
 
         {/* MENU LIST */}
         <View style={styles.menuSection}>
-          <MenuButton index={0} icon="📜" label="Lịch đặt" onPress={()=>{router.push('/Choreographer/RequestBookingList')}} />
+          <MenuButton
+            index={0}
+            icon="📜"
+            label="Lịch đặt"
+            onPress={() => {
+              router.push('/Dancer/DancerBookingList');
+            }}
+          />
           <MenuButton index={1} icon="💳" label="Ví tiền" />
-          {/* <MenuButton index={2} icon="📈" label="Lịch sử giao dịch" /> */}
-          {/* <MenuButton index={2} icon="" label="Khiếu nại đơn đặt" onPress={()=>{router.push('/PlatformComplaint')}} /> */}
 
-          <MenuButton index={2} icon="" label="Chat" onPress={()=>{router.push('/ChatList')}} />
+          <MenuButton
+            index={2}
+            icon=""
+            label="Chat"
+            onPress={() => {
+              router.push('/ChatList');
+            }}
+          />
 
-          <MenuButton index={3} icon="" label="Quét mã check in" onPress={()=>{router.push('/Choreographer/CheckInQr')}} />
-          <MenuButton index={4} icon="🚪" label="Đăng xuất" showLast={true} onPress={handleLogout} />
+          <MenuButton
+            index={3}
+            icon="🚪"
+            label="Đăng xuất"
+            showLast={true}
+            onPress={handleLogout}
+          />
         </View>
-        {loading && <ActivityIndicator color={ORANGE2} style={{marginTop:20}} />}
+
+        {loading && <ActivityIndicator color={ORANGE2} style={{ marginTop: 20 }} />}
       </ScrollView>
       {modal}
     </View>
   );
 }
 
-function MenuButton({ index = 0, icon, label, showLast, onPress }: { index?: number; icon: string; label: string; showLast?: boolean; onPress?: () => void }) {
+function MenuButton({
+  index = 0,
+  icon,
+  label,
+  showLast,
+  onPress,
+}: {
+  index?: number;
+  icon: string;
+  label: string;
+  showLast?: boolean;
+  onPress?: () => void;
+}) {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(16);
 
   useEffect(() => {
     const delayMs = 220 * index;
-    opacity.value = withDelay(delayMs, withTiming(1, { duration: 900, easing: Easing.out(Easing.cubic) }));
-    translateY.value = withDelay(delayMs, withTiming(0, { duration: 900, easing: Easing.out(Easing.cubic) }));
+    opacity.value = withDelay(
+      delayMs,
+      withTiming(1, { duration: 900, easing: Easing.out(Easing.cubic) }),
+    );
+    translateY.value = withDelay(
+      delayMs,
+      withTiming(0, { duration: 900, easing: Easing.out(Easing.cubic) }),
+    );
   }, [index, opacity, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -207,7 +246,7 @@ function MenuButton({ index = 0, icon, label, showLast, onPress }: { index?: num
 
   return (
     <AnimatedTouchable
-      style={[styles.menuBtn, showLast && {marginBottom: 0}, animatedStyle]}
+      style={[styles.menuBtn, showLast && { marginBottom: 0 }, animatedStyle]}
       activeOpacity={0.9}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -239,8 +278,7 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 20,
     color: '#374151',
-    // fontWeight: '400',
-    fontFamily: "RobotoMono_400Regular"
+    fontFamily: 'RobotoMono_400Regular',
   },
   headerIcons: {
     flexDirection: 'row',
@@ -288,7 +326,6 @@ const styles = StyleSheet.create({
     padding: 18,
     borderWidth: 2,
     borderColor: ORANGE2,
-    // very subtle shadow!
     shadowColor: ORANGE2,
     shadowOpacity: 0.08,
     shadowRadius: 9,
@@ -378,12 +415,12 @@ const styles = StyleSheet.create({
   },
   menuSection: {
     marginHorizontal: 20,
-    backgroundColor:'#fff',
+    backgroundColor: '#fff',
     borderRadius: 0,
     paddingVertical: 2,
     borderWidth: 0,
     borderColor: 'transparent',
-    marginBottom:28,
+    marginBottom: 28,
     marginTop: 10,
   },
   menuBtn: {
@@ -408,7 +445,7 @@ const styles = StyleSheet.create({
   },
   menuLabel: {
     fontSize: 16,
-    flex:1,
+    flex: 1,
     color: ORANGE2,
     fontFamily: 'RobotoMono_700Bold',
   },
@@ -416,9 +453,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: ORANGE2,
     marginLeft: 8,
-    marginRight:6,
+    marginRight: 6,
     opacity: 0.7,
     fontFamily: 'RobotoMono_700Bold',
   },
 });
+
 

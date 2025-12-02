@@ -215,6 +215,15 @@ export const getChoreographerBookings = () => {
   return api.get(`/booking/choreographer`);
 };
 
+// Get list of dancer bookings for the logged-in dancer
+export const getDancerBookings = () => {
+  // Backend returns an array of bookings like:
+  // [
+  //   { id, address, bookingDate, statusName, numberOfTeamMember, price, area, customer, ... }
+  // ]
+  return api.get(`/booking/dancers`);
+};
+
 export const getBookingById = (bookingId: string | number) => {
   return api.get(`/booking`, {
     params: { bookingId },
@@ -237,6 +246,26 @@ export const acceptChoreographerBooking = (
 };
 
 export const cancelChoreographerBooking = (bookingId: string | number) => {
+  return api.patch(`/booking/cancel`, null, {
+    params: { bookingId },
+  });
+};
+
+// Accept a dancer booking
+export const acceptDancerBooking = (
+  bookingId: string,
+  statusName: string = "BOOKING_ACTIVATE"
+) => {
+  return api.patch(
+    `/booking/dancers/status`,
+    null,
+    {
+      params: { bookingId, statusName },
+    }
+  );
+};
+
+export const cancelDancerBooking = (bookingId: string | number) => {
   return api.patch(`/booking/cancel`, null, {
     params: { bookingId },
   });

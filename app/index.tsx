@@ -51,9 +51,12 @@ export default function HomeScreen() {
         // Verify token by calling user info.
         const userRes = await getUserInfo();
         const role = userRes?.data?.role;
+        const roleUpper = String(role).toUpperCase();
 
-        if (String(role).toUpperCase() === "CHOREOGRAPHY" || String(role).toUpperCase() === "CHOREOGRAPHER") {
+        if (roleUpper === "CHOREOGRAPHY" || roleUpper === "CHOREOGRAPHER") {
           router.replace("/Choreographer/ChoreographerHome");
+        } else if (roleUpper === "DANCER") {
+          router.replace("/Dancer/DancerHome");
         } else {
           router.replace("/Home");
         }
