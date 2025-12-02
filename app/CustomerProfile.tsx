@@ -158,7 +158,7 @@ export default function CustomerProfile() {
           },
           headerTintColor: '#FFFFFF',
           headerTitleStyle: {
-            fontWeight: '600',
+            fontFamily: 'RobotoMono_700Bold',
           },
         }}
       />
@@ -313,8 +313,8 @@ const styles = StyleSheet.create({
   },
   profileFallbackText: {
     fontSize: 34,
-    fontWeight: '700',
     color: ORANGE2,
+    fontFamily: 'RobotoMono_700Bold',
   },
   avatarOverlay: {
     position: 'absolute',
@@ -336,10 +336,10 @@ const styles = StyleSheet.create({
   editText: {
     color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '700',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+    fontFamily: 'RobotoMono_700Bold',
   },
   editBadge: {
     position: 'absolute',
@@ -357,8 +357,8 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 22,
-    fontWeight: '700',
     color: ORANGE2,
+    fontFamily: 'RobotoMono_700Bold',
   },
   email: {
     fontSize: 15,
@@ -379,8 +379,8 @@ const styles = StyleSheet.create({
   detailHeading: {
     fontSize: 18,
     color: ORANGE2,
-    fontWeight: '700',
     marginBottom: 16,
+    fontFamily: 'RobotoMono_700Bold',
   },
   detailRow: {
     flexDirection: 'row',
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 15,
     color: '#111827',
-    fontWeight: '600',
+    fontFamily: 'RobotoMono_700Bold',
   },
   phoneValueContainer: {
     flex: 1,
@@ -422,10 +422,10 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '700',
     color: ORANGE2,
     marginBottom: 16,
     textAlign: 'center',
+    fontFamily: 'RobotoMono_700Bold',
   },
   modalInput: {
     borderWidth: 1,
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
   modalCancelButtonText: {
     color: '#6B7280',
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: 'RobotoMono_700Bold',
   },
   modalSaveButton: {
     backgroundColor: ORANGE2,
@@ -463,6 +463,6 @@ const styles = StyleSheet.create({
   modalSaveButtonText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: 'RobotoMono_700Bold',
   },
 });

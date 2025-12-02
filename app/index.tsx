@@ -237,18 +237,16 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: "700",
     color: "#FFFFFF",
     textAlign: "left",
     lineHeight: 40,
-    fontFamily: "Avenir, Helvetica, Arial, sans-serif",
+    fontFamily: "RobotoMono_700Bold",
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
   description: {
     fontSize: 16,
-    fontWeight: "400",
     color: "#FFFFFF",
     textAlign: "left",
     lineHeight: 24,
@@ -256,6 +254,7 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+    fontFamily: 'RobotoMono_400Regular',
   },
   paginationContainer: {
     alignItems: 'center',
@@ -310,7 +309,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: '600',
     letterSpacing: 1,
+    fontFamily: 'RobotoMono_700Bold',
   },
 });

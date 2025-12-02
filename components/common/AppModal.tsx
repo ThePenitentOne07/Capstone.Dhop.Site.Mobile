@@ -146,20 +146,21 @@ const styles = StyleSheet.create({
   },
   icon: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontFamily: 'RobotoMono_700Bold',
   },
   title: {
     fontSize: 18,
-    fontWeight: '700',
     color: '#111827',
     textAlign: 'center',
     marginBottom: 8,
+    fontFamily: 'RobotoMono_700Bold',
   },
   message: {
     fontSize: 15,
     color: '#4B5563',
     textAlign: 'center',
     marginBottom: 20,
+    fontFamily: 'RobotoMono_400Regular',
   },
   buttonRow: {
     flexDirection: 'row',
@@ -186,7 +187,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: 'RobotoMono_700Bold',
   },
   primaryButtonText: {
     color: '#fff',

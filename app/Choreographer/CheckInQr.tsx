@@ -254,8 +254,7 @@ const styles = StyleSheet.create({
   title: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   frameWrap: {
     position: 'absolute',
@@ -292,8 +291,7 @@ const styles = StyleSheet.create({
   },
   btnText: {
     color: '#fff',
-    fontWeight: '700',
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   modalOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -309,10 +307,9 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 16,
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
     color: '#111827',
     marginBottom: 6,
-    fontWeight: '700',
   },
   modalSub: {
     fontFamily: 'Roboto',
@@ -332,11 +329,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   modalLabel: {
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
     color: '#6B7280',
     fontSize: 14,
     width: 90,
-    fontWeight: '600',
   },
   modalValue: {
     fontFamily: 'Roboto',
@@ -358,8 +354,7 @@ const styles = StyleSheet.create({
   },
   modalBtnSecondaryText: {
     color: '#111827',
-    fontFamily: 'Roboto',
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   modalBtnPrimary: {
     backgroundColor: ORANGE2,
@@ -369,7 +364,6 @@ const styles = StyleSheet.create({
   },
   modalBtnPrimaryText: {
     color: '#fff',
-    fontFamily: 'Roboto',
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
 });

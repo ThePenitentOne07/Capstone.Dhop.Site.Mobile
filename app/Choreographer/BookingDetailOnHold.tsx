@@ -579,13 +579,12 @@ const styles = StyleSheet.create({
   thumbInitial: {
     fontSize: 26,
     color: ORANGE2,
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   itemTitle: {
     fontSize: 16,
-    fontWeight: '700',
     color: '#111827',
-    fontFamily: 'RobotoMono_400Regular',
+    fontFamily: 'RobotoMono_700Bold',
   },
   itemSubtitle: {
     marginTop: 2,
@@ -597,8 +596,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 16,
     color: '#6B7280',
-    fontWeight: '700',
-    fontFamily: 'RobotoMono_400Regular',
+    fontFamily: 'RobotoMono_700Bold',
   },
   priceRow: {
     flexDirection: 'row',
@@ -726,7 +724,6 @@ const styles = StyleSheet.create({
   },
   sessionStatus: {
     fontSize: 13,
-    fontWeight: '700',
     marginTop: 4,
     fontFamily: 'RobotoMono_700Bold',
   },
@@ -775,8 +772,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: '#fff',
     marginRight: 7,
-    fontWeight: 'bold',
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   fabLabel: {
     color: '#fff',
@@ -805,8 +801,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: '#fff',
     marginRight: 7,
-    fontWeight: 'bold',
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   msgBtnFabLabel: {
     color: '#fff',

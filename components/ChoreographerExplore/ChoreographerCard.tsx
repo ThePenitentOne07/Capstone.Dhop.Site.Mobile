@@ -105,23 +105,24 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 16,
-    fontWeight: "700",
     color: "#111827",
+    fontFamily: 'RobotoMono_700Bold',
   },
   nickname: {
     fontSize: 14,
-    fontWeight: "500",
     color: "#F97316",
+    fontFamily: 'RobotoMono_400Regular',
   },
   detail: {
     fontSize: 13,
     color: "#4B5563",
+    fontFamily: 'RobotoMono_400Regular',
   },
   price: {
     marginTop: 6,
     fontSize: 14,
-    fontWeight: "600",
     color: "#047857",
+    fontFamily: 'RobotoMono_700Bold',
   },
 });
 

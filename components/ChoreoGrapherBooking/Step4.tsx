@@ -145,6 +145,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
     marginBottom: 6,
+    fontFamily: 'RobotoMono_400Regular',
   },
   input: {
     backgroundColor: '#FFFFFF',
@@ -155,6 +156,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     color: '#1F2937',
     fontSize: 14,
+    fontFamily: 'RobotoMono_400Regular',
   },
   multiline: {
     minHeight: 96,
@@ -181,7 +183,7 @@ const styles = StyleSheet.create({
   submitText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   submitTextDisabled: {
     color: '#9CA3AF',
@@ -209,21 +211,22 @@ const styles = StyleSheet.create({
   },
   serviceName: {
     fontSize: 15,
-    fontWeight: '700',
     color: '#1F2937',
     flex: 1,
     paddingRight: 12,
+    fontFamily: 'RobotoMono_700Bold',
   },
   servicePrice: {
     fontSize: 14,
-    fontWeight: '600',
     color: '#FF7A00',
+    fontFamily: 'RobotoMono_700Bold',
   },
   serviceDescription: {
     marginTop: 4,
     fontSize: 13,
     color: '#4B5563',
     lineHeight: 18,
+    fontFamily: 'RobotoMono_400Regular',
   },
   checkbox: {
     position: 'absolute',
@@ -245,7 +248,7 @@ const styles = StyleSheet.create({
   checkboxTick: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
 });
 

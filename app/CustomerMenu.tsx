@@ -56,7 +56,7 @@ export default function CustomerMenu(){
                     },
                     headerTintColor: "#FFFFFF",
                     headerTitleStyle: {
-                      fontWeight: "600",
+                      fontFamily: "RobotoMono_700Bold",
                     }
                   }} 
               />
@@ -203,19 +203,19 @@ export default function CustomerMenu(){
     },
     profileFallbackText: {
       fontSize: 28,
-      fontWeight: 'bold',
       color: ORANGE2,
+      fontFamily: 'RobotoMono_700Bold',
     },
     name: {
       fontSize: 20,
-      fontWeight: '700',
       color: ORANGE2,
+      fontFamily: 'RobotoMono_700Bold',
     },
     location: {
       color: ORANGE,
       fontSize: 14,
       marginTop: 2,
-      fontWeight: '500',
+      fontFamily: 'RobotoMono_400Regular',
     },
     coinCard: {
       flexDirection: 'row',
@@ -232,8 +232,8 @@ export default function CustomerMenu(){
     },
     coinText: {
       color: ORANGE,
-      fontWeight: 'bold',
       fontSize: 15,
+      fontFamily: 'RobotoMono_700Bold',
     },
     coinIcon: {
       fontSize: 18,
@@ -261,8 +261,8 @@ export default function CustomerMenu(){
     },
     tabActiveText: {
       color: '#fff',
-      fontWeight: '700',
       fontSize: 15,
+      fontFamily: 'RobotoMono_700Bold',
     },
     tabInactive: {
       flex: 1,
@@ -275,9 +275,9 @@ export default function CustomerMenu(){
     },
     tabInactiveText: {
       color: ORANGE2,
-      fontWeight: '700',
       fontSize: 15,
       opacity: 0.91,
+      fontFamily: 'RobotoMono_700Bold',
     },
     menuSection: {
       marginHorizontal: 20,
@@ -311,17 +311,17 @@ export default function CustomerMenu(){
     },
     menuLabel: {
       fontSize: 16,
-      fontWeight: '600',
       flex:1,
       color: ORANGE2,
+      fontFamily: 'RobotoMono_700Bold',
     },
     menuArrow: {
       fontSize: 20,
       color: ORANGE2,
-      fontWeight: '800',
       marginLeft: 8,
       marginRight:6,
       opacity: 0.7,
+      fontFamily: 'RobotoMono_700Bold',
     },
   });
 

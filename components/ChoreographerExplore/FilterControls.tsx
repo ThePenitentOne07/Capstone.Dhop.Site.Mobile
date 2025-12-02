@@ -173,8 +173,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
     color: "#1F2937",
+    fontFamily: 'RobotoMono_700Bold',
   },
   selector: {
     borderWidth: 1,
@@ -186,6 +186,7 @@ const styles = StyleSheet.create({
   selectorText: {
     fontSize: 14,
     color: "#111827",
+    fontFamily: 'RobotoMono_400Regular',
   },
   inlineInputs: {
     flexDirection: "row",
@@ -202,10 +203,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     fontSize: 14,
     color: "#111827",
+    fontFamily: 'RobotoMono_400Regular',
   },
   toLabel: {
     paddingHorizontal: 6,
     color: "#6B7280",
+    fontFamily: 'RobotoMono_400Regular',
   },
   searchInputWrapper: {
     borderWidth: 1,
@@ -217,6 +220,7 @@ const styles = StyleSheet.create({
   searchInput: {
     fontSize: 15,
     color: "#111827",
+    fontFamily: 'RobotoMono_400Regular',
   },
   clearButton: {
     borderWidth: 1,
@@ -229,7 +233,7 @@ const styles = StyleSheet.create({
   },
   clearText: {
     color: "#F97316",
-    fontWeight: "600",
+    fontFamily: 'RobotoMono_700Bold',
   },
   modalOverlay: {
     flex: 1,
@@ -247,9 +251,9 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 16,
-    fontWeight: "700",
     color: "#111827",
     marginBottom: 16,
+    fontFamily: 'RobotoMono_700Bold',
   },
   modalItem: {
     paddingVertical: 12,
@@ -259,10 +263,11 @@ const styles = StyleSheet.create({
   modalItemText: {
     fontSize: 15,
     color: "#111827",
+    fontFamily: 'RobotoMono_400Regular',
   },
   modalItemAll: {
     color: "#F97316",
-    fontWeight: "600",
+    fontFamily: 'RobotoMono_700Bold',
   },
 });
 

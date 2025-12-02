@@ -73,6 +73,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#111827",
+    fontFamily: 'RobotoMono_400Regular',
   },
   filterButton: {
     width: 50,

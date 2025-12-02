@@ -1,11 +1,35 @@
-import { View, Text, StyleSheet, Dimensions } from 'react-native'
-import React from 'react'
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native'
+import React, { useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import Animated, { FadeInUp, FadeInLeft, FadeInRight } from 'react-native-reanimated'
 
 const { width } = Dimensions.get('window');
 
-export default function Introduction({ props }: { props: { title: string, name: string, price: number, yearExperience: number, about: string, area: Array<{ id: number, city: string, ward: string }>, danceType: Array<{ id: number, type: string, description: string }>, averageRating: number, extraServices?: Array<{ id: number, name: string, description: string, price: number }> } }) {
+interface IntroductionProps {
+  title: string;
+  name: string;
+  price: number;
+  yearExperience: number;
+  about: string;
+  area: Array<{ id: number; city: string; ward: string }>;
+  danceType: Array<{ id: number; type: string; description: string }>;
+  averageRating: number;
+  extraServices?: Array<{ id: number; name: string; description: string; price: number }>;
+  crews?: Array<{
+    crewId: number;
+    dancerName: string;
+    dancerStatus?: string;
+    description?: string;
+  }>;
+}
+
+export default function Introduction({ props }: { props: IntroductionProps }) {
+  const [showAllCrews, setShowAllCrews] = useState(false);
+  const crewsToDisplay = props.crews
+    ? showAllCrews
+      ? props.crews
+      : props.crews.slice(0, 3)
+    : [];
   console.log("props", props);
   return (
     <View style={styles.container}>
@@ -65,13 +89,46 @@ export default function Introduction({ props }: { props: { title: string, name: 
 
       {/* About Section - Spotify-style Card */}
       <Animated.View entering={FadeInUp.delay(1200)} style={styles.section}>
-        <Text style={styles.sectionTitle}>Về tôi</Text>
+        <Text style={styles.sectionTitle}>Về chúng tôi</Text>
         <View style={styles.aboutCard}>
           <Text style={styles.paragraph}>
             {props.about}
           </Text>
         </View>
       </Animated.View>
+
+      {/* Crew Members */}
+      {!!props.crews?.length && (
+        <Animated.View entering={FadeInUp.delay(1250)} style={styles.section}>
+          <Text style={styles.sectionTitle}>Đội ngũ</Text>
+          <View style={styles.crewsContainer}>
+            {crewsToDisplay.map((crew, index) => (
+              <Animated.View
+                key={crew.crewId || `${crew.dancerName}-${index}`}
+                entering={FadeInRight.delay(1300 + index * 80)}
+                style={styles.crewCard}
+              >
+                <Text style={styles.crewName}>{crew.dancerName}</Text>
+                {!!crew.dancerStatus && <Text style={styles.crewStatus}>{crew.dancerStatus}</Text>}
+                {!!crew.description && (
+                  <Text style={styles.crewDescription}>{crew.description}</Text>
+                )}
+              </Animated.View>
+            ))}
+          </View>
+          {props.crews.length > 3 && (
+            <TouchableOpacity
+              style={styles.showMoreButton}
+              onPress={() => setShowAllCrews((prev) => !prev)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.showMoreText}>
+                {showAllCrews ? 'Thu gọn' : `Xem thêm ${props.crews.length - crewsToDisplay.length} thành viên`}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </Animated.View>
+      )}
 
       {/* Extra services */}
       {!!props.extraServices?.length && (
@@ -139,16 +196,16 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: '900',
     color: '#1F2937', // Dark text for white background
     marginBottom: 8,
     letterSpacing: -0.5,
+    fontFamily: 'RobotoMono_700Bold',
   },
   subtitle: {
     fontSize: 16,
     color: '#6B7280', // Gray text for white background
-    fontWeight: '400',
     marginBottom: 16,
+    fontFamily: 'RobotoMono_400Regular',
   },
   headerStats: {
     flexDirection: 'row',
@@ -157,12 +214,13 @@ const styles = StyleSheet.create({
   statText: {
     fontSize: 14,
     color: '#6B7280',
-    fontWeight: '400',
+    fontFamily: 'RobotoMono_400Regular',
   },
   statDot: {
     fontSize: 14,
     color: '#6B7280',
     marginHorizontal: 8,
+    fontFamily: 'RobotoMono_400Regular',
   },
   section: {
     paddingHorizontal: 20,
@@ -170,10 +228,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    // fontWeight: '700',
     color: '#1F2937', // Dark text for white background
     marginBottom: 16,
     letterSpacing: -0.2,
+    fontFamily: 'RobotoMono_700Bold',
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -192,9 +251,9 @@ const styles = StyleSheet.create({
   tagText: {
     color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    fontFamily: 'RobotoMono_700Bold',
   },
   areaContainer: {
     flexDirection: 'row',
@@ -216,14 +275,14 @@ const styles = StyleSheet.create({
   },
   cityText: {
     fontSize: 14,
-    fontWeight: '600',
     color: '#1F2937',
     marginBottom: 2,
+    fontFamily: 'RobotoMono_700Bold',
   },
   wardText: {
     fontSize: 12,
     color: '#6B7280',
-    fontWeight: '400',
+    fontFamily: 'RobotoMono_400Regular',
   },
   aboutCard: {
     backgroundColor: '#F9FAFB', // Light gray card background
@@ -257,26 +316,74 @@ const styles = StyleSheet.create({
   },
   serviceName: {
     fontSize: 16,
-    fontWeight: '700',
     color: '#1F2937',
     flex: 1,
     paddingRight: 12,
+    fontFamily: 'RobotoMono_700Bold',
   },
   servicePrice: {
     fontSize: 15,
-    fontWeight: '600',
     color: '#FF7A00',
+    fontFamily: 'RobotoMono_700Bold',
   },
   serviceDescription: {
     fontSize: 13,
     color: '#4B5563',
     lineHeight: 18,
+    fontFamily: 'RobotoMono_400Regular',
   },
   paragraph: {
     fontSize: 14,
     color: '#374151', // Darker text for light background
     lineHeight: 20,
-    fontWeight: '400',
+    fontFamily: 'RobotoMono_400Regular',
+  },
+  crewsContainer: {
+    gap: 12,
+  },
+  crewCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  crewName: {
+    fontSize: 15,
+    color: '#1F2937',
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  crewStatus: {
+    fontSize: 13,
+    color: '#FF7A00',
+    marginTop: 2,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  crewDescription: {
+    fontSize: 13,
+    color: '#4B5563',
+    marginTop: 6,
+    lineHeight: 18,
+    fontFamily: 'RobotoMono_400Regular',
+  },
+  showMoreButton: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FF7A00',
+  },
+  showMoreText: {
+    color: '#FF7A00',
+    fontSize: 13,
+    fontFamily: 'RobotoMono_700Bold',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -306,18 +413,19 @@ const styles = StyleSheet.create({
   },
   statIconText: {
     fontSize: 16,
+    fontFamily: 'RobotoMono_400Regular',
   },
   statNumber: {
     fontSize: 20,
-    fontWeight: '700',
     color: '#1F2937', // Dark text for light background
     marginBottom: 4,
+    fontFamily: 'RobotoMono_700Bold',
   },
   statLabel: {
     fontSize: 11,
     color: '#6B7280', // Gray text for light background
-    fontWeight: '500',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    fontFamily: 'RobotoMono_400Regular',
   },
 })

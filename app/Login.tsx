@@ -217,8 +217,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     color: "#111827",
     marginBottom: 8,
-    fontWeight: "600",
-    fontFamily: "RobotoMono_400Regular",
+    fontFamily: "RobotoMono_700Bold",
   },
   input: {
     height: 48,
@@ -237,8 +236,7 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     color: "#6B7280",
-    fontWeight: "600",
-    fontFamily: "RobotoMono_400Regular",
+    fontFamily: "RobotoMono_700Bold",
   },
   loginButton: {
     height: 52,
@@ -251,9 +249,8 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: "#FFFFFF",
-    fontWeight: "600",
     fontSize: 18,
-    fontFamily: "RobotoMono_400Regular",
+    fontFamily: "RobotoMono_700Bold",
   },
   errorText: {
     color: "#DC2626",
@@ -275,6 +272,6 @@ const styles = StyleSheet.create({
   signupLink: {
     color: "#FF7120",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: "RobotoMono_700Bold",
   },
 }); 

@@ -138,6 +138,11 @@ export const getChoreographerById = (choreographerId: string) => {
   return api.get(`/choreography/${choreographerId}`);
 };
 
+// Get dancer details by ID
+export const getDancerById = (dancerId: string | number) => {
+  return api.get(`/dancers/${dancerId}`);
+};
+
 // Calculate total price for a choreographer booking
 export const getChoreographerBookingTotalPrice = (
   payload: ChoreographerBooking

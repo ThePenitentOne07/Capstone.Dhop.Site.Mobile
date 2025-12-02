@@ -226,13 +226,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: "700",
     color: "#111827",
+    fontFamily: 'RobotoMono_700Bold',
   },
   showMore: {
     fontSize: 14,
     color: "#FF7A00",
-    fontWeight: "500",
+    fontFamily: 'RobotoMono_400Regular',
   },
   choreographyContainer: {
     paddingLeft: 20,
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   },
   retryText: {
     color: '#FF7A00',
-    fontWeight: '600',
+    fontFamily: 'RobotoMono_700Bold',
   },
   cardImageWrap: {
     width: '100%',
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   experienceText: {
     color: '#fff',
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: 'RobotoMono_700Bold',
   },
   cardBody: {
     paddingHorizontal: 14,
@@ -302,12 +302,13 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: "700",
     color: "#111827",
+    fontFamily: 'RobotoMono_700Bold',
   },
   cardSubtitle: {
     fontSize: 13,
     color: "#6B7280",
+    fontFamily: 'RobotoMono_400Regular',
   },
   cardFooter: {
     marginTop: 6,
@@ -318,15 +319,17 @@ const styles = StyleSheet.create({
   priceLabel: {
     fontSize: 11,
     color: '#9CA3AF',
+    fontFamily: 'RobotoMono_400Regular',
   },
   priceValue: {
     fontSize: 18,
-    fontWeight: '700',
     color: '#FF7A00',
+    fontFamily: 'RobotoMono_700Bold',
   },
   priceUnit: {
     fontSize: 11,
     color: '#9CA3AF',
+    fontFamily: 'RobotoMono_400Regular',
   },
 });
 

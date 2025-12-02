@@ -71,7 +71,16 @@ export default function HomeScreen() {
   };
 
   const handleArtistPress = (artist: any) => {
-    console.log("Artist pressed:", artist);
+    if (!artist?.id) {
+      console.log("Artist pressed without id:", artist);
+      return;
+    }
+    router.push({
+      pathname: "/DetailsDancer/[id]",
+      params: {
+        id: artist.id,
+      },
+    });
   };
 
   const handleAddArtist = () => {

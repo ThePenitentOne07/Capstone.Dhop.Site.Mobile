@@ -300,9 +300,9 @@ const styles = StyleSheet.create({
   },
   busyLabel: {
     fontSize: 12,
-    fontWeight: '700',
     color: '#B45309',
     marginBottom: 6,
+    fontFamily: 'RobotoMono_700Bold',
   },
   busyItem: {
     flexDirection: 'row',
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   busyTime: {
     fontSize: 13,
     color: '#92400E',
-    fontWeight: '600',
+    fontFamily: 'RobotoMono_700Bold',
   },
   busyMeta: {
     fontSize: 12,
@@ -325,9 +325,9 @@ const styles = StyleSheet.create({
   },
   dateLabel: {
     fontSize: 16,
-    fontWeight: '800',
     color: '#1F2937',
     marginBottom: 12,
+    fontFamily: 'RobotoMono_700Bold',
   },
   row: {
     flexDirection: 'row',
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   submitText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   submitTextDisabled: {
     color: '#9CA3AF',
@@ -378,13 +378,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 12,
     color: '#DC2626',
-    fontWeight: '500',
+    fontFamily: 'RobotoMono_400Regular',
   },
   warningText: {
     marginTop: 8,
     fontSize: 12,
     color: '#F59E0B',
-    fontWeight: '600',
+    fontFamily: 'RobotoMono_700Bold',
   },
   warningCard: {
     backgroundColor: '#FFFBEB',
@@ -397,6 +397,6 @@ const styles = StyleSheet.create({
   warningCardText: {
     fontSize: 13,
     color: '#92400E',
-    fontWeight: '600',
+    fontFamily: 'RobotoMono_700Bold',
   },
 });

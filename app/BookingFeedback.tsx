@@ -152,9 +152,9 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: "700",
     color: "#111",
     marginBottom: 8,
+    fontFamily: 'RobotoMono_700Bold',
   },
   subtitle: {
     fontSize: 15,
@@ -163,9 +163,9 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 16,
-    fontWeight: "600",
     marginBottom: 12,
     color: "#222",
+    fontFamily: 'RobotoMono_700Bold',
   },
   ratingRow: {
     flexDirection: "row",
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   submitText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: 'RobotoMono_700Bold',
   },
 });
 

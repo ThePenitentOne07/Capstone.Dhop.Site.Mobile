@@ -163,7 +163,6 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 16,
     color: "#374151",
-    fontWeight: "400",
     fontFamily: "RobotoMono_400Regular",
   },
   greetingSubtext: {
@@ -206,7 +205,6 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#fff',
     fontSize: 10,
-    fontWeight: 'bold',
     fontFamily: 'RobotoMono_700Bold',
   },
 });

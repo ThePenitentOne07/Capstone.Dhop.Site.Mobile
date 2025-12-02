@@ -299,12 +299,14 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: "#6B7280",
+    fontFamily: 'RobotoMono_400Regular',
   },
   errorText: {
     fontSize: 16,
     color: "#C92A2A",
     textAlign: "center",
     marginBottom: 16,
+    fontFamily: 'RobotoMono_400Regular',
   },
   retryButton: {
     backgroundColor: "#FF7A00",
@@ -315,7 +317,7 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: 'RobotoMono_700Bold',
   },
   scrollView: {
     flex: 1,
@@ -370,13 +372,14 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 16,
-    fontWeight: "600",
     color: "#FFFFFF",
     marginBottom: 2,
+    fontFamily: 'RobotoMono_700Bold',
   },
   userLocation: {
     fontSize: 14,
     color: "#D1D5DB",
+    fontFamily: 'RobotoMono_400Regular',
   },
   coinsContainer: {
     flexDirection: "row",
@@ -394,9 +397,9 @@ const styles = StyleSheet.create({
   },
   coinsText: {
     fontSize: 14,
-    fontWeight: "600",
     color: "#FFFFFF",
     marginRight: 6,
+    fontFamily: 'RobotoMono_700Bold',
   },
   segmentedControl: {
     flexDirection: "row",
@@ -430,11 +433,12 @@ const styles = StyleSheet.create({
   },
   segmentText: {
     fontSize: 14,
-    fontWeight: "600",
     color: "#9CA3AF",
+    fontFamily: 'RobotoMono_700Bold',
   },
   segmentTextActive: {
     color: "#FFFFFF",
+    fontFamily: 'RobotoMono_700Bold',
   },
   arrowButton: {
     paddingVertical: 12,
@@ -445,7 +449,7 @@ const styles = StyleSheet.create({
   arrowText: {
     fontSize: 18,
     color: "#FFFFFF",
-    fontWeight: "600",
+    fontFamily: 'RobotoMono_700Bold',
   },
   bottomSpacer: {
     height: 100, // Space for the sticky button
@@ -480,7 +484,7 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: 'RobotoMono_700Bold',
   },
   msgBtnFab: {
     position: 'absolute',

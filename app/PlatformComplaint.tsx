@@ -109,7 +109,7 @@ export default function PlatformComplaint() {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
           }
         }} 
       />

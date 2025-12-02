@@ -85,7 +85,7 @@ export const FeaturedChoreography: React.FC<FeaturedChoreographyProps> = ({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Biên đạo dành cho bạn</Text>
+        <Text style={styles.sectionTitle}>Biên đạo </Text>
         <TouchableOpacity onPress={onShowMore}>
           <Text style={styles.showMore}>Xem tất cả &gt;</Text>
         </TouchableOpacity>
@@ -218,13 +218,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: "700",
     color: "#111827",
+    fontFamily: 'RobotoMono_700Bold',
   },
   showMore: {
     fontSize: 14,
     color: "#FF7A00",
-    fontWeight: "500",
+    fontFamily: 'RobotoMono_400Regular',
   },
   choreographyContainer: {
     paddingLeft: 20,
@@ -240,12 +240,12 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 16,
     color: "#6B7280",
-    fontWeight: "500",
+    fontFamily: 'RobotoMono_400Regular',
   },
   categoryTextActive: {
     fontSize: 16,
     color: "#FF7A00",
-    fontWeight: "600",
+    fontFamily: 'RobotoMono_700Bold',
   },
   cardsContainer: {
     paddingRight: 20,
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   },
   retryText: {
     color: '#FF7A00',
-    fontWeight: '600',
+    fontFamily: 'RobotoMono_700Bold',
   },
   cardImageWrap: {
     width: '100%',
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
   experienceText: {
     color: '#fff',
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: 'RobotoMono_700Bold',
   },
   cardBody: {
     paddingHorizontal: 14,
@@ -312,12 +312,13 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: "700",
     color: "#111827",
+    fontFamily: 'RobotoMono_700Bold',
   },
   cardSubtitle: {
     fontSize: 13,
     color: "#6B7280",
+    fontFamily: 'RobotoMono_400Regular',
   },
   cardFooter: {
     marginTop: 6,
@@ -328,15 +329,17 @@ const styles = StyleSheet.create({
   priceLabel: {
     fontSize: 11,
     color: '#9CA3AF',
+    fontFamily: 'RobotoMono_400Regular',
   },
   priceValue: {
     fontSize: 18,
-    fontWeight: '700',
     color: '#FF7A00',
+    fontFamily: 'RobotoMono_700Bold',
   },
   priceUnit: {
     fontSize: 11,
     color: '#9CA3AF',
+    fontFamily: 'RobotoMono_400Regular',
   },
   bookTag: {
     backgroundColor: '#FFEDE1',
@@ -346,7 +349,7 @@ const styles = StyleSheet.create({
   },
   bookTagText: {
     fontSize: 12,
-    fontWeight: '600',
     color: '#FF7A00',
+    fontFamily: 'RobotoMono_700Bold',
   },
 });

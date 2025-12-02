@@ -79,7 +79,7 @@ export default function BookingList() {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
           }
         }} 
       />
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   thumbInitial: {
     fontSize: 28,
     color: ORANGE2,
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   titleWrap: {
     flex: 1,
@@ -317,8 +317,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 16,
     color: '#6B7280',
-    fontWeight: '700',
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   totalRow: {
     marginTop: 8,
@@ -338,9 +337,8 @@ const styles = StyleSheet.create({
   totalValue: {
     color: ORANGE2,
     fontSize: 20,
-    fontWeight: '900',
     marginLeft: 8,
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   feedbackRow: {
     marginTop: 10,

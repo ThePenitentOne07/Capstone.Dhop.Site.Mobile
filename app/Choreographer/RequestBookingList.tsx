@@ -187,11 +187,10 @@ const styles = StyleSheet.create({
     marginTop: 9,
     marginBottom: 6,
     fontSize: 21,
-    fontWeight: '700',
     color: ORANGE2,
     textAlign: 'center',
     letterSpacing: 0.2,
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   chipsRow: {
     paddingHorizontal: 12,
@@ -224,15 +223,13 @@ const styles = StyleSheet.create({
   },
   chipText: {
     color: ORANGE2,
-    fontWeight: '600',
     fontSize: 13,
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   chipTextActive: {
     color: '#fff',
-    fontWeight: '800',
     fontSize: 13,
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   emptyText: {
     textAlign: 'center',
@@ -281,16 +278,15 @@ const styles = StyleSheet.create({
   thumbInitial: {
     fontSize: 28,
     color: ORANGE2,
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   titleWrap: {
     flex: 1,
   },
   title: {
     fontSize: 16,
-    fontWeight: '700',
     color: '#111827',
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   subtitle: {
     marginTop: 2,
@@ -302,8 +298,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 16,
     color: '#6B7280',
-    fontWeight: '700',
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   totalRow: {
     marginTop: 8,
@@ -323,9 +318,8 @@ const styles = StyleSheet.create({
   totalValue: {
     color: ORANGE2,
     fontSize: 20,
-    fontWeight: '900',
     marginLeft: 8,
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   feedbackRow: {
     marginTop: 10,

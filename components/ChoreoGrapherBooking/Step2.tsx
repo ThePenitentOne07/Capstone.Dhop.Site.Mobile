@@ -331,13 +331,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: '700',
     color: '#1F2937',
     marginBottom: 8,
+    fontFamily: 'RobotoMono_700Bold',
   },
   subtitle: {
     fontSize: 14,
     color: '#6B7280',
+    fontFamily: 'RobotoMono_400Regular',
   },
   errorText: {
     marginTop: 6,
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 12,
     color: '#F59E0B',
-    fontWeight: '600',
+    fontFamily: 'RobotoMono_700Bold',
   },
   calendarCard: {
     backgroundColor: '#F9FAFB',
@@ -373,9 +374,9 @@ const styles = StyleSheet.create({
   },
   monthTitle: {
     fontSize: 16,
-    fontWeight: '700',
     color: '#1F2937',
     textTransform: 'capitalize',
+    fontFamily: 'RobotoMono_700Bold',
   },
   weekdayRow: {
     flexDirection: 'row',
@@ -389,7 +390,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 12,
     color: '#6B7280',
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   weekRow: {
     flexDirection: 'row',
@@ -426,14 +427,15 @@ const styles = StyleSheet.create({
   dayText: {
     fontSize: 14,
     color: '#1F2937',
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   dayTextSelected: {
     color: '#FFFFFF',
+    fontFamily: 'RobotoMono_700Bold',
   },
   dayTextDisabled: {
     color: '#9CA3AF',
-    fontWeight: '600',
+    fontFamily: 'RobotoMono_700Bold',
   },
   sessionLegend: {
     marginTop: 8,
@@ -464,8 +466,8 @@ const styles = StyleSheet.create({
   },
   sessionBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
     color: '#F97316',
+    fontFamily: 'RobotoMono_700Bold',
   },
   sessionBadgeTextSelected: {
     color: '#FFFFFF',
@@ -489,7 +491,7 @@ const styles = StyleSheet.create({
   selectionValue: {
     fontSize: 16,
     color: '#78350F',
-    fontWeight: '800',
+    fontFamily: 'RobotoMono_700Bold',
   },
   selectionHint: {
     marginTop: 4,
@@ -520,7 +522,7 @@ const styles = StyleSheet.create({
   nextButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   nextButtonTextDisabled: {
     color: '#9CA3AF',

@@ -321,20 +321,20 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: '800',
     color: '#1F2937',
     marginBottom: 4,
+    fontFamily: 'RobotoMono_700Bold',
   },
   headerSubtitle: {
     fontSize: 14,
     color: '#6B7280',
-    fontWeight: '500',
+    fontFamily: 'RobotoMono_400Regular',
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
     color: '#1F2937',
     marginBottom: 10,
+    fontFamily: 'RobotoMono_700Bold',
   },
   sectionSeparator: {
     height: 1,
@@ -383,18 +383,18 @@ const styles = StyleSheet.create({
   playIcon: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: 'bold',
     marginLeft: 2,
+    fontFamily: 'RobotoMono_700Bold',
   },
   projectInfo: {
     padding: 16,
   },
   projectTitle: {
     fontSize: 16,
-    fontWeight: '700',
     color: '#1F2937',
     marginBottom: 8,
     lineHeight: 22,
+    fontFamily: 'RobotoMono_700Bold',
   },
   typeBadge: {
     marginTop: 8,
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
   typeText: {
     fontSize: 12,
     color: '#6B7280',
-    fontWeight: '500',
+    fontFamily: 'RobotoMono_400Regular',
   },
   achievementsSection: {
     paddingHorizontal: 20,
@@ -411,9 +411,9 @@ const styles = StyleSheet.create({
   },
   achievementsTitle: {
     fontSize: 18,
-    fontWeight: '700',
     color: '#1F2937',
     marginBottom: 12,
+    fontFamily: 'RobotoMono_700Bold',
   },
   achievementsContainer: {
     flexDirection: 'row',
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
   achievementText: {
     fontSize: 13,
     color: '#92400E',
-    fontWeight: '500',
+    fontFamily: 'RobotoMono_400Regular',
   },
   emptyState: {
     paddingVertical: 40,
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     color: '#9CA3AF',
-    fontWeight: '500',
+    fontFamily: 'RobotoMono_400Regular',
   },
   bottomSpacer: {
     height: 20,
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: '#FFFFFF',
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: 'RobotoMono_700Bold',
   },
   experienceCard: {
     backgroundColor: '#F9FAFB',
@@ -495,11 +495,11 @@ const styles = StyleSheet.create({
   },
   experienceTitle: {
     fontSize: 16,
-    fontWeight: '700',
     color: '#1F2937',
     flex: 1,
     marginRight: 12,
     lineHeight: 22,
+    fontFamily: 'RobotoMono_700Bold',
   },
   experienceYearBadge: {
     backgroundColor: '#EEF2FF',
@@ -511,13 +511,13 @@ const styles = StyleSheet.create({
   },
   experienceYear: {
     fontSize: 12,
-    fontWeight: '600',
     color: '#4F46E5',
+    fontFamily: 'RobotoMono_700Bold',
   },
   experienceSubject: {
     fontSize: 14,
     color: '#6B7280',
-    fontWeight: '500',
     lineHeight: 20,
+    fontFamily: 'RobotoMono_400Regular',
   },
 });

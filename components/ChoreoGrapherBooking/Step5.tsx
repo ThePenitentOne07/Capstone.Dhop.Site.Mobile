@@ -158,14 +158,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: '800',
     color: '#1F2937',
     marginBottom: 8,
+    fontFamily: 'RobotoMono_700Bold',
   },
   subtitle: {
     fontSize: 14,
     color: '#6B7280',
     marginBottom: 16,
+    fontFamily: 'RobotoMono_400Regular',
   },
   loadingRow: {
     marginTop: 8,
@@ -192,8 +193,8 @@ const styles = StyleSheet.create({
   },
   resultValue: {
     fontSize: 20,
-    fontWeight: '900',
     color: '#78350F',
+    fontFamily: 'RobotoMono_700Bold',
   },
   errorText: {
     marginTop: 12,
@@ -228,12 +229,12 @@ const styles = StyleSheet.create({
   bookBtnText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   successText: {
     marginTop: 12,
     color: '#059669',
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
 });
 

@@ -162,7 +162,18 @@ export default function Layout() {
   if (!loaded) return null;
 
   return (
-    <Stack screenOptions={{ animation: "slide_from_right" }}>
+    <Stack
+      screenOptions={{
+        animation: "slide_from_right",
+        headerStyle: {
+          backgroundColor: "#FF7A00",
+        },
+        headerTintColor: "#FFFFFF",
+        headerTitleStyle: {
+          fontFamily: "RobotoMono_700Bold",
+        },
+      }}
+    >
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="Login" options={{ headerShown: false }} />
       <Stack.Screen name="SignUp" options={{ headerShown: false }} />
@@ -178,7 +189,7 @@ export default function Layout() {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
           }
         }} 
       />
@@ -201,8 +212,15 @@ export default function Layout() {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
           }
+        }} 
+      />
+      <Stack.Screen 
+        name="DetailsDancer/[id]" 
+        options={{ 
+          headerShown: true,
+          title: "Chi tiết nhóm nhảy",
         }} 
       />
       <Stack.Screen name="ChoreographerBooking/[id]" 
@@ -214,7 +232,7 @@ export default function Layout() {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
           }
         }} 
         />
@@ -228,7 +246,7 @@ export default function Layout() {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
           }
         }} 
       />
@@ -242,7 +260,7 @@ export default function Layout() {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
           }
         }} 
       />
@@ -256,7 +274,7 @@ export default function Layout() {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
           }
         }} 
       />
@@ -270,7 +288,7 @@ export default function Layout() {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
           }
         }} 
       />

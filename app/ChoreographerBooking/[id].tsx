@@ -164,9 +164,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
     color: '#1F2937',
     marginBottom: 4,
+    fontFamily: 'RobotoMono_700Bold',
   },
   headerSubtitle: {
     fontSize: 14,

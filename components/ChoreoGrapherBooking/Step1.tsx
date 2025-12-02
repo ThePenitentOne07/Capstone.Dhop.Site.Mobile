@@ -87,14 +87,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: '700',
     color: '#1F2937',
     marginBottom: 8,
+    fontFamily: 'RobotoMono_700Bold',
   },
   subtitle: {
     fontSize: 14,
     color: '#6B7280',
     lineHeight: 20,
+    fontFamily: 'RobotoMono_400Regular',
   },
   inputSection: {
     marginBottom: 24,
@@ -112,14 +113,14 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 18,
-    fontWeight: '600',
     color: '#1F2937',
+    fontFamily: 'RobotoMono_700Bold',
   },
   inputLabel: {
     fontSize: 14,
     color: '#6B7280',
-    fontWeight: '500',
     marginLeft: 8,
+    fontFamily: 'RobotoMono_400Regular',
   },
   priceCard: {
     backgroundColor: '#FF7A00',
@@ -134,9 +135,9 @@ const styles = StyleSheet.create({
   },
   priceValue: {
     fontSize: 32,
-    fontWeight: '900',
     color: '#FFFFFF',
     marginBottom: 4,
+    fontFamily: 'RobotoMono_700Bold',
   },
   priceBreakdown: {
     fontSize: 12,
@@ -169,7 +170,7 @@ const styles = StyleSheet.create({
   nextButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   nextButtonTextDisabled: {
     color: '#9CA3AF',

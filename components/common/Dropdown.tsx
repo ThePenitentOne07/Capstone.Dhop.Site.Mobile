@@ -115,6 +115,7 @@
     text: {
       fontSize: 15,
       opacity: 0.8,
+      fontFamily: 'RobotoMono_400Regular',
     },
     button: {
       height: 50,
@@ -129,7 +130,7 @@
     optionText: {
       fontSize: 14,
       color: '#111827',
-      fontWeight: '600',
+      fontFamily: 'RobotoMono_700Bold',
     },
   });
 

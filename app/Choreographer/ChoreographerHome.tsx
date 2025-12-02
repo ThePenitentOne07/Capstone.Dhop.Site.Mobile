@@ -275,7 +275,6 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#fff',
     fontSize: 10,
-    fontWeight: 'bold',
     fontFamily: 'RobotoMono_700Bold',
   },
   profileSection: {
@@ -306,14 +305,14 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 20,
-    fontWeight: '700',
     color: ORANGE2,
+    fontFamily: 'RobotoMono_700Bold',
   },
   location: {
     color: ORANGE,
     fontSize: 14,
     marginTop: 2,
-    fontWeight: '500',
+    fontFamily: 'RobotoMono_400Regular',
   },
   coinCard: {
     flexDirection: 'row',
@@ -330,8 +329,8 @@ const styles = StyleSheet.create({
   },
   coinText: {
     color: ORANGE,
-    fontWeight: 'bold',
     fontSize: 15,
+    fontFamily: 'RobotoMono_700Bold',
   },
   coinIcon: {
     fontSize: 18,
@@ -359,8 +358,8 @@ const styles = StyleSheet.create({
   },
   tabActiveText: {
     color: '#fff',
-    fontWeight: '700',
     fontSize: 15,
+    fontFamily: 'RobotoMono_700Bold',
   },
   tabInactive: {
     flex: 1,
@@ -373,9 +372,9 @@ const styles = StyleSheet.create({
   },
   tabInactiveText: {
     color: ORANGE2,
-    fontWeight: '700',
     fontSize: 15,
     opacity: 0.91,
+    fontFamily: 'RobotoMono_700Bold',
   },
   menuSection: {
     marginHorizontal: 20,
@@ -409,17 +408,17 @@ const styles = StyleSheet.create({
   },
   menuLabel: {
     fontSize: 16,
-    fontWeight: '600',
     flex:1,
     color: ORANGE2,
+    fontFamily: 'RobotoMono_700Bold',
   },
   menuArrow: {
     fontSize: 20,
     color: ORANGE2,
-    fontWeight: '800',
     marginLeft: 8,
     marginRight:6,
     opacity: 0.7,
+    fontFamily: 'RobotoMono_700Bold',
   },
 });
 

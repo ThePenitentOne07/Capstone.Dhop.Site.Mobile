@@ -252,10 +252,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: "600",
     color: "#FFFFFF",
     marginTop: 20,
-    fontFamily: "RobotoMono_400Regular",
+    fontFamily: "RobotoMono_700Bold",
   },
   headerSubtitle: {
     fontSize: 16,
@@ -265,8 +264,8 @@ const styles = StyleSheet.create({
     fontFamily: "RobotoMono_400Regular",
   },
   emailText: {
-    fontWeight: "600",
     color: "#FFFFFF",
+    fontFamily: "RobotoMono_700Bold",
   },
   formCard: {
     flex: 1,
@@ -287,10 +286,9 @@ const styles = StyleSheet.create({
   },
   otpLabel: {
     fontSize: 18,
-    fontWeight: "600",
     color: "#111827",
     marginBottom: 24,
-    fontFamily: "RobotoMono_400Regular",
+    fontFamily: "RobotoMono_700Bold",
   },
   otpInputs: {
     flexDirection: "row",
@@ -306,9 +304,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "transparent",
     fontSize: 20,
-    fontWeight: "600",
     color: "#111827",
-    fontFamily: "RobotoMono_400Regular",
+    fontFamily: "RobotoMono_700Bold",
   },
   otpInputFilled: {
     backgroundColor: "#FF7120",
@@ -328,9 +325,8 @@ const styles = StyleSheet.create({
   },
   verifyButtonText: {
     color: "#FFFFFF",
-    fontWeight: "600",
     fontSize: 18,
-    fontFamily: "RobotoMono_400Regular",
+    fontFamily: "RobotoMono_700Bold",
   },
   errorContainer: {
     backgroundColor: "#FEE2E2",
@@ -361,8 +357,7 @@ const styles = StyleSheet.create({
   resendLink: {
     color: "#FF7120",
     fontSize: 16,
-    fontWeight: "600",
-    fontFamily: "RobotoMono_400Regular",
+    fontFamily: "RobotoMono_700Bold",
   },
   backContainer: {
     alignItems: "center",
