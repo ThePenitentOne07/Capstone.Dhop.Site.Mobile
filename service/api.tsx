@@ -143,6 +143,62 @@ export const getDancerById = (dancerId: string | number) => {
   return api.get(`/dancers/${dancerId}`);
 };
 
+// Get dancer schedule
+export const getDancerSchedule = ({
+  id,
+  startTime,
+  endTime,
+}: GetChoreographyScheduleParams) => {
+  // Backend expects `dancerId` as the query param name (not generic `id`)
+  const params = { dancerId: id, startTime, endTime };
+  console.log("API getDancerSchedule params:", params);
+  return api.get(`/dancers/schedule`, { params });
+};
+
+// Calculate total price for a dancer booking
+// Matches backend body:
+// {
+//   "dancerId": 16,
+//   "areaId": 37,
+//   "location": "...",
+//   "detail": "...",
+//   "crewId": [42,43,44],
+//   "numberOfPeople": 3,
+//   "bookingDate": "2025-12-15",
+//   "startTime": "14:00",
+//   "endTime": "16:00",
+//   "bookingExtraServiceRequests": [...]
+// }
+export interface DancerBooking {
+  dancerId: string;
+  areaId: string;
+  location: string;
+  detail: string | null;
+  bookingDate: string;
+  startTime: string;
+  endTime: string;
+  bookingExtraServiceRequests?: {
+    extraServiceId: number;
+    quantity: number;
+  }[];
+  crewMembers?: number;
+  // manual selection: list of crew member IDs; auto selection: empty array
+  crewId?: number[];
+  // total number of people requested
+  numberOfPeople?: number;
+}
+
+export const getDancerBookingTotalPrice = (
+  payload: DancerBooking
+) => {
+  return api.post(`/booking/dancers/total-price`, payload);
+};
+
+// Create a dancer booking
+export const createDancerBooking = (payload: DancerBooking) => {
+  return api.post(`/booking/dancers`, payload);
+};
+
 // Calculate total price for a choreographer booking
 export const getChoreographerBookingTotalPrice = (
   payload: ChoreographerBooking

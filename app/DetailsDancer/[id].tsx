@@ -205,6 +205,31 @@ export default function DetailsDancerScreen() {
         {renderTabContent()}
         <View style={styles.bottomSpacer} />
       </ScrollView>
+      
+      {/* Sticky Button */}
+      <View style={styles.stickyButtonContainer}>
+        <TouchableOpacity 
+          style={styles.primaryBtn} 
+          activeOpacity={0.9} 
+          onPress={() => router.push({
+            pathname: '/DancerBooking/[id]',
+            params: { 
+              userId: dancerId,
+              id: dancerId,
+              name, 
+              avatar: dancer?.profiles?.[0]?.images?.[0] || '', 
+              price: String(price || 0), 
+              about, 
+              yearExperience: String(yearExperience || 0), 
+              danceType: JSON.stringify(danceType || []), 
+              area: JSON.stringify(area || []),
+              extraServices: JSON.stringify(extraServices || [])
+            }
+          })}
+        >
+          <Text style={styles.primaryBtnText}>Đặt lịch ngay!</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -292,7 +317,39 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   bottomSpacer: {
-    height: 80,
+    height: 100, // Space for the sticky button
+  },
+  stickyButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 34, // Extra padding for safe area
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  primaryBtn: {
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#FF7A00",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  primaryBtnText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontFamily: 'RobotoMono_700Bold',
   },
 });
 

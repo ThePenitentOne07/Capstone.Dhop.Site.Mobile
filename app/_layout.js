@@ -236,6 +236,19 @@ export default function Layout() {
           }
         }} 
         />
+      <Stack.Screen name="DancerBooking/[id]" 
+        options={{ 
+          headerShown: true,
+          title: "Đặt lịch nhóm nhảy",
+          headerStyle: {
+            backgroundColor: "#FF7A00",
+          },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: {
+            fontFamily: "RobotoMono_700Bold",
+          }
+        }} 
+        />
       <Stack.Screen 
         name="ChatList" 
         options={{ 

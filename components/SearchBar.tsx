@@ -41,9 +41,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           onChangeText={onSearchChange}
         />
       </View>
-      <TouchableOpacity style={styles.filterButton} onPress={onFilterPress}>
-        <Text style={styles.filterIcon}>⚙️</Text>
-      </TouchableOpacity>
+     
     </View>
   );
 };
