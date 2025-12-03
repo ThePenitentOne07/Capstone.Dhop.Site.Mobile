@@ -224,10 +224,30 @@ export const getDancerBookings = () => {
   return api.get(`/booking/dancers`);
 };
 
+export const dancerAcceptBooking= (bookingId: number)=>{
+  return api.patch(
+    `/dancers/apply-booking`,
+    { bookingId }
+  )
+}
+export const dancerCompleteWork = (bookingId: number, qrCodeData: string) => {
+  return api.post(`/dancers/complete-work`, { bookingId, qrCodeData });
+};
+export const dancerStartWorking = (bookingId: number) => {
+  return api.patch(`/dancers/start-work-booking`, { bookingId });
+};
+export const dancerGetBooking = ()=>{
+  return api.get(`/dancers/bookings`)
+}
+
 export const getBookingById = (bookingId: string | number) => {
   return api.get(`/booking`, {
     params: { bookingId },
   });
+};
+
+export const confirmBookingCompletion = (bookingId: number) => {
+  return api.post(`/booking/confirm-completion`, { bookingId });
 };
 
 // Accept a choreographer booking
@@ -252,18 +272,18 @@ export const cancelChoreographerBooking = (bookingId: string | number) => {
 };
 
 // Accept a dancer booking
-export const acceptDancerBooking = (
-  bookingId: string,
-  statusName: string = "BOOKING_ACTIVATE"
-) => {
-  return api.patch(
-    `/booking/dancers/status`,
-    null,
-    {
-      params: { bookingId, statusName },
-    }
-  );
-};
+// export const acceptDancerBooking = (
+//   bookingId: string,
+//   statusName: string = "BOOKING_ACTIVATE"
+// ) => {
+//   return api.patch(
+//     `/booking/dancers/status`,
+//     null,
+//     {
+//       params: { bookingId, statusName },
+//     }
+//   );
+// };
 
 export const cancelDancerBooking = (bookingId: string | number) => {
   return api.patch(`/booking/cancel`, null, {
@@ -285,6 +305,11 @@ export const generateTrainingSessionQR = (trainingSessionId: number) => {
   return api.get(`/training_session/generating-QR`, {
     params: { trainingSessionId },
   });
+};
+
+// Generate QR for a booking
+export const generateBookingQR = (bookingId: number) => {
+  return api.get(`/booking/${bookingId}/qr-code`);
 };
 
 export interface BookingFeedbackPayload {

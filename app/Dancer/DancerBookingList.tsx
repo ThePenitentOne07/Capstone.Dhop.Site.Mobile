@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
-import { getDancerBookings } from '../../service/api';
+import { dancerGetBooking, getDancerBookings } from '../../service/api';
 import { useRefetchOnFocus } from '../hooks';
 
 const ORANGE = '#FF7120';
@@ -27,9 +27,9 @@ export default function DancerBookingList() {
       if (!mountedRef.current) return;
       setLoading(true);
       setError(null);
-      const res = await getDancerBookings();
+      const res = await dancerGetBooking();
       // API shape: plain array: [{ id, address, bookingDate, ... }]
-      const items = res?.data ?? [];
+      const items = res?.data?.result ?? [];
       if (mountedRef.current) {
         setData(items || []);
       }
@@ -47,6 +47,7 @@ export default function DancerBookingList() {
       }
     }
   }, []);
+console.log(data);
 
   useEffect(() => {
     fetchData();
@@ -58,8 +59,9 @@ export default function DancerBookingList() {
   useRefetchOnFocus(fetchData);
 
   const filteredData = useMemo(() => {
-    if (selectedStatus === 'Tất cả') return data;
-    return (data || []).filter(
+    const dataArray = Array.isArray(data) ? data : [];
+    if (selectedStatus === 'Tất cả') return dataArray;
+    return dataArray.filter(
       (b) => (b?.statusName || '').trim() === selectedStatus,
     );
   }, [data, selectedStatus]);

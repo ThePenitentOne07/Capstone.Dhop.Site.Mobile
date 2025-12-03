@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getBookingById } from '../service/api';
+import { getBookingById, confirmBookingCompletion } from '../service/api';
 import { useConversationStore } from '../states/conversationStore';
 import { useAppModal } from '../hooks/useAppModal';
 import { useRefetchOnFocus } from './hooks/useRefetchOnFocus';
@@ -87,6 +87,7 @@ export default function DancerBookingDetailCustomer() {
   const handleRetry = () => setReloadToken((token) => token + 1);
 
   const [chatLoading, setChatLoading] = useState(false);
+  const [confirmCompletionLoading, setConfirmCompletionLoading] = useState(false);
 
   const router = useRouter();
   const { createConversation } = useConversationStore();
@@ -296,6 +297,61 @@ export default function DancerBookingDetailCustomer() {
           </View>
         )}
       </ScrollView>
+
+      {/* Check-in Button */}
+      {status === 'Đơn đặt đã kích hoạt' && (
+        <View style={styles.actionBar}>
+          <TouchableOpacity
+            style={styles.checkinBtn}
+            onPress={() => {
+              router.push({
+                pathname: '/DancerCustomerQR',
+                params: { bookingId: String(booking.id) },
+              });
+            }}
+          >
+            <Text style={styles.checkinBtnText}>Check in</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Confirm Completion Button */}
+      {status === 'Đơn đặt đã hoàn thành công việc' && (
+        <View style={styles.actionBar}>
+          <TouchableOpacity 
+            style={styles.checkinBtn} 
+            onPress={async () => {
+              if (!booking?.id || confirmCompletionLoading) return;
+              try {
+                setConfirmCompletionLoading(true);
+                await confirmBookingCompletion(booking.id);
+                showModal({
+                  title: 'Thành công',
+                  message: 'Đã xác nhận hoàn thành.',
+                  status: 'success',
+                  autoCloseAfter: 2000,
+                  onAutoClose: () => load(),
+                });
+              } catch (e: any) {
+                showModal({
+                  title: 'Lỗi',
+                  message: e?.response?.data?.message || e?.message || 'Không thể xác nhận hoàn thành.',
+                  status: 'error',
+                });
+              } finally {
+                setConfirmCompletionLoading(false);
+              }
+            }}
+            disabled={confirmCompletionLoading}
+          >
+            {confirmCompletionLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.checkinBtnText}>Xác nhận hoàn thành</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
 
       {modal}
     </View>
@@ -641,6 +697,36 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#fff',
     fontSize: 15,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  actionBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 22,
+    paddingBottom: 50,
+    paddingTop: 8,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#F3ECE7',
+    zIndex: 20,
+    gap: 14,
+  },
+  checkinBtn: {
+    flex: 1,
+    backgroundColor: ORANGE2,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 48,
+  },
+  checkinBtnText: {
+    color: '#fff',
+    fontSize: 16,
     fontFamily: 'RobotoMono_700Bold',
   },
 });

@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getBookingById, acceptDancerBooking, cancelDancerBooking } from '../../service/api';
+import { getBookingById, dancerAcceptBooking, cancelDancerBooking, dancerStartWorking } from '../../service/api';
 import { useConversationStore } from '../../states/conversationStore';
 import { useAppModal } from '../../hooks/useAppModal';
 import { useRefetchOnFocus } from '../hooks/useRefetchOnFocus';
@@ -90,6 +90,7 @@ export default function DancerBookingDetail() {
   const [declineLoading, setDeclineLoading] = useState(false);
   const [acceptError, setAcceptError] = useState<string|undefined>();
   const [chatLoading, setChatLoading] = useState(false);
+  const [startWorkingLoading, setStartWorkingLoading] = useState(false);
 
   const router = useRouter();
   const { createConversation } = useConversationStore();
@@ -343,7 +344,7 @@ export default function DancerBookingDetail() {
                   bookingId: booking.id,
                   statusName: 'BOOKING_ACTIVATE',
                 });
-                await acceptDancerBooking(booking.id, 'BOOKING_ACTIVATE');
+                await dancerAcceptBooking(booking.id);
                 showModal({
                   title: 'Thành công',
                   message: 'Đơn đã được chấp nhận.',
@@ -364,6 +365,58 @@ export default function DancerBookingDetail() {
           </View>
           {acceptError && <Text style={{textAlign:'center',color:'#b91c1c',fontWeight:'bold',marginBottom:6}}>{acceptError}</Text>}
         </>
+      )}
+
+      {/* Check-in Button */}
+      {status === 'Đơn đặt đã kích hoạt' && (
+        <View style={styles.actionBar}>
+          <TouchableOpacity 
+            style={styles.checkinBtn} 
+            onPress={async () => {
+              if (!booking?.id || startWorkingLoading) return;
+              try {
+                setStartWorkingLoading(true);
+                await dancerStartWorking(booking.id);
+                showModal({
+                  title: 'Thành công',
+                  message: 'Đã bắt đầu làm việc.',
+                  status: 'success',
+                  autoCloseAfter: 2000,
+                  onAutoClose: () => load(),
+                });
+              } catch (e: any) {
+                showModal({
+                  title: 'Lỗi',
+                  message: e?.response?.data?.message || e?.message || 'Không thể bắt đầu làm việc.',
+                  status: 'error',
+                });
+              } finally {
+                setStartWorkingLoading(false);
+              }
+            }}
+            disabled={startWorkingLoading}
+          >
+            {startWorkingLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.checkinBtnText}>Bắt đầu làm việc</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Check-in QR Button */}
+      {status === 'Đơn đặt đang tiến hành' && (
+        <View style={styles.actionBar}>
+          <TouchableOpacity 
+            style={styles.checkinBtn} 
+            onPress={() => {
+              router.push('/Dancer/CheckInQRDancer');
+            }}
+          >
+            <Text style={styles.checkinBtnText}>Check in</Text>
+          </TouchableOpacity>
+        </View>
       )}
 
       {modal}
@@ -760,6 +813,19 @@ const styles = StyleSheet.create({
   },
   declineBtnText: {
     color: '#A66',
+    fontSize: 16,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  checkinBtn: {
+    flex: 1,
+    backgroundColor: ORANGE2,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 48,
+  },
+  checkinBtnText: {
+    color: '#fff',
     fontSize: 16,
     fontFamily: 'RobotoMono_700Bold',
   },
