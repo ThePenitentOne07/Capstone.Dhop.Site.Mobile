@@ -131,18 +131,13 @@ export default function BookingDetailOnHold() {
   const qty = booking.numberOfTrainingSessions ?? (booking.trainingSessions?.length || 0);
   const totalPrice = booking.price;
   const perSessionPrice = booking?.choreography?.price;
-  const status = booking.statusName;
+  const status = (booking.statusName || '').trim();
   const feedbacks = Array.isArray(booking.bookingFeedbacks) ? booking.bookingFeedbacks : [];
   const hasFeedback = feedbacks.length > 0;
   
 
-  // Determine status color
-  let statusBg = '#E7F5EF';
-  let statusColor = '#0E766E';
-  if (/chờ xác nhận|on hold|pending/i.test(status)) {
-    statusBg = '#FFF9E0';
-    statusColor = ORANGE2;
-  }
+  // Determine status color for main booking status card
+  const { bg: statusBg, color: statusColor } = getBookingStatusStyle(status);
 
   return (
     <View style={{flex:1, backgroundColor:'#fff'}}>
@@ -970,3 +965,33 @@ const styles = StyleSheet.create({
     fontFamily: 'RobotoMono_700Bold',
   },
 });
+
+// Color mapping for overall booking status (Vietnamese status names)
+function getBookingStatusStyle(status: string): { bg: string; color: string } {
+  const normalized = (status || '').trim();
+
+  switch (normalized) {
+    case 'Đơn đặt chờ xác nhận':
+      return { bg: '#FEF9C3', color: '#B45309' }; // pending
+    case 'Đơn đặt đã kích hoạt':
+      return { bg: '#DBEAFE', color: '#1D4ED8' }; // active
+    case 'Đơn đặt không kích hoạt':
+      return { bg: '#E5E7EB', color: '#4B5563' }; // neutral
+    case 'Đơn đặt đang tiến hành':
+      return { bg: '#E0F2FE', color: '#0369A1' }; // in progress
+    case 'Đơn đặt đã hoàn thành công việc':
+      return { bg: '#DCFCE7', color: '#16A34A' }; // work done
+    case 'Đơn đặt hoàn tất':
+      return { bg: '#BBF7D0', color: '#15803D' }; // fully completed
+    case 'Đơn đặt chưa hoàn tất':
+      return { bg: '#F3F4F6', color: '#4B5563' }; // not finished
+    case 'Đơn đặt đã hủy':
+      return { bg: '#FEE2E2', color: '#B91C1B' }; // cancelled
+    case 'Đơn đặt hết chỗ':
+      return { bg: '#FFEDD5', color: '#C2410C' }; // full
+    case 'Đơn trong trạng thái khiếu nại':
+      return { bg: '#FEF3C7', color: '#B45309' }; // complaint
+    default:
+      return { bg: '#E7F5EF', color: '#0E766E' }; // default teal
+  }
+}

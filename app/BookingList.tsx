@@ -7,6 +7,21 @@ import { useRefetchOnFocus } from './hooks';
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
 
+// All booking status display values
+const STATUS_CHIP_VALUES = [
+  'Tất cả',
+  'Đơn đặt chờ xác nhận',
+  'Đơn đặt đã kích hoạt',
+  'Đơn đặt không kích hoạt',
+  'Đơn đặt đang tiến hành',
+  'Đơn đặt đã hoàn thành công việc',
+  'Đơn đặt hoàn tất',
+  'Đơn đặt chưa hoàn tất',
+  'Đơn đặt đã hủy',
+  'Đơn đặt hết chỗ',
+  'Đơn trong trạng thái khiếu nại',
+];
+
 export default function BookingList() {
   const router = useRouter();
   const [data, setData] = useState<any[]>([]);
@@ -45,7 +60,9 @@ export default function BookingList() {
 
   const filteredData = useMemo(() => {
     if (selectedStatus === 'Tất cả') return data;
-    return (data || []).filter((b) => (b?.statusName || '').trim() === selectedStatus);
+    return (data || []).filter(
+      (b) => (b?.statusName || '').trim() === selectedStatus,
+    );
   }, [data, selectedStatus]);
 
   const openDetail = (booking: any) => {
@@ -110,13 +127,6 @@ export default function BookingList() {
     </View>
   );
 }
-
-const STATUS_CHIP_VALUES = [
-  'Tất cả',
-  'Đơn đặt chờ xác nhận',
-  'Đơn đặt đã kích hoạt',
-  'Đơn đặt hoàn tất'
-];
 
 function StatusChips({ selected, onSelect }: { selected: string; onSelect: (v: string) => void }) {
   return (

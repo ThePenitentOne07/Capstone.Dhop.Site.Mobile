@@ -25,6 +25,34 @@ api.interceptors.request.use(
   }
 );
 
+// Add a response interceptor
+api.interceptors.response.use(
+  function (response) {
+    // Log successful responses
+    console.log("Response:", {
+      url: response.config?.url,
+      method: response.config?.method,
+      status: response.status,
+      data: response.data,
+    });
+    return response;
+  },
+  function (error) {
+    // Log response errors
+    if (error.response) {
+      console.log("RESPONSE ERROR:", {
+        url: error.response.config?.url,
+        method: error.response.config?.method,
+        status: error.response.status,
+        data: error.response.data,
+      });
+    } else {
+      console.log("RESPONSE ERROR (no response):", error.message || error);
+    }
+    return Promise.reject(error);
+  }
+);
+
 
 export const apiNoToken = axios.create(({
   baseURL: process.env.EXPO_PUBLIC_API_URL,

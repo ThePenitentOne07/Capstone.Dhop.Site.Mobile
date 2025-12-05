@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useNotificationStore } from '../states/notificationStore';
 import type { Notification } from '../states/notificationStore';
 import { getNotifications, markNotificationAsRead as markNotificationAsReadApi, markAllNotificationsAsRead } from '../service/api';
@@ -7,6 +8,7 @@ import { getNotifications, markNotificationAsRead as markNotificationAsReadApi, 
 const ORANGE2 = '#FF7A00';
 
 export default function NotificationList() {
+  const router = useRouter();
   const { notifications, unreadCount, markAsRead, markAllAsRead, removeNotification, setNotifications } = useNotificationStore();
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,18 +37,23 @@ export default function NotificationList() {
         const serverItems = response.data?.items ?? [];
         console.log("notfications", serverItems);
         
-        const normalized = serverItems.map<Notification>((item) => ({
-          id: item.id,
-          title: item.title ?? 'Notification',
-          message: item.message ?? '',
-          type: normalizeType(item.type),
-          timestamp: new Date(item.createdAt),
-          read: !!item.read,
-          data: {
-            link: item.link,
-            userUUID: item.userUUID,
-          },
-        }));
+        const normalized = serverItems.map<Notification>((item) => {
+          const anyItem: any = item;
+          return {
+            id: item.id,
+            title: item.title ?? 'Notification',
+            message: item.message ?? '',
+            type: normalizeType(item.type),
+            timestamp: new Date(item.createdAt),
+            read: !!item.read,
+            data: {
+              link: anyItem.link,
+              userUUID: anyItem.userUUID,
+              notificationType: anyItem.notificationType,
+              conversationId: anyItem.conversationId,
+            },
+          };
+        });
         setNotifications(normalized);
       } catch (error: any) {
         console.error('Failed to fetch notifications:', error);
@@ -82,9 +89,26 @@ export default function NotificationList() {
           console.error('Failed to mark notification as read:', err);
         }
       }
-      // TODO: Navigate to relevant screen based on notification.data
+      // Navigate based on notification type/data
+      const nType = notification.data?.notificationType;
+      const conversationId = notification.data?.conversationId;
+
+      if (nType === 'CHAT' && conversationId) {
+        try {
+          // Minimal conversation object – ChatDetail will fetch full details
+          const conversationParam = JSON.stringify({ id: String(conversationId) });
+          router.push({
+            pathname: '/ChatDetail',
+            params: {
+              conversation: conversationParam,
+            },
+          });
+        } catch (err) {
+          console.error('Failed to navigate to chat from notification:', err);
+        }
+      }
     },
-    [markAsRead]
+    [markAsRead, router]
   );
 
   const handleMarkAllAsRead = useCallback(async () => {

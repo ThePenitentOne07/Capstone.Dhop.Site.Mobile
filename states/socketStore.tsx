@@ -6,6 +6,7 @@ interface SocketState {
     isConnected: boolean;
     initSocket: (accessToken: string) => void;
     disconnectSocket: () => void;
+    reconnectSocket: (accessToken: string) => void;
 }
 
 
@@ -40,11 +41,31 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         newSocket.on("disconnect", (reason) => {
             console.log("Socket disconnected:", reason);
             set({ isConnected: false });
+            
+            // "io server disconnect" means the server actively disconnected the client
+            // This usually happens due to:
+            // - Invalid/expired authentication token
+            // - Server-side authentication failure
+            // - Server policy (rate limiting, session limits, etc.)
+            if (reason === "io server disconnect") {
+                console.warn("Server disconnected the socket. Possible causes:");
+                console.warn("- Token expired or invalid");
+                console.warn("- Authentication failure");
+                console.warn("- Server policy violation");
+                // Disable reconnection for server disconnects to prevent infinite retry loops
+                // The app should handle token refresh and reinitialize the socket
+                newSocket.io.opts.reconnection = false;
+            }
         });
 
         newSocket.on("connect_error", (err) => {
             console.error("Socket connection error:", err);
             set({ isConnected: false });
+            
+            // Check if it's an authentication error
+            if (err.message?.includes("auth") || err.message?.includes("unauthorized")) {
+                console.error("Socket authentication failed. Token may be invalid or expired.");
+            }
         });
 
         set({ socket: newSocket });
@@ -57,5 +78,18 @@ export const useSocketStore = create<SocketState>((set, get) => ({
             socket.disconnect();
             set({ socket: null, isConnected: false });
         }
+    },
+
+    reconnectSocket: (accessToken: string) => {
+        const { socket } = get();
+        if (socket) {
+            console.log("Reconnecting socket with new token...");
+            socket.disconnect();
+            set({ socket: null, isConnected: false });
+        }
+        // Small delay to ensure cleanup before reinitializing
+        setTimeout(() => {
+            get().initSocket(accessToken);
+        }, 100);
     },
 }))

@@ -7,11 +7,19 @@ import { useRefetchOnFocus } from '../hooks';
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
 
+// All booking status display values (same set across booking lists)
 const STATUS_CHIP_VALUES = [
   'Tất cả',
   'Đơn đặt chờ xác nhận',
   'Đơn đặt đã kích hoạt',
+  'Đơn đặt không kích hoạt',
+  'Đơn đặt đang tiến hành',
+  'Đơn đặt đã hoàn thành công việc',
   'Đơn đặt hoàn tất',
+  'Đơn đặt chưa hoàn tất',
+  'Đơn đặt đã hủy',
+  'Đơn đặt hết chỗ',
+  'Đơn trong trạng thái khiếu nại',
 ];
 
 export default function DancerBookingList() {

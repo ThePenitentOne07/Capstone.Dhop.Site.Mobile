@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { getDancerBookings } from '../service/api';
 import { useRefetchOnFocus } from './hooks';
@@ -7,11 +7,19 @@ import { useRefetchOnFocus } from './hooks';
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
 
+// All booking status display values (same set as other booking lists)
 const STATUS_CHIP_VALUES = [
   'Tất cả',
   'Đơn đặt chờ xác nhận',
   'Đơn đặt đã kích hoạt',
+  'Đơn đặt không kích hoạt',
+  'Đơn đặt đang tiến hành',
+  'Đơn đặt đã hoàn thành công việc',
   'Đơn đặt hoàn tất',
+  'Đơn đặt chưa hoàn tất',
+  'Đơn đặt đã hủy',
+  'Đơn đặt hết chỗ',
+  'Đơn trong trạng thái khiếu nại',
 ];
 
 export default function CustomerDancerBookingList() {
@@ -185,8 +193,9 @@ function BookingCard({
   const crewName = mainMember?.dancerName || 'Nhóm nhảy';
   const extraCount = Math.max(crew.length - 1, 0);
 
-  const title = booking.dancer.danceGroupName
-    
+  const title = booking.dancer.danceGroupName;
+  const avatar = booking?.dancer?.avatar;
+
   const subtitle = `${booking.area?.ward || ''}${
     booking.area?.ward ? ', ' : ''
   }${booking.area?.city || ''}`;
@@ -205,12 +214,20 @@ function BookingCard({
       onPress={onPress}
     >
       <View style={styles.rowTop}>
-        {/* Thumbnail (just initial of crew name) */}
-        <View style={styles.thumb}>
-          <Text style={styles.thumbInitial}>
-            {(crewName || 'N')[0].toUpperCase()}
-          </Text>
-        </View>
+        {/* Thumbnail: dancer avatar or initial of crew name */}
+        {avatar ? (
+          <Image
+            source={{ uri: avatar }}
+            style={styles.thumbImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.thumb}>
+            <Text style={styles.thumbInitial}>
+              {(crewName || 'N')[0].toUpperCase()}
+            </Text>
+          </View>
+        )}
 
         {/* Title + subtitle */}
         <View style={styles.titleWrap}>
@@ -345,6 +362,15 @@ const styles = StyleSheet.create({
     marginRight: 10,
     borderWidth: 1,
     borderColor: '#FFD8B4',
+  },
+  thumbImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 8,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#FFD8B4',
+    backgroundColor: '#FFF4E8',
   },
   thumbInitial: {
     fontSize: 28,
