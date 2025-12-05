@@ -138,6 +138,35 @@ export const getChoreographerById = (choreographerId: string) => {
   return api.get(`/choreography/${choreographerId}`);
 };
 
+export interface ChoreographyFeedbackItem {
+  id: number;
+  comment: string;
+  rating: number;
+  fromUser: string;
+  status: string;
+  toUser: string;
+  createdAt: string;
+}
+
+export interface ChoreographyFeedbackResponse {
+  pageNo: number;
+  pageSize: number;
+  totalPage: number;
+  totalElements: number;
+  avgRating: number;
+  items: ChoreographyFeedbackItem[];
+}
+
+export const getChoreographyFeedbacks = (
+  choreographyId: string | number,
+  pageNo: number = 1,
+  pageSize: number = 2
+) => {
+  return api.get<ChoreographyFeedbackResponse>(`/choreography/${choreographyId}/feedbacks`, {
+    params: { pageNo, pageSize },
+  });
+};
+
 // Get dancer details by ID
 export const getDancerById = (dancerId: string | number) => {
   return api.get(`/dancers/${dancerId}`);
@@ -181,7 +210,7 @@ export interface DancerBooking {
     extraServiceId: number;
     quantity: number;
   }[];
-  crewMembers?: number;
+  // crewMembers?: number;
   // manual selection: list of crew member IDs; auto selection: empty array
   crewId?: number[];
   // total number of people requested
@@ -369,6 +398,8 @@ export interface UserComplaintItem {
   complainTypeDescription: string;
   evidenceUrls?: string[];
   fromUserName?: string;
+  customerRefundAmount?: number;
+  processByUserName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -393,4 +424,8 @@ export const getUserComplaints = ({
   return api.get<UserComplaintsResponse>(`/api/complain/user`, {
     params: { pageNo, pageSize },
   });
+};
+
+export const cancelComplaint = (complaintId: number) => {
+  return api.put(`/api/complain/${complaintId}/cancel`);
 };

@@ -150,11 +150,17 @@ export default function DancerBookingDetailCustomer() {
 
         {/* Address / Dancer */}
         <View style={[styles.block, {position:'relative', paddingBottom:52}]}>
-          <Text style={styles.blockTitle}>Thông tin vũ công</Text>
+          <Text style={styles.blockTitle}>Thông tin đơn đặt</Text>
           <Text style={styles.addrName}>{booking.dancer?.danceGroupName}</Text>
           <Text style={styles.addrText}>{booking.address}</Text>
           {!!booking.area && (
             <Text style={styles.addrText}>{booking.area.ward}, {booking.area.city}</Text>
+          )}
+          {!!booking.startTime && (
+            <Text style={styles.addrText}>Bắt đầu: {formatDateTime(booking.startTime)}</Text>
+          )}
+          {!!booking.endTime && (
+            <Text style={styles.addrText}>Kết thúc: {formatDateTime(booking.endTime)}</Text>
           )}
           <TouchableOpacity 
             style={styles.msgBtnFab} 
@@ -218,7 +224,7 @@ export default function DancerBookingDetailCustomer() {
               )}
             </View>
             <View style={{flex:1}}>
-              <Text numberOfLines={1} style={styles.itemTitle}>{booking.dancer?.name}</Text>
+              <Text numberOfLines={1} style={styles.itemTitle}>{booking.dancer?.danceGroupName}</Text>
               <Text numberOfLines={2} style={styles.itemSubtitle}>{booking.detail || 'Đặt lịch nhóm nhảy'}</Text>
             </View>
             <Text style={styles.itemQty}>x{qty}</Text>
@@ -413,7 +419,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: '#EEE',
-    height: 200,
+    height: 250,
   },
   blockTitle: {
     fontSize: 15,
@@ -601,6 +607,7 @@ const styles = StyleSheet.create({
     fontFamily: 'RobotoMono_700Bold',
   },
   msgBtnFab: {
+    
     position: 'absolute',
     right: 14,
     bottom: 14,

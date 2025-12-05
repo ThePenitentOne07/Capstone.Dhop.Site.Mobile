@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } from "react-native-reanimated";
 import { Introduction, ChoreographerProject } from "../../components/ChoreographerDetail/index";
+import CommentSection from "../../components/ChoreographerDetail/CommentSection";
 import { getChoreographerById } from "../../service/api";
 import { useConversationStore } from "../../states/conversationStore";
 import { useAppModal } from "../../hooks/useAppModal";
@@ -252,6 +253,9 @@ export default function DetailsScreen() {
         </View>
         
         {renderTabContent()}
+        {selectedTab === "My Progress" && (
+          <CommentSection choreographyId={id} avgRating={averageRating || 0} />
+        )}
         <View style={styles.bottomSpacer} />
       </ScrollView>
       

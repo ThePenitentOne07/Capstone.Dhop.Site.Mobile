@@ -4,12 +4,14 @@ import { useRouter } from 'expo-router';
 import { useNotificationStore } from '../states/notificationStore';
 import type { Notification } from '../states/notificationStore';
 import { getNotifications, markNotificationAsRead as markNotificationAsReadApi, markAllNotificationsAsRead } from '../service/api';
+import { useUserInfo } from '../hooks/useUserInfo';
 
 const ORANGE2 = '#FF7A00';
 
 export default function NotificationList() {
   const router = useRouter();
   const { notifications, unreadCount, markAsRead, markAllAsRead, removeNotification, setNotifications } = useNotificationStore();
+  const { user } = useUserInfo();
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -51,6 +53,7 @@ export default function NotificationList() {
               userUUID: anyItem.userUUID,
               notificationType: anyItem.notificationType,
               conversationId: anyItem.conversationId,
+              bookingId: anyItem.bookingId,
             },
           };
         });
@@ -79,6 +82,34 @@ export default function NotificationList() {
     fetchNotifications({ usePullToRefresh: true });
   };
 
+  const normalizeRole = (roleValue: unknown): string | undefined => {
+    if (!roleValue) return undefined;
+    const toUpper = (value: string) => value.trim().toUpperCase();
+
+    if (typeof roleValue === 'string') {
+      return toUpper(roleValue);
+    }
+
+    if (Array.isArray(roleValue)) {
+      const first = roleValue[0];
+      if (typeof first === 'string') {
+        return toUpper(first);
+      }
+      if (first && typeof first === 'object' && 'name' in first && typeof first.name === 'string') {
+        return toUpper(first.name);
+      }
+    }
+
+    if (typeof roleValue === 'object' && roleValue !== null && 'name' in roleValue) {
+      const name = (roleValue as { name?: string }).name;
+      if (typeof name === 'string') {
+        return toUpper(name);
+      }
+    }
+
+    return undefined;
+  };
+
   const handleNotificationPress = useCallback(
     async (notification: Notification) => {
       if (!notification.read) {
@@ -92,6 +123,7 @@ export default function NotificationList() {
       // Navigate based on notification type/data
       const nType = notification.data?.notificationType;
       const conversationId = notification.data?.conversationId;
+      const bookingId = notification.data?.bookingId;
 
       if (nType === 'CHAT' && conversationId) {
         try {
@@ -106,9 +138,51 @@ export default function NotificationList() {
         } catch (err) {
           console.error('Failed to navigate to chat from notification:', err);
         }
+      } else if (nType === 'BOOKING_CHOREOGRAPHY' && bookingId) {
+        try {
+          router.push({
+            pathname: '/BookingDetail',
+            params: {
+              bookingId: String(bookingId),
+            },
+          });
+        } catch (err) {
+          console.error('Failed to navigate to booking detail from notification:', err);
+        }
+      } else if (nType === 'BOOKING_DANCER' && bookingId) {
+        try {
+          const userRole = normalizeRole(user?.role);
+          const roleUpper = userRole || '';
+          
+          if (roleUpper === 'CHOREOGRAPHY' || roleUpper === 'CHOREOGRAPHER') {
+            router.push({
+              pathname: '/Choreographer/BookingDetailOnHold',
+              params: {
+                bookingId: String(bookingId),
+              },
+            });
+          } else if (roleUpper === 'DANCER') {
+            router.push({
+              pathname: '/Dancer/DancerBookingDetail',
+              params: {
+                bookingId: String(bookingId),
+              },
+            });
+          } else {
+            // Default to customer view
+            router.push({
+              pathname: '/DancerBookingDetailCustomer',
+              params: {
+                bookingId: String(bookingId),
+              },
+            });
+          }
+        } catch (err) {
+          console.error('Failed to navigate to dancer booking detail from notification:', err);
+        }
       }
     },
-    [markAsRead, router]
+    [markAsRead, router, user]
   );
 
   const handleMarkAllAsRead = useCallback(async () => {

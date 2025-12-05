@@ -6,11 +6,14 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { Stack } from 'expo-router';
-import { getUserComplaints, UserComplaintItem } from '../service/api';
+import { getUserComplaints, UserComplaintItem, cancelComplaint } from '../service/api';
 import { useRefetchOnFocus } from './hooks/useRefetchOnFocus';
+import { useFormatCurrency } from '../hooks/useFormatCurrency';
+import { useAppModal } from '../hooks/useAppModal';
 
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
@@ -132,7 +135,11 @@ export default function PlatformComplaint() {
             </View>
           )}
           {sortedComplaints.map((complaint) => (
-            <ComplaintCard key={complaint.id} complaint={complaint} />
+            <ComplaintCard 
+              key={complaint.id} 
+              complaint={complaint} 
+              onCancelSuccess={loadComplaints}
+            />
           ))}
         </ScrollView>
       )}
@@ -140,8 +147,15 @@ export default function PlatformComplaint() {
   );
 }
 
-function ComplaintCard({ complaint }: { complaint: UserComplaintItem }) {
+function ComplaintCard({ 
+  complaint, 
+  onCancelSuccess 
+}: { 
+  complaint: UserComplaintItem;
+  onCancelSuccess: () => Promise<void>;
+}) {
   const {
+    id,
     bookingId,
     complainTypeName,
     complainTypeDescription,
@@ -149,11 +163,46 @@ function ComplaintCard({ complaint }: { complaint: UserComplaintItem }) {
     statusName,
     statusCode,
     evidenceUrls,
+    customerRefundAmount,
+    processByUserName,
     createdAt,
     updatedAt,
   } = complaint;
 
+  const { formatCurrency } = useFormatCurrency();
   const colorSet = getStatusColors(statusCode);
+  const [cancelling, setCancelling] = useState(false);
+  const { showModal, modal } = useAppModal();
+
+  const handleCancel = useCallback(() => {
+    showModal({
+      title: 'Xác nhận hủy',
+      message: 'Bạn có chắc chắn muốn hủy khiếu nại này?',
+      status: 'info',
+      buttons: [
+        { text: 'Không', variant: 'secondary' },
+        {
+          text: 'Có',
+          destructive: true,
+          onPress: async () => {
+            setCancelling(true);
+            try {
+              await cancelComplaint(id);
+              await onCancelSuccess();
+            } catch (err: any) {
+              showModal({
+                title: 'Lỗi',
+                message: err?.response?.data?.message || err?.message || 'Không thể hủy khiếu nại',
+                status: 'error',
+              });
+            } finally {
+              setCancelling(false);
+            }
+          },
+        },
+      ],
+    });
+  }, [id, onCancelSuccess, showModal]);
 
   return (
     <View style={styles.card}>
@@ -183,7 +232,35 @@ function ComplaintCard({ complaint }: { complaint: UserComplaintItem }) {
         
       </View>
 
-      
+      {customerRefundAmount !== undefined && customerRefundAmount !== null && (
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Số tiền hoàn lại:</Text>
+          <Text style={styles.infoValue}>{formatCurrency(customerRefundAmount)}</Text>
+        </View>
+      )}
+
+      {processByUserName && (
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Xử lý bởi:</Text>
+          <Text style={styles.infoValue}>{processByUserName}</Text>
+        </View>
+      )}
+
+      {statusCode === 'COMPLAIN_NEW' && (
+        <View style={styles.cancelButtonContainer}>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={handleCancel}
+            disabled={cancelling}
+          >
+            {cancelling ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.cancelButtonText}>Hủy</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
 
       {Array.isArray(evidenceUrls) && evidenceUrls.length > 0 && (
         <View style={styles.evidenceBlock}>
@@ -195,6 +272,7 @@ function ComplaintCard({ complaint }: { complaint: UserComplaintItem }) {
           </ScrollView>
         </View>
       )}
+      {modal}
     </View>
   );
 }
@@ -314,6 +392,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
     fontFamily: 'RobotoMono_400Regular',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingVertical: 4,
+  },
+  infoLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontFamily: 'RobotoMono_400Regular',
+  },
+  infoValue: {
+    fontSize: 13,
+    color: '#1F2937',
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  cancelButtonContainer: {
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  cancelButton: {
+    backgroundColor: '#EF4444',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+  },
+  cancelButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: 'RobotoMono_700Bold',
   },
   evidenceBlock: {
     borderTopWidth: 1,

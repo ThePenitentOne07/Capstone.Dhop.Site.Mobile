@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } from "react-native-reanimated";
 import { Introduction, ChoreographerProject } from "../../components/ChoreographerDetail";
 import { getDancerById } from "../../service/api";
+import { useConversationStore } from "../../states/conversationStore";
+import { useAppModal } from "../../hooks/useAppModal";
 
 const ORANGE2 = "#FF7A00";
 
@@ -64,6 +66,9 @@ export default function DetailsDancerScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dancer, setDancer] = useState<DancerResult | null>(null);
+  const [chatLoading, setChatLoading] = useState(false);
+  const { createConversation } = useConversationStore();
+  const { showModal, modal } = useAppModal();
 
   const dancerId = params.id ? String(params.id) : "";
 
@@ -116,7 +121,8 @@ export default function DetailsDancerScreen() {
   const imageSource = dancer?.profiles?.[0]?.images?.[0]
     ? { uri: dancer.profiles[0].images[0] }
     : require("../../assets/girl-dancing-2830024-2357254.webp");
-
+  console.log(imageSource);
+  
   const handleTabPress = (tab: "Intro" | "Projects") => {
     setSelectedTab(tab);
     slideValue.value = withTiming(tab === "Intro" ? 0 : 1, { duration: 300 });
@@ -176,6 +182,52 @@ export default function DetailsDancerScreen() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.imageContainer}>
           <Image source={imageSource} style={styles.coverImage} resizeMode="cover" />
+          <TouchableOpacity 
+            style={styles.msgBtnFab} 
+            activeOpacity={0.86} 
+            onPress={async () => {
+              const userUUID = (dancer as any)?.uuid;
+              if (!userUUID) {
+                showModal({
+                  title: 'Lỗi',
+                  message: 'Không tìm thấy thông tin người dùng',
+                  status: 'error',
+                });
+                return;
+              }
+
+              setChatLoading(true);
+              try {
+                const conversation = await createConversation({
+                  type: 'DIRECT',
+                  participantIds: [userUUID],
+                });
+
+                router.push({
+                  pathname: '/ChatDetail',
+                  params: {
+                    conversation: JSON.stringify(conversation),
+                  },
+                });
+              } catch (error: any) {
+                console.error('Failed to create conversation:', error);
+                showModal({
+                  title: 'Lỗi',
+                  message: error?.message || 'Không thể tạo cuộc trò chuyện',
+                  status: 'error',
+                });
+              } finally {
+                setChatLoading(false);
+              }
+            }}
+            disabled={chatLoading}
+          >
+            {chatLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.msgBtnFabLabel}>Nhắn tin</Text>
+            )}
+          </TouchableOpacity>
         </View>
 
         <View style={styles.segmentedControl}>
@@ -230,6 +282,7 @@ export default function DetailsDancerScreen() {
           <Text style={styles.primaryBtnText}>Đặt lịch ngay!</Text>
         </TouchableOpacity>
       </View>
+      {modal}
     </View>
   );
 }
@@ -270,6 +323,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   imageContainer: {
+    position: 'relative',
     width: "100%",
     minHeight: 260,
   },
@@ -349,6 +403,27 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     color: "#FFFFFF",
     fontSize: 16,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  msgBtnFab: {
+    position: 'absolute',
+    right: 14,
+    bottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: "#FF7A00",
+    borderRadius: 32,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    shadowColor: "#FF7120",
+    shadowOpacity: 0.14,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  msgBtnFabLabel: {
+    color: '#fff',
+    fontSize: 15,
+    textAlign: 'center',
     fontFamily: 'RobotoMono_700Bold',
   },
 });

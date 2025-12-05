@@ -75,7 +75,7 @@ export default function Step5Dancer({
         startTime,
         endTime,
         bookingExtraServiceRequests,
-        crewMembers,
+        // crewMembers,
         crewId,
         numberOfPeople,
       };
@@ -87,7 +87,7 @@ export default function Step5Dancer({
       detail,
       sessions,
       bookingExtraServiceRequests,
-      crewMembers,
+      // crewMembers,
       crewId,
       numberOfPeople,
     ]
