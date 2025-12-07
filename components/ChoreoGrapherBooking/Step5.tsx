@@ -12,6 +12,7 @@ interface Step5Props {
   location: string;
   detail?: string;
   sessions: { dateISO: string; startTime: string; durationMinutes: number }[]; // from Step3
+  bookingExtraServiceRequests?: { extraServiceId: number; quantity: number }[];
 }
 
 function toScheduledISO(dateISO: string, hhmm: string): string {
@@ -20,7 +21,7 @@ function toScheduledISO(dateISO: string, hhmm: string): string {
   return `${datePart}T${hh}:${mm}:00`;
 }
 
-export default function Step5({ choreographerId, areaId, location, detail, sessions }: Step5Props) {
+export default function Step5({ choreographerId, areaId, location, detail, sessions, bookingExtraServiceRequests = [] }: Step5Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalPrice, setTotalPrice] = useState<number | null>(null);
@@ -37,7 +38,8 @@ export default function Step5({ choreographerId, areaId, location, detail, sessi
       durationMinutes: s.durationMinutes,
       scheduledTime: toScheduledISO(s.dateISO, s.startTime),
     })),
-  }), [choreographerId, areaId, location, detail, sessions]);
+    bookingExtraServiceRequests,
+  }), [choreographerId, areaId, location, detail, sessions, bookingExtraServiceRequests]);
 
   const handleCalculate = async () => {
     setLoading(true);
@@ -156,14 +158,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: '800',
     color: '#1F2937',
     marginBottom: 8,
+    fontFamily: 'RobotoMono_700Bold',
   },
   subtitle: {
     fontSize: 14,
     color: '#6B7280',
     marginBottom: 16,
+    fontFamily: 'RobotoMono_400Regular',
   },
   loadingRow: {
     marginTop: 8,
@@ -190,8 +193,8 @@ const styles = StyleSheet.create({
   },
   resultValue: {
     fontSize: 20,
-    fontWeight: '900',
     color: '#78350F',
+    fontFamily: 'RobotoMono_700Bold',
   },
   errorText: {
     marginTop: 12,
@@ -226,12 +229,12 @@ const styles = StyleSheet.create({
   bookBtnText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   successText: {
     marginTop: 12,
     color: '#059669',
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
 });
 

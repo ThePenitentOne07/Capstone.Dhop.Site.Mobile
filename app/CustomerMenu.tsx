@@ -56,7 +56,7 @@ export default function CustomerMenu(){
                     },
                     headerTintColor: "#FFFFFF",
                     headerTitleStyle: {
-                      fontWeight: "600",
+                      fontFamily: "RobotoMono_700Bold",
                     }
                   }} 
               />
@@ -87,12 +87,15 @@ export default function CustomerMenu(){
   
           {/* MENU LIST */}
           <View style={styles.menuSection}>
-            <MenuButton index={0} icon="📜" label="Lịch đặt" onPress={()=>{router.push('/BookingList')}} />
-            <MenuButton index={1} icon="" label="Ví tiền" onPress={()=>{router.push('/Wallet')}} />
-            {/* <MenuButton index={2} icon="" label="Lịch sử giao dịch" /> */}
-            <MenuButton index={2} icon="" label="Chat" onPress={()=>{router.push('/ChatList')}} />
-            <MenuButton index={3} icon="" label="Lịch" />
-            <MenuButton index={4} icon="🚪" label="Đăng xuất" showLast={true} onPress={handleLogout} />
+            <MenuButton index={0} icon="" label="Lịch đặt biên đạo" onPress={()=>{router.push('/BookingList')}} />
+            <MenuButton index={0} icon="" label="Lịch đặt nhóm nhảy" onPress={()=>{router.push('/DancerBookingList')}} />
+            <MenuButton index={1} icon="" label="Khiếu nại đơn đặt" onPress={()=>{router.push('/PlatformComplaint')}} />
+            {/* <MenuButton index={2} icon="⚠️" label="Khiếu nại nền tảng" onPress={()=>{router.push('/PlatformComplaint')}} /> */}
+            <MenuButton index={2} icon="" label="Ví tiền" onPress={()=>{router.push('/Wallet')}} />
+            {/* <MenuButton index={4} icon="" label="Lịch sử giao dịch" /> */}
+            <MenuButton index={3} icon="" label="Chat" onPress={()=>{router.push('/ChatList')}} />
+            
+            <MenuButton index={4} icon="" label="Đăng xuất" showLast={true} onPress={handleLogout} />
           </View>
         {loading && <ActivityIndicator color={ORANGE2} style={{marginTop:20}} />}
         </ScrollView>
@@ -201,19 +204,19 @@ export default function CustomerMenu(){
     },
     profileFallbackText: {
       fontSize: 28,
-      fontWeight: 'bold',
       color: ORANGE2,
+      fontFamily: 'RobotoMono_700Bold',
     },
     name: {
       fontSize: 20,
-      fontWeight: '700',
       color: ORANGE2,
+      fontFamily: 'RobotoMono_700Bold',
     },
     location: {
       color: ORANGE,
       fontSize: 14,
       marginTop: 2,
-      fontWeight: '500',
+      fontFamily: 'RobotoMono_400Regular',
     },
     coinCard: {
       flexDirection: 'row',
@@ -230,8 +233,8 @@ export default function CustomerMenu(){
     },
     coinText: {
       color: ORANGE,
-      fontWeight: 'bold',
       fontSize: 15,
+      fontFamily: 'RobotoMono_700Bold',
     },
     coinIcon: {
       fontSize: 18,
@@ -259,8 +262,8 @@ export default function CustomerMenu(){
     },
     tabActiveText: {
       color: '#fff',
-      fontWeight: '700',
       fontSize: 15,
+      fontFamily: 'RobotoMono_700Bold',
     },
     tabInactive: {
       flex: 1,
@@ -273,9 +276,9 @@ export default function CustomerMenu(){
     },
     tabInactiveText: {
       color: ORANGE2,
-      fontWeight: '700',
       fontSize: 15,
       opacity: 0.91,
+      fontFamily: 'RobotoMono_700Bold',
     },
     menuSection: {
       marginHorizontal: 20,
@@ -309,17 +312,17 @@ export default function CustomerMenu(){
     },
     menuLabel: {
       fontSize: 16,
-      fontWeight: '600',
       flex:1,
       color: ORANGE2,
+      fontFamily: 'RobotoMono_700Bold',
     },
     menuArrow: {
       fontSize: 20,
       color: ORANGE2,
-      fontWeight: '800',
       marginLeft: 8,
       marginRight:6,
       opacity: 0.7,
+      fontFamily: 'RobotoMono_700Bold',
     },
   });
 

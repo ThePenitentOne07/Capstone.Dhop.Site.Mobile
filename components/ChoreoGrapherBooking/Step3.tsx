@@ -31,12 +31,50 @@ const durationOptions = [30, 60, 90, 120, 150, 180];
 
 export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, onSubmit }: Step3Props) {
   const timeOptions = useMemo(() => generateTimeOptions(), []);
+
+  // Check if a session time is within 48 hours from now (must be at least 48 hours)
+  const isWithin48Hours = (dateISO: string, startTime: string): boolean => {
+    try {
+      const date = new Date(dateISO);
+      const [hours, minutes] = startTime.split(':').map(Number);
+      const sessionDateTime = new Date(date);
+      sessionDateTime.setHours(hours, minutes, 0, 0);
+      
+      const now = new Date();
+      const minBookingTime = new Date(now.getTime() + 48 * 60 * 60 * 1000); // 48 hours from now
+      
+      // Session must be at least 48 hours from now (>=)
+      return sessionDateTime <= minBookingTime;
+    } catch {
+      return false;
+    }
+  };
+
+  // Get available time options for a specific date (filtering out times within 48 hours)
+  const getAvailableTimeOptions = (dateISO: string): string[] => {
+    return timeOptions.filter((time) => !isWithin48Hours(dateISO, time));
+  };
+
+  // Get a safe default time that's not within 48 hours
+  const getDefaultTime = (dateISO: string): string => {
+    const availableTimes = getAvailableTimeOptions(dateISO);
+    if (availableTimes.length > 0) {
+      return availableTimes[0]; // Use first available time
+    }
+    // Fallback: calculate a time that's at least 48 hours from now
+    const now = new Date();
+    const minBookingTime = new Date(now.getTime() + 48 * 60 * 60 * 1000 + 60 * 60 * 1000); // 49 hours to be safe
+    const hours = String(minBookingTime.getHours()).padStart(2, '0');
+    const minutes = String(minBookingTime.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   const [sessions, setSessions] = useState<
     Record<string, { startTime: string; durationMinutes: number }>
   >(() => {
     const init: Record<string, { startTime: string; durationMinutes: number }> = {};
     selectedDatesISO.forEach((dateISO) => {
-      init[dateISO] = { startTime: '09:00', durationMinutes: 60 };
+      init[dateISO] = { startTime: getDefaultTime(dateISO), durationMinutes: 60 };
     });
     return init;
   });
@@ -89,8 +127,18 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, o
     return selectedDatesISO.some((dateISO) => hasConflictForDate(dateISO, sessions));
   }, [selectedDatesISO, sessions]);
 
+  // Check if any session is within 48 hours
+  const hasSessionWithin48Hours = useMemo(() => {
+    return selectedDatesISO.some((dateISO) => {
+      const session = sessions[dateISO];
+      if (!session?.startTime) return false;
+      return isWithin48Hours(dateISO, session.startTime);
+    });
+  }, [selectedDatesISO, sessions]);
+
   const canSubmit =
     !hasAnyConflict &&
+    !hasSessionWithin48Hours &&
     selectedDatesISO.every(
       (d) => !!sessions[d]?.startTime && !!sessions[d]?.durationMinutes
     );
@@ -144,9 +192,9 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, o
             <View key={dateISO} style={styles.card}>
               <Text style={styles.dateLabel}>{formatDateLabel(dateISO)}</Text>
 
-              <View style={styles.busyWrapper}>
-                {busySessions.length > 0 ? (
-                  <>
+             
+                {busySessions.length > 0 && (
+                   <View style={styles.busyWrapper}>
                     <Text style={styles.busyLabel}>Khung giờ biên đạo đã bận</Text>
                     {busySessions.map((session, idx) => (
                       <View key={`${session.scheduledTime}-${idx}`} style={styles.busyItem}>
@@ -156,17 +204,15 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, o
                         ) : null}
                       </View>
                     ))}
-                  </>
-                ) : (
-                  <Text style={styles.freeText}>Hiện chưa có buổi nào trong ngày này.</Text>
-                )}
-              </View>
+                  </View>
+                ) }
+              
 
               <View style={styles.row}>
                 <View style={styles.dropdownColumn}>
                   <Text style={styles.dropdownLabel}>Giờ bắt đầu</Text>
                   <Dropdown
-                    data={timeOptions.map((t) => ({ value: t, label: t }))}
+                    data={getAvailableTimeOptions(dateISO).map((t) => ({ value: t, label: t }))}
                     onChange={(item) => setTime(dateISO, item.value)}
                     placeholder={s.startTime}
                   />
@@ -192,10 +238,22 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, o
                   Khung giờ này trùng với lịch đã có. Vui lòng chọn khung giờ khác.
                 </Text>
               )}
+              {isWithin48Hours(dateISO, s.startTime) && (
+                <Text style={styles.warningText}>
+                  ⚠️ Phải đặt lịch trước ít nhất 48 giờ. Vui lòng chọn giờ muộn hơn.
+                </Text>
+              )}
             </View>
           );
         })}
 
+        {hasSessionWithin48Hours && (
+          <View style={styles.warningCard}>
+            <Text style={styles.warningCardText}>
+              ⚠️ Một hoặc nhiều buổi tập được đặt trong vòng 48 giờ. Vui lòng chọn thời gian muộn hơn.
+            </Text>
+          </View>
+        )}
         <Animated.View entering={FadeInUp.delay(200)} style={styles.submitButtonContainer}>
           <TouchableOpacity
             style={[styles.submitBtn, !canSubmit && styles.submitBtnDisabled]}
@@ -242,9 +300,9 @@ const styles = StyleSheet.create({
   },
   busyLabel: {
     fontSize: 12,
-    fontWeight: '700',
     color: '#B45309',
     marginBottom: 6,
+    fontFamily: 'RobotoMono_700Bold',
   },
   busyItem: {
     flexDirection: 'row',
@@ -255,7 +313,7 @@ const styles = StyleSheet.create({
   busyTime: {
     fontSize: 13,
     color: '#92400E',
-    fontWeight: '600',
+    fontFamily: 'RobotoMono_700Bold',
   },
   busyMeta: {
     fontSize: 12,
@@ -267,9 +325,9 @@ const styles = StyleSheet.create({
   },
   dateLabel: {
     fontSize: 16,
-    fontWeight: '800',
     color: '#1F2937',
     marginBottom: 12,
+    fontFamily: 'RobotoMono_700Bold',
   },
   row: {
     flexDirection: 'row',
@@ -307,7 +365,7 @@ const styles = StyleSheet.create({
   submitText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   submitTextDisabled: {
     color: '#9CA3AF',
@@ -320,6 +378,25 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 12,
     color: '#DC2626',
-    fontWeight: '500',
+    fontFamily: 'RobotoMono_400Regular',
+  },
+  warningText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#F59E0B',
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  warningCard: {
+    backgroundColor: '#FFFBEB',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  warningCardText: {
+    fontSize: 13,
+    color: '#92400E',
+    fontFamily: 'RobotoMono_700Bold',
   },
 });

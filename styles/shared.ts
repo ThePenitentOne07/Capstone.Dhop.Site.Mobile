@@ -20,13 +20,13 @@ export const sharedStyles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: "700",
     color: "#111827",
+    fontFamily: 'RobotoMono_700Bold',
   },
   showMore: {
     fontSize: 14,
     color: "#FF7A00",
-    fontWeight: "500",
+    fontFamily: 'RobotoMono_400Regular',
   },
 });
 

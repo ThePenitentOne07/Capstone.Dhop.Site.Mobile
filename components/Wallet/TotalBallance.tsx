@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#FFFFFF',
         opacity: 0.9,
-        fontWeight: '500',
+        fontFamily: 'RobotoMono_400Regular',
     },
     eyeIcon: {
         width: 32,
@@ -176,10 +176,10 @@ const styles = StyleSheet.create({
     },
     amount: {
         fontSize: 36,
-        fontWeight: '700',
         color: '#FFFFFF',
         marginBottom: 24,
         letterSpacing: 0.5,
+        fontFamily: 'RobotoMono_700Bold',
     },
     footerRow: {
         flexDirection: 'row',
@@ -199,8 +199,8 @@ const styles = StyleSheet.create({
     },
     footerValue: {
         fontSize: 16,
-        fontWeight: '600',
         color: '#FFFFFF',
+        fontFamily: 'RobotoMono_700Bold',
     },
     divider: {
         width: 1,

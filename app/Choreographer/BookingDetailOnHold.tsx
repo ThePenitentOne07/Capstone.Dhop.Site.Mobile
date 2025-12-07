@@ -1,10 +1,11 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { acceptChoreographerBooking, cancelChoreographerBooking, getBookingById } from '../../service/api';
 import { useRouter } from 'expo-router';
 import { useConversationStore } from '../../states/conversationStore';
 import { useAppModal } from '../../hooks/useAppModal';
+import { useRefetchOnFocus } from '../hooks/useRefetchOnFocus';
 
 
 const YELLOW = '#FFD540';
@@ -44,61 +45,47 @@ export default function BookingDetailOnHold() {
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
-  useEffect(() => {
-    let active = true;
-
-    const load = async () => {
-      if (!bookingId) {
-        if (fallbackBooking) {
-          if (active) {
-            setBooking(fallbackBooking);
-            setError(null);
-            setLoading(false);
-          }
-        } else if (active) {
-          setBooking(null);
-          setError('Không tìm thấy mã đơn đặt lịch.');
-          setLoading(false);
-        }
-        return;
-      }
-
-      if (active) {
-        setLoading(true);
+  const load = useCallback(async () => {
+    if (!bookingId) {
+      if (fallbackBooking) {
+        setBooking(fallbackBooking);
         setError(null);
+        setLoading(false);
+      } else {
+        setBooking(null);
+        setError('Không tìm thấy mã đơn đặt lịch.');
+        setLoading(false);
+      }
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await getBookingById(bookingId);
+      const payload = Array.isArray(res.data) ? res.data[0] : res.data;
+
+      if (!payload) {
+        throw new Error('Không tìm thấy đơn đặt lịch.');
       }
 
-      try {
-        const res = await getBookingById(bookingId);
-        const payload = Array.isArray(res.data) ? res.data[0] : res.data;
-
-        if (!payload) {
-          throw new Error('Không tìm thấy đơn đặt lịch.');
-        }
-
-        if (active) {
-          setBooking(payload);
-        }
-      } catch (err: any) {
-        if (active) {
-          setError(err?.response?.data?.message || err?.message || 'Không thể tải đơn đặt lịch');
-          if (!fallbackBooking) {
-            setBooking(null);
-          }
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
+      setBooking(payload);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Không thể tải đơn đặt lịch');
+      if (!fallbackBooking) {
+        setBooking(null);
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  }, [bookingId, fallbackBooking]);
 
-    load();
+  useEffect(() => {
+    void load();
+  }, [load, reloadToken]);
 
-    return () => {
-      active = false;
-    };
-  }, [bookingId, fallbackBooking, reloadToken]);
+  useRefetchOnFocus(load);
 
   const handleRetry = () => setReloadToken((token) => token + 1);
 
@@ -144,17 +131,13 @@ export default function BookingDetailOnHold() {
   const qty = booking.numberOfTrainingSessions ?? (booking.trainingSessions?.length || 0);
   const totalPrice = booking.price;
   const perSessionPrice = booking?.choreography?.price;
-  const status = booking.statusName;
+  const status = (booking.statusName || '').trim();
   const feedbacks = Array.isArray(booking.bookingFeedbacks) ? booking.bookingFeedbacks : [];
   const hasFeedback = feedbacks.length > 0;
+  
 
-  // Determine status color
-  let statusBg = '#E7F5EF';
-  let statusColor = '#0E766E';
-  if (/chờ xác nhận|on hold|pending/i.test(status)) {
-    statusBg = '#FFF9E0';
-    statusColor = ORANGE2;
-  }
+  // Determine status color for main booking status card
+  const { bg: statusBg, color: statusColor } = getBookingStatusStyle(status);
 
   return (
     <View style={{flex:1, backgroundColor:'#fff'}}>
@@ -226,7 +209,17 @@ export default function BookingDetailOnHold() {
         {/* Item block */}
         <View style={styles.itemBlock}>
           <View style={styles.itemRow}>
-            <View style={styles.thumb}><Text style={{fontSize:26}}></Text></View>
+            <View style={styles.thumb}>
+              {booking.customer?.avatar ? (
+                <Image 
+                  source={{ uri: booking.customer.avatar }} 
+                  style={styles.thumbImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={styles.thumbInitial}>{(booking.customer?.name || 'K')[0].toUpperCase()}</Text>
+              )}
+            </View>
             <View style={{flex:1}}>
               <Text numberOfLines={1} style={styles.itemTitle}>{booking.customer?.name}</Text>
               <Text numberOfLines={1} style={styles.itemSubtitle}>{booking.detail || 'Đặt lịch biên đạo'}</Text>
@@ -246,6 +239,21 @@ export default function BookingDetailOnHold() {
             <Text style={styles.totalValue}>{formatNumber(totalPrice)}đ</Text>
           </View>
         </View>
+
+        {/* Extra Services */}
+        {Array.isArray(booking.bookingExtraServices) && booking.bookingExtraServices.length > 0 && (
+          <View style={styles.extraServicesBlock}>
+            <Text style={styles.extraServicesTitle}>Dịch vụ bổ sung</Text>
+            {booking.bookingExtraServices.map((service: any, idx: number) => (
+              <View key={idx} style={styles.extraServiceCard}>
+                <View style={styles.extraServiceRow}>
+                  <Text style={styles.extraServiceName}>{service.name || 'Dịch vụ'}</Text>
+                </View>
+                <Text style={styles.extraServicePrice}>{formatNumber(service.price || 0)}đ</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Training Sessions */}
         {Array.isArray(booking.trainingSessions) && booking.trainingSessions.length > 0 && (
@@ -290,6 +298,46 @@ export default function BookingDetailOnHold() {
            )}
          </View>
         )}
+
+        {/* Cancle Button */}
+        {status === "Đơn đặt chờ xác nhận" && (
+            <View style={styles.complaintBlock}>
+            <TouchableOpacity
+              style={styles.complaintButton}
+              onPress={() => {
+                // TODO: Navigate to complaint screen or show complaint modal
+                showModal({
+                  title: 'Hủy đơn',
+                  message: 'Tính năng hủy đơn đang được phát triển. Vui lòng liên hệ hỗ trợ qua chat.',
+                  status: 'info',
+                });
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.complaintButtonText}>Hủy đơn</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Complaint Button */}
+          {status !== "Đơn đặt chờ xác nhận" && (
+            <View style={styles.complaintBlock}>
+            <TouchableOpacity
+              style={styles.complaintButton}
+              onPress={() => {
+                router.push({
+                  pathname: '/Complaint',
+                  params: {
+                    bookingId: booking.id,
+                  },
+                });
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.complaintButtonText}>Khiếu nại</Text>
+            </TouchableOpacity>
+          </View>
+        )}
        
       </ScrollView>
       {/* Floating action buttons */}
@@ -308,7 +356,7 @@ export default function BookingDetailOnHold() {
                     message: 'Đã từ chối đơn.',
                     status: 'success',
                     autoCloseAfter: 2000,
-                    onAutoClose: () => router.replace('/Choreographer/RequestBookingList'),
+                    onAutoClose: () => router.back(),
                   });
                 } catch (e: any) {
                   showModal({
@@ -341,7 +389,7 @@ export default function BookingDetailOnHold() {
                   message: 'Đơn đã được chấp nhận.',
                   status: 'success',
                   autoCloseAfter: 2000,
-                  onAutoClose: () => router.replace('/Choreographer/RequestBookingList'),
+                  onAutoClose: () => load(),
                 });
               } catch(e:any) {
                 setAcceptError(e?.response?.data?.message || e?.message || 'Lỗi khi xác nhận');
@@ -518,11 +566,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFD8B4',
   },
+  thumbImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  thumbInitial: {
+    fontSize: 26,
+    color: ORANGE2,
+    fontFamily: 'RobotoMono_700Bold',
+  },
   itemTitle: {
     fontSize: 16,
-    fontWeight: '700',
     color: '#111827',
-    fontFamily: 'RobotoMono_400Regular',
+    fontFamily: 'RobotoMono_700Bold',
   },
   itemSubtitle: {
     marginTop: 2,
@@ -534,8 +591,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 16,
     color: '#6B7280',
-    fontWeight: '700',
-    fontFamily: 'RobotoMono_400Regular',
+    fontFamily: 'RobotoMono_700Bold',
   },
   priceRow: {
     flexDirection: 'row',
@@ -573,6 +629,52 @@ const styles = StyleSheet.create({
     color: ORANGE2,
     fontSize: 20,
     
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  extraServicesBlock: {
+    marginHorizontal: 12,
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#FFECD0',
+  },
+  extraServicesTitle: {
+    color: ORANGE2,
+    fontSize: 15,
+    marginBottom: 10,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  extraServiceCard: {
+    backgroundColor: '#FFF9EF',
+    borderRadius: 9,
+    padding: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#FFD8B4',
+  },
+  extraServiceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  extraServiceName: {
+    flex: 1,
+    color: '#111827',
+    fontSize: 14,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  extraServiceQty: {
+    color: '#6B7280',
+    fontSize: 14,
+    fontFamily: 'RobotoMono_400Regular',
+    marginLeft: 8,
+  },
+  extraServicePrice: {
+    color: ORANGE2,
+    fontSize: 15,
     fontFamily: 'RobotoMono_700Bold',
   },
   sessionsBlock: {
@@ -617,7 +719,6 @@ const styles = StyleSheet.create({
   },
   sessionStatus: {
     fontSize: 13,
-    fontWeight: '700',
     marginTop: 4,
     fontFamily: 'RobotoMono_700Bold',
   },
@@ -666,8 +767,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: '#fff',
     marginRight: 7,
-    fontWeight: 'bold',
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   fabLabel: {
     color: '#fff',
@@ -696,8 +796,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: '#fff',
     marginRight: 7,
-    fontWeight: 'bold',
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   msgBtnFabLabel: {
     color: '#fff',
@@ -845,4 +944,54 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'RobotoMono_700Bold',
   },
+  complaintBlock: {
+    marginHorizontal: 12,
+    marginBottom: 20,
+    marginTop: 8,
+  },
+  complaintButton: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderWidth: 1.5,
+    borderColor: '#DC2626',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  complaintButtonText: {
+    color: '#DC2626',
+    fontSize: 15,
+    fontFamily: 'RobotoMono_700Bold',
+  },
 });
+
+// Color mapping for overall booking status (Vietnamese status names)
+function getBookingStatusStyle(status: string): { bg: string; color: string } {
+  const normalized = (status || '').trim();
+
+  switch (normalized) {
+    case 'Đơn đặt chờ xác nhận':
+      return { bg: '#FEF9C3', color: '#B45309' }; // pending
+    case 'Đơn đặt đã kích hoạt':
+      return { bg: '#DBEAFE', color: '#1D4ED8' }; // active
+    case 'Đơn đặt không kích hoạt':
+      return { bg: '#E5E7EB', color: '#4B5563' }; // neutral
+    case 'Đơn đặt đang tiến hành':
+      return { bg: '#E0F2FE', color: '#0369A1' }; // in progress
+    case 'Đơn đặt đã hoàn thành công việc':
+      return { bg: '#DCFCE7', color: '#16A34A' }; // work done
+    case 'Đơn đặt hoàn tất':
+      return { bg: '#BBF7D0', color: '#15803D' }; // fully completed
+    case 'Đơn đặt chưa hoàn tất':
+      return { bg: '#F3F4F6', color: '#4B5563' }; // not finished
+    case 'Đơn đặt đã hủy':
+      return { bg: '#FEE2E2', color: '#B91C1B' }; // cancelled
+    case 'Đơn đặt hết chỗ':
+      return { bg: '#FFEDD5', color: '#C2410C' }; // full
+    case 'Đơn trong trạng thái khiếu nại':
+      return { bg: '#FEF3C7', color: '#B45309' }; // complaint
+    default:
+      return { bg: '#E7F5EF', color: '#0E766E' }; // default teal
+  }
+}

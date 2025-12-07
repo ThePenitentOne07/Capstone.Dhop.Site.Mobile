@@ -1,6 +1,11 @@
 import { Stack } from "expo-router";
 import { useFonts, RobotoMono_400Regular, RobotoMono_700Bold } from "@expo-google-fonts/roboto-mono";
 import { useUserInfo } from "../hooks/useUserInfo";
+import { useEffect, useCallback } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSocketStore } from "../states/socketStore";
+import { useNotificationStore } from "../states/notificationStore";
+import { getNotifications } from "../service/api";
 
 export default function Layout() {
   const [loaded] = useFonts({
@@ -10,11 +15,165 @@ export default function Layout() {
   
   // Call the hook on every screen
   const { user, loading, error } = useUserInfo();
+  const { socket, initSocket, disconnectSocket } = useSocketStore();
+  const { addNotification, setNotifications } = useNotificationStore();
+
+  const mapServerNotification = useCallback((item) => ({
+    id: item.id,
+    title: item.title ?? "Notification",
+    message: item.message ?? "",
+    type: item.type === "success" || item.type === "warning" || item.type === "error" ? item.type : "info",
+    timestamp: new Date(item.createdAt),
+    read: !!item.read,
+    data: {
+      link: item.link,
+      userUUID: item.userUUID,
+    },
+  }), []);
+
+  const fetchInitialNotifications = useCallback(async () => {
+    try {
+      const response = await getNotifications();
+      const items = response.data?.items ?? [];
+      const mapped = items.map(mapServerNotification);
+      setNotifications(mapped);
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    }
+  }, [mapServerNotification, setNotifications]);
+
+  // Initialize socket when user is authenticated
+  useEffect(() => {
+    const initializeSocket = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (token && user) {
+          console.log('Initializing socket for user:', user.id);
+          initSocket(token);
+        }
+      } catch (err) {
+        console.error('Error initializing socket:', err);
+      }
+    };
+
+    if (user && !loading) {
+      initializeSocket();
+    }
+
+    // Cleanup when user logs out
+    return () => {
+      if (!user) {
+        console.log('User logged out, disconnecting socket');
+        disconnectSocket();
+      }
+    };
+  }, [user, loading, initSocket, disconnectSocket]);
+
+  // Listen for notification events when socket is ready
+  useEffect(() => {
+    if (!socket) return;
+
+    // Generic notification handler - handles server-sent notification objects
+    const notificationHandler = (data) => {
+      console.log('Received notification event:', data);
+      
+      // If data is already a notification object from server
+      if (data && (data.title || data.message)) {
+        const mapped = mapServerNotification(data);
+        addNotification({
+          title: mapped.title,
+          message: mapped.message,
+          type: mapped.type,
+          data: mapped.data
+        });
+        // Refetch notifications to ensure count is accurate
+        fetchInitialNotifications();
+      } else {
+        // Fallback for simple message data
+        addNotification({
+          title: data.title || 'Notification',
+          message: data.message || 'You have a new notification!',
+          type: data.type || 'info',
+          data: data
+        });
+        fetchInitialNotifications();
+      }
+    };
+
+    // Specific event handlers with better titles
+    const bookingHandler = (data) => {
+      addNotification({
+        title: data.title || 'New Booking',
+        message: data.message || 'You have a new booking!',
+        type: 'info',
+        data: data
+      });
+      fetchInitialNotifications();
+      console.log('Received booking event:', data);
+    };
+
+    const chatHandler = (data) => {
+      addNotification({
+        title: data.title || 'New Message',
+        message: data.message || 'You have a new message!',
+        type: 'info',
+        data: data
+      });
+      fetchInitialNotifications();
+      console.log('Received chat event:', data);
+    };
+
+    // Listen for generic notification events (most common)
+    socket.on('NOTIFICATION', notificationHandler);
+    socket.on('notification', notificationHandler);
+    socket.on('new_notification', notificationHandler);
+
+    // Listen for specific booking events
+    socket.on('NEW_BOOKING', bookingHandler);
+    socket.on('BOOKING_ACCEPTED', bookingHandler);
+    socket.on('BOOKING_CANCELLED', bookingHandler);
+    socket.on('BOOKING_COMPLETED', bookingHandler);
+    socket.on('STAFF_APPROVED', bookingHandler);
+    socket.on('STAFF_REJECTED', bookingHandler);
+
+    // Listen for chat events
+    socket.on('CHAT_MESSAGE', chatHandler);
+
+    return () => {
+      socket.off('NOTIFICATION', notificationHandler);
+      socket.off('notification', notificationHandler);
+      socket.off('new_notification', notificationHandler);
+      socket.off('NEW_BOOKING', bookingHandler);
+      socket.off('BOOKING_ACCEPTED', bookingHandler);
+      socket.off('BOOKING_CANCELLED', bookingHandler);
+      socket.off('BOOKING_COMPLETED', bookingHandler);
+      socket.off('CHAT_MESSAGE', chatHandler);
+      socket.off('STAFF_APPROVED', bookingHandler);
+      socket.off('STAFF_REJECTED', bookingHandler);
+    };
+  }, [socket, addNotification, mapServerNotification, fetchInitialNotifications]);
   
+  useEffect(() => {
+    if (user && !loading) {
+      fetchInitialNotifications();
+    }
+  }, [user, loading, fetchInitialNotifications]);
+
   if (!loaded) return null;
 
   return (
-    <Stack screenOptions={{ animation: "slide_from_right" }}>
+    <Stack
+      screenOptions={{
+        animation: "slide_from_right",
+        headerStyle: {
+          backgroundColor: "#FF7A00",
+        },
+        headerTintColor: "#FFFFFF",
+        headerTitleStyle: {
+          fontFamily: "RobotoMono_700Bold",
+        },
+      }}
+    >
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="Login" options={{ headerShown: false }} />
       <Stack.Screen name="SignUp" options={{ headerShown: false }} />
@@ -30,7 +189,7 @@ export default function Layout() {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
           }
         }} 
       />
@@ -53,8 +212,15 @@ export default function Layout() {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
           }
+        }} 
+      />
+      <Stack.Screen 
+        name="DetailsDancer/[id]" 
+        options={{ 
+          headerShown: true,
+          title: "Chi tiết nhóm nhảy",
         }} 
       />
       <Stack.Screen name="ChoreographerBooking/[id]" 
@@ -66,7 +232,20 @@ export default function Layout() {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
+          }
+        }} 
+        />
+      <Stack.Screen name="DancerBooking/[id]" 
+        options={{ 
+          headerShown: true,
+          title: "Đặt lịch nhóm nhảy",
+          headerStyle: {
+            backgroundColor: "#FF7A00",
+          },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: {
+            fontFamily: "RobotoMono_700Bold",
           }
         }} 
         />
@@ -80,7 +259,7 @@ export default function Layout() {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
           }
         }} 
       />
@@ -94,7 +273,35 @@ export default function Layout() {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
+          }
+        }} 
+      />
+      <Stack.Screen 
+        name="NotificationList" 
+        options={{ 
+          headerShown: true,
+          title: "Thông báo",
+          headerStyle: {
+            backgroundColor: "#FF7A00",
+          },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: {
+            fontFamily: "RobotoMono_700Bold",
+          }
+        }} 
+      />
+      <Stack.Screen 
+        name="Complaint" 
+        options={{ 
+          headerShown: true,
+          title: "Khiếu nại",
+          headerStyle: {
+            backgroundColor: "#FF7A00",
+          },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: {
+            fontFamily: "RobotoMono_700Bold",
           }
         }} 
       />

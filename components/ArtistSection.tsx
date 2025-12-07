@@ -1,46 +1,66 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { getDancerUsers } from '../service/api';
+import { useFormatCurrency } from '../hooks/useFormatCurrency';
 
-interface Artist {
-  id: string;
+interface Area {
+  id: number;
+  city: string;
+  ward: string;
+}
+
+interface DanceType {
+  id: number;
+  type: string;
+  description: string;
+}
+
+interface Dancer {
+  dancerId: number;
+  about?: string;
+  danceGroupName?: string;
+  teamSize?: number;
+  bankAccount?: string;
+  businessLicense?: string;
+  price?: number;
+  yearExperience?: number;
+  area?: Area[];
+  danceType?: DanceType[];
+  profiles?: any[];
+  averageRating?: number;
+}
+
+interface ApiDancerItem {
+  id: number;
+  userUUID: string;
+  avatar?: string;
+  email: string;
   name: string;
-  image: any;
-  isAddButton?: boolean;
+  phone?: string;
+  active?: boolean;
+  role: string;
+  profileEmpty?: boolean;
+  walletBalance?: number;
+  dancer?: Dancer;
+  averageRating?: number;
+}
+
+interface ApiResponse {
+  pageNo: number;
+  pageSize: number;
+  totalPage: number;
+  totalElements: number;
+  items: ApiDancerItem[];
 }
 
 interface ArtistSectionProps {
   onShowMore?: () => void;
-  onArtistPress?: (artist: Artist) => void;
+  onArtistPress?: (artist: any) => void;
   onAddArtist?: () => void;
 }
 
-const artistsData: Artist[] = [
-  {
-    id: '1',
-    name: 'John Smith',
-    image: require('../assets/vecteezy_man-using-smartphone-device_24096847.png'),
-    isAddButton: true
-  },
-  {
-    id: '2',
-    name: 'Louise',
-    image: require('../assets/girl-dancing-2830024-2357254.webp')
-  },
-  {
-    id: '3',
-    name: 'Henna',
-    image: require('../assets/energetic-dance-performance-given-by-lady-illustration-svg-download-png-11526278.webp')
-  },
-  {
-    id: '4',
-    name: 'Leah',
-    image: require('../assets/girl-dancing-2830024-2357254.webp')
-  },
-  {
-    id: '5',
-    name: 'Lisa',
-    image: require('../assets/energetic-dance-performance-given-by-lady-illustration-svg-download-png-11526278.webp')
-  }
+const fallbackImages = [
+  require('../assets/logo-icon.png'),
 ];
 
 export const ArtistSection: React.FC<ArtistSectionProps> = ({ 
@@ -48,6 +68,32 @@ export const ArtistSection: React.FC<ArtistSectionProps> = ({
   onArtistPress,
   onAddArtist 
 }) => {
+  const [data, setData] = React.useState<ApiDancerItem[]>([]);
+  const [loading, setLoading] = React.useState<boolean>(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const {formatCurrency} = useFormatCurrency();
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await getDancerUsers({
+        pageNo: 1,
+        pageSize: 10,
+      });
+      const payload: ApiResponse = res.data;
+      setData(Array.isArray(payload?.items) ? payload.items : []);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || e?.message || 'Failed to load dancers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchData();
+  }, []);
+
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
@@ -57,27 +103,112 @@ export const ArtistSection: React.FC<ArtistSectionProps> = ({
         </TouchableOpacity>
       </View>
       
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.artistContainer}>
-        {artistsData.map((artist) => (
-          <TouchableOpacity 
-            key={artist.id}
-            style={styles.artistCircle}
-            onPress={() => artist.isAddButton ? onAddArtist?.() : onArtistPress?.(artist)}
-          >
-            <Image 
-              source={artist.image} 
-              style={styles.artistImage}
-              resizeMode="cover"
-            />
-            {artist.isAddButton && (
-              <View style={styles.addIcon}>
-                <Text style={styles.addIconText}>+</Text>
+      <View style={styles.choreographyContainer}>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator color="#FF7A00" />
+          </View>
+        ) : error ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity onPress={fetchData}>
+              <Text style={styles.retryText}>Tap to retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View>
+            {data.length === 0 ? (
+              <View style={styles.loadingContainer}>
+                <Text style={styles.emptyStateText}>Hiện chưa có vũ công nào.</Text>
+                <TouchableOpacity onPress={fetchData}>
+                  <Text style={styles.retryText}>Tải lại</Text>
+                </TouchableOpacity>
               </View>
+            ) : (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardsContainer}>
+                {data.map((item, index) => {
+                  const title = item.dancer?.danceGroupName || item.name;
+                  const imageSource = item.avatar
+                    ? { uri: item.avatar }
+                    : fallbackImages[index % fallbackImages.length];
+                  const price = item.dancer?.price;
+                  const years = item.dancer?.yearExperience;
+
+                  // danceType from API is an array of objects
+                  const rawDanceType: any = item.dancer?.danceType;
+                  let danceTypeLabel = '';
+
+                  if (Array.isArray(rawDanceType)) {
+                    const parts = rawDanceType
+                      .map((dt) => dt?.type || dt?.description)
+                      .filter(Boolean);
+                    if (parts.length > 0) {
+                      danceTypeLabel = parts.join(', ');
+                    }
+                  } else if (rawDanceType && typeof rawDanceType === 'object') {
+                    danceTypeLabel =
+                      rawDanceType.type ||
+                      rawDanceType.description ||
+                      danceTypeLabel;
+                  } else if (typeof rawDanceType === 'string') {
+                    danceTypeLabel = rawDanceType;
+                  }
+
+                  const formattedPrice =
+                    typeof price === 'number'
+                      ? `${formatCurrency(price)}`
+                      : 'Liên hệ';
+
+                  return (
+                    <TouchableOpacity 
+                      key={item.id}
+                      style={styles.choreographyCard}
+                      onPress={() => onArtistPress?.({
+                        id: String(item.dancer?.dancerId || item.id),
+                        title,
+                        artist: item.name,
+                        image: imageSource,
+                        avatar: item.avatar,
+                        price: item.dancer?.price,
+                        yearExperience: years,
+                        about: item.dancer?.about,
+                        area: item.dancer?.area,
+                        danceType: item.dancer?.danceType,
+                        danceGroupName: item.dancer?.danceGroupName,
+                        teamSize: item.dancer?.teamSize,
+                      })}
+                    >
+                      <View style={styles.cardImageWrap}>
+                        <Image 
+                          source={imageSource} 
+                          style={styles.cardImage}
+                          resizeMode="contain"
+                        />
+                        {typeof years === 'number' && years > 0 && (
+                          <View style={styles.experienceBadge}>
+                            <Text style={styles.experienceText}>{years}+ năm kinh nghiệm</Text>
+                          </View>
+                        )}
+                      </View>
+                      <View style={styles.cardBody}>
+                        <Text numberOfLines={1} style={styles.cardTitle}>{title}</Text>
+                        <Text numberOfLines={1} style={styles.cardSubtitle}>{danceTypeLabel}</Text>
+                        <View style={styles.cardFooter}>
+                          <View>
+                            <Text style={styles.priceLabel}>Từ</Text>
+                            <Text style={styles.priceValue}>{formattedPrice}</Text>
+                            <Text style={styles.priceUnit}>/ buổi</Text>
+                          </View>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
             )}
-            <Text style={styles.artistName}>{artist.name}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+          </View>
+        )}
+      </View>
     </View>
   );
 };
@@ -95,50 +226,110 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: "700",
     color: "#111827",
+    fontFamily: 'RobotoMono_700Bold',
   },
   showMore: {
     fontSize: 14,
     color: "#FF7A00",
-    fontWeight: "500",
+    fontFamily: 'RobotoMono_400Regular',
   },
-  artistContainer: {
+  choreographyContainer: {
     paddingLeft: 20,
+  },
+  cardsContainer: {
     paddingRight: 20,
   },
-  artistCircle: {
-    alignItems: 'center',
-    marginRight: 20,
-    width: 80,
+  choreographyCard: {
+    width: 200,
+    marginRight: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  artistImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginBottom: 8,
-  },
-  addIcon: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#FF7A00',
+  loadingContainer: {
+    height: 140,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingRight: 20,
   },
-  addIconText: {
-    fontSize: 12,
-    color: "#FFFFFF",
-    fontWeight: "600",
+  errorText: {
+    color: '#DC2626',
+    marginBottom: 8,
   },
-  artistName: {
-    fontSize: 12,
-    color: "#374151",
-    textAlign: 'center',
-    fontWeight: "500",
+  emptyStateText: {
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  retryText: {
+    color: '#FF7A00',
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  cardImageWrap: {
+    width: '100%',
+    height: 140,
+    position: 'relative',
+    backgroundColor: '#FFF7ED',
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  experienceBadge: {
+    position: 'absolute',
+    left: 10,
+    bottom: 10,
+    backgroundColor: 'rgba(17, 24, 39, 0.8)',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+  },
+  experienceText: {
+    color: '#fff',
+    fontSize: 11,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  cardBody: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 6,
+  },
+  cardTitle: {
+    fontSize: 16,
+    color: "#111827",
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    color: "#6B7280",
+    fontFamily: 'RobotoMono_400Regular',
+  },
+  cardFooter: {
+    marginTop: 6,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  priceLabel: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontFamily: 'RobotoMono_400Regular',
+  },
+  priceValue: {
+    fontSize: 18,
+    color: '#FF7A00',
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  priceUnit: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontFamily: 'RobotoMono_400Regular',
   },
 });
 

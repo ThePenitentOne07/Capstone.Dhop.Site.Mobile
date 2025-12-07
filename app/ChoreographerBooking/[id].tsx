@@ -34,6 +34,7 @@ export default function ChoreographerBookingScreen() {
   const yearExperience = params.yearExperience ? Number(params.yearExperience) : undefined;
   const danceType = safeJsonParse(params.danceType, []);
   const area = safeJsonParse(params.area, []);
+  const extraServices = safeJsonParse(params.extraServices, []);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [bookingData, setBookingData] = useState<any>({});
@@ -53,7 +54,7 @@ export default function ChoreographerBookingScreen() {
     setBookingData({ ...bookingData, sessions });
     setCurrentStep(4);
   };
-  const handleStep4Submit = (payload: { location: string; description?: string; areaId: number }) => {
+  const handleStep4Submit = (payload: { location: string; description?: string; areaId: number; bookingExtraServiceRequests: { extraServiceId: number; quantity: number }[] }) => {
     setBookingData({ ...bookingData, ...payload });
     setCurrentStep(5);
   };
@@ -114,7 +115,12 @@ export default function ChoreographerBookingScreen() {
           />
         )}
         {currentStep === 4 && (
-          <Step4 sessions={bookingData.sessions || []} onSubmit={handleStep4Submit} />
+          <Step4 
+            sessions={bookingData.sessions || []} 
+            onSubmit={handleStep4Submit}
+            choreographerAreas={area}
+            extraServices={extraServices}
+          />
         )}
         {currentStep === 5 && (
           <Step5
@@ -123,6 +129,7 @@ export default function ChoreographerBookingScreen() {
             location={bookingData.location}
             detail={bookingData.description}
             sessions={bookingData.sessions || []}
+            bookingExtraServiceRequests={bookingData.bookingExtraServiceRequests || []}
           />
         )}
       </ScrollView>
@@ -157,9 +164,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
     color: '#1F2937',
     marginBottom: 4,
+    fontFamily: 'RobotoMono_700Bold',
   },
   headerSubtitle: {
     fontSize: 14,

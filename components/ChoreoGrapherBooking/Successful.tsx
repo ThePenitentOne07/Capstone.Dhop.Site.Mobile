@@ -91,20 +91,21 @@ const styles = StyleSheet.create({
   icon: {
     fontSize: 36,
     color: '#10B981',
-    fontWeight: '900',
+    fontFamily: 'RobotoMono_700Bold',
   },
   title: {
     fontSize: 22,
-    fontWeight: '800',
     color: '#111827',
     marginBottom: 6,
     textAlign: 'center',
+    fontFamily: 'RobotoMono_700Bold',
   },
   subtitle: {
     fontSize: 14,
     color: '#6B7280',
     marginBottom: 16,
     textAlign: 'center',
+    fontFamily: 'RobotoMono_400Regular',
   },
   sessionsList: {
     alignSelf: 'stretch',
@@ -115,6 +116,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#374151',
     marginBottom: 6,
+    fontFamily: 'RobotoMono_400Regular',
   },
   totalCard: {
     alignSelf: 'stretch',
@@ -133,8 +135,8 @@ const styles = StyleSheet.create({
   },
   totalValue: {
     fontSize: 22,
-    fontWeight: '900',
     color: '#78350F',
+    fontFamily: 'RobotoMono_700Bold',
   },
   buttonsContainer: {
     width: '100%',
@@ -151,7 +153,7 @@ const styles = StyleSheet.create({
   bookingListText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   doneBtn: {
     backgroundColor: '#111827',
@@ -163,7 +165,7 @@ const styles = StyleSheet.create({
   doneText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
 });
 

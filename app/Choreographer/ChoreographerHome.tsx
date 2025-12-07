@@ -5,6 +5,7 @@ import { useUserInfo } from '../../hooks/useUserInfo';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, Easing, withDelay } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppModal } from '../../hooks/useAppModal';
+import { useNotificationStore } from '../../states/notificationStore';
 
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
@@ -13,7 +14,10 @@ export default function ChoreographerHome() {
   const router = useRouter();
   const { user, loading } = useUserInfo();
   const { showModal, modal } = useAppModal();
-  const avatar = require('../../assets/vecteezy_man-using-smartphone-device_24096847.png');
+  const { unreadCount } = useNotificationStore();
+  const avatarSource = user?.avatar
+    ? { uri: user.avatar }
+    : require('../../assets/vecteezy_man-using-smartphone-device_24096847.png');
   const username = user?.name || 'Choreographer';
   const handleLogout = () => {
     showModal({
@@ -132,15 +136,25 @@ export default function ChoreographerHome() {
             <Text style={styles.greeting}>{username ? displayText : 'Hi, ...'}</Text>
           </View>
           <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.iconButton}>
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={() => router.push('/NotificationList')}
+            >
               <Text style={styles.iconText}>🔔</Text>
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
             
           </View>
         </View>
         {/* PROFILE SECTION */}
         <Animated.View style={[styles.profileSection, profileAnimatedStyle]}>
-          <Image source={avatar} style={styles.profilePic} />
+          <Image source={avatarSource} style={styles.profilePic} />
           <View style={{flex:1}}>
             <Text style={styles.name}>{username}</Text>
           </View>
@@ -151,9 +165,11 @@ export default function ChoreographerHome() {
           <MenuButton index={0} icon="📜" label="Lịch đặt" onPress={()=>{router.push('/Choreographer/RequestBookingList')}} />
           <MenuButton index={1} icon="💳" label="Ví tiền" />
           {/* <MenuButton index={2} icon="📈" label="Lịch sử giao dịch" /> */}
+          {/* <MenuButton index={2} icon="" label="Khiếu nại đơn đặt" onPress={()=>{router.push('/PlatformComplaint')}} /> */}
+
           <MenuButton index={2} icon="" label="Chat" onPress={()=>{router.push('/ChatList')}} />
 
-          <MenuButton index={3} icon="📅" label="Lịch" />
+          <MenuButton index={3} icon="" label="Quét mã check in" onPress={()=>{router.push('/Choreographer/CheckInQr')}} />
           <MenuButton index={4} icon="🚪" label="Đăng xuất" showLast={true} onPress={handleLogout} />
         </View>
         {loading && <ActivityIndicator color={ORANGE2} style={{marginTop:20}} />}
@@ -242,6 +258,25 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#374151',
   },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontFamily: 'RobotoMono_700Bold',
+  },
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -270,14 +305,14 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 20,
-    fontWeight: '700',
     color: ORANGE2,
+    fontFamily: 'RobotoMono_700Bold',
   },
   location: {
     color: ORANGE,
     fontSize: 14,
     marginTop: 2,
-    fontWeight: '500',
+    fontFamily: 'RobotoMono_400Regular',
   },
   coinCard: {
     flexDirection: 'row',
@@ -294,8 +329,8 @@ const styles = StyleSheet.create({
   },
   coinText: {
     color: ORANGE,
-    fontWeight: 'bold',
     fontSize: 15,
+    fontFamily: 'RobotoMono_700Bold',
   },
   coinIcon: {
     fontSize: 18,
@@ -323,8 +358,8 @@ const styles = StyleSheet.create({
   },
   tabActiveText: {
     color: '#fff',
-    fontWeight: '700',
     fontSize: 15,
+    fontFamily: 'RobotoMono_700Bold',
   },
   tabInactive: {
     flex: 1,
@@ -337,9 +372,9 @@ const styles = StyleSheet.create({
   },
   tabInactiveText: {
     color: ORANGE2,
-    fontWeight: '700',
     fontSize: 15,
     opacity: 0.91,
+    fontFamily: 'RobotoMono_700Bold',
   },
   menuSection: {
     marginHorizontal: 20,
@@ -373,17 +408,17 @@ const styles = StyleSheet.create({
   },
   menuLabel: {
     fontSize: 16,
-    fontWeight: '600',
     flex:1,
     color: ORANGE2,
+    fontFamily: 'RobotoMono_700Bold',
   },
   menuArrow: {
     fontSize: 20,
     color: ORANGE2,
-    fontWeight: '800',
     marginLeft: 8,
     marginRight:6,
     opacity: 0.7,
+    fontFamily: 'RobotoMono_700Bold',
   },
 });
 

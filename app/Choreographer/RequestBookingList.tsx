@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { getChoreographerBookings } from '../../service/api';
 import { useRefetchOnFocus } from '../hooks';
@@ -123,13 +123,22 @@ function BookingCard({ booking, onPress }: { booking: any; onPress?: () => void 
   const hasFeedback = Array.isArray(booking.bookingFeedbacks) && booking.bookingFeedbacks.length > 0;
   const isCompleted = (booking?.statusName || '').trim() === 'Đơn đặt hoàn tất';
   const showFeedbackRow = hasFeedback || isCompleted;
+  const ava = booking.customer?.avatar;
 
   return (
     <TouchableOpacity activeOpacity={0.8} style={styles.card} onPress={onPress}>
       <View style={styles.rowTop}>
         {/* Thumbnail */}
         <View style={styles.thumb}>
-          <Text style={styles.thumbEmoji}></Text>
+          {ava ? (
+            <Image 
+              source={{ uri: ava }} 
+              style={styles.thumbImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={styles.thumbInitial}>{(title || 'K')[0].toUpperCase()}</Text>
+          )}
         </View>
 
         {/* Title + subtitle */}
@@ -178,11 +187,10 @@ const styles = StyleSheet.create({
     marginTop: 9,
     marginBottom: 6,
     fontSize: 21,
-    fontWeight: '700',
     color: ORANGE2,
     textAlign: 'center',
     letterSpacing: 0.2,
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   chipsRow: {
     paddingHorizontal: 12,
@@ -215,15 +223,13 @@ const styles = StyleSheet.create({
   },
   chipText: {
     color: ORANGE2,
-    fontWeight: '600',
     fontSize: 13,
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   chipTextActive: {
     color: '#fff',
-    fontWeight: '800',
     fontSize: 13,
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   emptyText: {
     textAlign: 'center',
@@ -264,14 +270,23 @@ const styles = StyleSheet.create({
   thumbEmoji: {
     fontSize: 28,
   },
+  thumbImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  thumbInitial: {
+    fontSize: 28,
+    color: ORANGE2,
+    fontFamily: 'RobotoMono_700Bold',
+  },
   titleWrap: {
     flex: 1,
   },
   title: {
     fontSize: 16,
-    fontWeight: '700',
     color: '#111827',
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   subtitle: {
     marginTop: 2,
@@ -283,8 +298,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 16,
     color: '#6B7280',
-    fontWeight: '700',
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   totalRow: {
     marginTop: 8,
@@ -304,9 +318,8 @@ const styles = StyleSheet.create({
   totalValue: {
     color: ORANGE2,
     fontSize: 20,
-    fontWeight: '900',
     marginLeft: 8,
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   feedbackRow: {
     marginTop: 10,

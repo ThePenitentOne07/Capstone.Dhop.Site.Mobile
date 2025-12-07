@@ -1,11 +1,26 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { getChoreographerBookings } from '../service/api';
 import { useRefetchOnFocus } from './hooks';
 
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
+
+// All booking status display values
+const STATUS_CHIP_VALUES = [
+  'Tất cả',
+  'Đơn đặt chờ xác nhận',
+  'Đơn đặt đã kích hoạt',
+  'Đơn đặt không kích hoạt',
+  'Đơn đặt đang tiến hành',
+  'Đơn đặt đã hoàn thành công việc',
+  'Đơn đặt hoàn tất',
+  'Đơn đặt chưa hoàn tất',
+  'Đơn đặt đã hủy',
+  'Đơn đặt hết chỗ',
+  'Đơn trong trạng thái khiếu nại',
+];
 
 export default function BookingList() {
   const router = useRouter();
@@ -45,7 +60,9 @@ export default function BookingList() {
 
   const filteredData = useMemo(() => {
     if (selectedStatus === 'Tất cả') return data;
-    return (data || []).filter((b) => (b?.statusName || '').trim() === selectedStatus);
+    return (data || []).filter(
+      (b) => (b?.statusName || '').trim() === selectedStatus,
+    );
   }, [data, selectedStatus]);
 
   const openDetail = (booking: any) => {
@@ -79,7 +96,7 @@ export default function BookingList() {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
           }
         }} 
       />
@@ -110,13 +127,6 @@ export default function BookingList() {
     </View>
   );
 }
-
-const STATUS_CHIP_VALUES = [
-  'Tất cả',
-  'Đơn đặt chờ xác nhận',
-  'Đơn đặt đã kích hoạt',
-  'Đơn đặt hoàn tất'
-];
 
 function StatusChips({ selected, onSelect }: { selected: string; onSelect: (v: string) => void }) {
   return (
@@ -150,13 +160,22 @@ function BookingCard({ booking, onPress }: { booking: any; onPress?: () => void 
   const hasFeedback = Array.isArray(booking.bookingFeedbacks) && booking.bookingFeedbacks.length > 0;
   const isCompleted = (booking?.statusName || '').trim() === 'Đơn đặt hoàn tất';
   const showFeedbackRow = hasFeedback || isCompleted;
-  const ava= booking.choreography?.avatarUrl
+  const avatarUrl = booking.choreography?.avatarUrl;
+  const avatarInitial = title?.[0]?.toUpperCase() || 'U';
 
   return (
     <TouchableOpacity activeOpacity={0.8} style={styles.card} onPress={onPress}>
       <View style={styles.rowTop}>
         <View style={styles.thumb}>
-          <Text style={styles.thumbEmoji}></Text>
+          {avatarUrl ? (
+            <Image 
+              source={{ uri: avatarUrl }} 
+              style={styles.thumbImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={styles.thumbInitial}>{avatarInitial}</Text>
+          )}
         </View>
         <View style={styles.titleWrap}>
           <Text numberOfLines={1} style={styles.title}>{title}</Text>
@@ -279,8 +298,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFD8B4',
   },
-  thumbEmoji: {
+  thumbImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  thumbInitial: {
     fontSize: 28,
+    color: ORANGE2,
+    fontFamily: 'RobotoMono_700Bold',
   },
   titleWrap: {
     flex: 1,
@@ -301,8 +327,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 16,
     color: '#6B7280',
-    fontWeight: '700',
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   totalRow: {
     marginTop: 8,
@@ -322,9 +347,8 @@ const styles = StyleSheet.create({
   totalValue: {
     color: ORANGE2,
     fontSize: 20,
-    fontWeight: '900',
     marginLeft: 8,
-    fontFamily: 'Roboto',
+    fontFamily: 'RobotoMono_700Bold',
   },
   feedbackRow: {
     marginTop: 10,

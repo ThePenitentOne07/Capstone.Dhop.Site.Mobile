@@ -50,11 +50,20 @@ export default function LoginScreen() {
         const userRes = await getUserInfo();
         // FIX: role is an array property 'role', not 'roles', each element has a 'name'
         const role = userRes?.data?.role;
+        const roleUpper = String(role).toUpperCase();
         console.log("role:", userRes?.data);
-        if (String(role).toUpperCase() === 'CHOREOGRAPHY' || String(role).toUpperCase() === 'CHOREOGRAPHER') {
-          router.replace("/Choreographer/ChoreographerHome");
-        } else {
-          router.replace("/Home");
+
+        switch (roleUpper) {
+          case "CHOREOGRAPHY":
+          case "CHOREOGRAPHER":
+            router.replace("/Choreographer/ChoreographerHome");
+            break;
+          case "DANCER":
+            router.replace("/Dancer/DancerHome");
+            break;
+          default:
+            router.replace("/Home");
+            break;
         }
       } catch {
         // fallback to Home if role cannot be fetched
@@ -148,7 +157,7 @@ export default function LoginScreen() {
         </TouchableOpacity>
         <View style={styles.signupContainer}>
           <Text style={styles.signupText}>Chưa có tài khoản? </Text>
-          <TouchableOpacity onPress={() => router.push("/signUp")}>
+          <TouchableOpacity onPress={() => router.push("/SignUp")}>
             <Text style={styles.signupLink}>Tạo tài khoản</Text>
           </TouchableOpacity>
         </View>
@@ -159,8 +168,7 @@ export default function LoginScreen() {
   );
 }
 
-const PURPLE = "#7C5CFC";
-const YELLOW = "#F2B200"; // close to mock's button
+
 
 const styles = StyleSheet.create({
   screenRoot: {
@@ -218,8 +226,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     color: "#111827",
     marginBottom: 8,
-    fontWeight: "600",
-    fontFamily: "RobotoMono_400Regular",
+    fontFamily: "RobotoMono_700Bold",
   },
   input: {
     height: 48,
@@ -238,8 +245,7 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     color: "#6B7280",
-    fontWeight: "600",
-    fontFamily: "RobotoMono_400Regular",
+    fontFamily: "RobotoMono_700Bold",
   },
   loginButton: {
     height: 52,
@@ -252,9 +258,8 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: "#FFFFFF",
-    fontWeight: "600",
     fontSize: 18,
-    fontFamily: "RobotoMono_400Regular",
+    fontFamily: "RobotoMono_700Bold",
   },
   errorText: {
     color: "#DC2626",
@@ -276,6 +281,6 @@ const styles = StyleSheet.create({
   signupLink: {
     color: "#FF7120",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: "RobotoMono_700Bold",
   },
 }); 

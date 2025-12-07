@@ -98,13 +98,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: "700",
     color: "#111827",
+    fontFamily: 'RobotoMono_700Bold',
   },
   showMore: {
     fontSize: 14,
     color: "#FF7A00",
-    fontWeight: "500",
+    fontFamily: 'RobotoMono_400Regular',
   },
   filterContainer: {
     paddingLeft: 20,
@@ -127,12 +127,12 @@ const styles = StyleSheet.create({
   filterPillText: {
     fontSize: 14,
     color: "#6B7280",
-    fontWeight: "500",
+    fontFamily: 'RobotoMono_400Regular',
   },
   filterPillTextActive: {
     fontSize: 14,
     color: "#FFFFFF",
-    fontWeight: "600",
+    fontFamily: 'RobotoMono_700Bold',
   },
   classCardsContainer: {
     paddingLeft: 20,

@@ -264,8 +264,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: '700',
     color: colors.text.primary,
+    fontFamily: 'RobotoMono_700Bold',
   },
   iconButton: {
     width: 40,
@@ -295,13 +295,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '700',
     color: colors.text.primary,
+    fontFamily: 'RobotoMono_700Bold',
   },
   seeAllText: {
     fontSize: 14,
     color: colors.primary,
-    fontWeight: '600',
+    fontFamily: 'RobotoMono_700Bold',
   },
   quickActions: {
     flexDirection: 'row',
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   actionLabel: {
     fontSize: 12,
     color: colors.text.secondary,
-    fontWeight: '500',
+    fontFamily: 'RobotoMono_400Regular',
   },
   transactionsList: {
     marginTop: 8,
@@ -367,17 +367,18 @@ const styles = StyleSheet.create({
   },
   transactionTitle: {
     fontSize: 16,
-    fontWeight: '600',
     color: colors.text.primary,
     marginBottom: 4,
+    fontFamily: 'RobotoMono_700Bold',
   },
   transactionDate: {
     fontSize: 12,
     color: colors.text.muted,
+    fontFamily: 'RobotoMono_400Regular',
   },
   transactionAmount: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   amountIncoming: {
     color: '#10B981',

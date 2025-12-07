@@ -2,9 +2,11 @@ import { View, Text, Button, Image, ScrollView, StyleSheet, TouchableOpacity, Di
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } from "react-native-reanimated";
-import { LinearGradient } from 'expo-linear-gradient';
 import { Introduction, ChoreographerProject } from "../../components/ChoreographerDetail/index";
+import CommentSection from "../../components/ChoreographerDetail/CommentSection";
 import { getChoreographerById } from "../../service/api";
+import { useConversationStore } from "../../states/conversationStore";
+import { useAppModal } from "../../hooks/useAppModal";
 
 interface Profile {
   profileId: number;
@@ -15,6 +17,8 @@ interface Profile {
 
 interface ChoreographerData {
   id: string;
+  userId?: string;
+  userUUID?: string;
   title?: string;
   nickname?: string;
   name?: string;
@@ -27,6 +31,7 @@ interface ChoreographerData {
   area?: any[];
   averageRating?: number;
   profiles?: Profile[];
+  extraServices?: Array<{ id: number; name: string; description: string; price: number }>;
 }
 
 export default function DetailsScreen() {
@@ -37,6 +42,9 @@ export default function DetailsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState("")
   const [choreographerData, setChoreographerData] = useState<ChoreographerData | null>(null);
+  const [chatLoading, setChatLoading] = useState(false);
+  const { createConversation } = useConversationStore();
+  const { showModal, modal } = useAppModal();
 
   // Get screen dimensions for responsive animation
   const screenWidth = Dimensions.get('window').width;
@@ -85,6 +93,7 @@ export default function DetailsScreen() {
   const area = choreographerData?.area || [];
   const averageRating= choreographerData?.averageRating ;
   const profiles = choreographerData?.profiles || [];
+  const extraServices = choreographerData?.extraServices || [];
 
   const imageSource = avatar
     ? { uri: avatar }
@@ -116,7 +125,9 @@ export default function DetailsScreen() {
           about: about || "",
           area: area || [],
           danceType: danceType || [],
-          averageRating: averageRating || 0
+          averageRating: averageRating || 0,
+          extraServices,
+          
         }} />;
       case "My Account":
         return <ChoreographerProject profiles={profiles} />;
@@ -129,7 +140,8 @@ export default function DetailsScreen() {
           about: about || "",
           area: area || [],
           danceType: danceType || [],
-          averageRating: averageRating || 0
+          averageRating: averageRating || 0,
+          extraServices
         }} />;
     }
   };
@@ -163,12 +175,53 @@ export default function DetailsScreen() {
     <View style={styles.screenRoot}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.imageContainer}>
-          <Image source={imageSource} style={styles.coverImage} resizeMode="cover" />
-          <LinearGradient
-            colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.3)', 'rgba(255, 255, 255, 0.8)', '#FFFFFF']}
-            locations={[0, 0.3, 0.7, 1]}
-            style={styles.imageGradient}
-          />
+          <Image source={imageSource} style={styles.coverImage} resizeMode="contain" />
+          <TouchableOpacity 
+            style={styles.msgBtnFab} 
+            activeOpacity={0.86} 
+            onPress={async () => {
+              const userUUID = choreographerData?.userUUID || choreographerData?.userId;
+              if (!userUUID) {
+                showModal({
+                  title: 'Lỗi',
+                  message: 'Không tìm thấy thông tin người dùng',
+                  status: 'error',
+                });
+                return;
+              }
+
+              setChatLoading(true);
+              try {
+                const conversation = await createConversation({
+                  type: 'DIRECT',
+                  participantIds: [userUUID],
+                });
+
+                router.push({
+                  pathname: '/ChatDetail',
+                  params: {
+                    conversation: JSON.stringify(conversation),
+                  },
+                });
+              } catch (error: any) {
+                console.error('Failed to create conversation:', error);
+                showModal({
+                  title: 'Lỗi',
+                  message: error?.message || 'Không thể tạo cuộc trò chuyện',
+                  status: 'error',
+                });
+              } finally {
+                setChatLoading(false);
+              }
+            }}
+            disabled={chatLoading}
+          >
+            {chatLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.msgBtnFabLabel}>Nhắn tin</Text>
+            )}
+          </TouchableOpacity>
         </View>
 
         
@@ -200,6 +253,9 @@ export default function DetailsScreen() {
         </View>
         
         {renderTabContent()}
+        {selectedTab === "My Progress" && (
+          <CommentSection choreographyId={id} avgRating={averageRating || 0} />
+        )}
         <View style={styles.bottomSpacer} />
       </ScrollView>
       
@@ -218,13 +274,15 @@ export default function DetailsScreen() {
               about, 
               yearExperience: String(yearExperience || 0), 
               danceType: JSON.stringify(danceType || []), 
-              area: JSON.stringify(area || [])
+              area: JSON.stringify(area || []),
+              extraServices: JSON.stringify(extraServices || [])
             }
           })}
         >
           <Text style={styles.primaryBtnText}>Đặt lịch ngay!</Text>
         </TouchableOpacity>
       </View>
+      {modal}
     </View>
   );
 }
@@ -245,12 +303,14 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: "#6B7280",
+    fontFamily: 'RobotoMono_400Regular',
   },
   errorText: {
     fontSize: 16,
     color: "#C92A2A",
     textAlign: "center",
     marginBottom: 16,
+    fontFamily: 'RobotoMono_400Regular',
   },
   retryButton: {
     backgroundColor: "#FF7A00",
@@ -261,7 +321,7 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: 'RobotoMono_700Bold',
   },
   scrollView: {
     flex: 1,
@@ -269,21 +329,12 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
     width: "100%",
-    height: 220,
+    minHeight: 300,
   },
   coverImage: {
     width: "100%",
-    height: 220,
+    height: 300,
     backgroundColor: "#F3F4F6",
-  },
-  imageGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: "100%",
-    height: 220,
   },
   profileSection: {
     flexDirection: "row",
@@ -325,13 +376,14 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 16,
-    fontWeight: "600",
     color: "#FFFFFF",
     marginBottom: 2,
+    fontFamily: 'RobotoMono_700Bold',
   },
   userLocation: {
     fontSize: 14,
     color: "#D1D5DB",
+    fontFamily: 'RobotoMono_400Regular',
   },
   coinsContainer: {
     flexDirection: "row",
@@ -349,9 +401,9 @@ const styles = StyleSheet.create({
   },
   coinsText: {
     fontSize: 14,
-    fontWeight: "600",
     color: "#FFFFFF",
     marginRight: 6,
+    fontFamily: 'RobotoMono_700Bold',
   },
   segmentedControl: {
     flexDirection: "row",
@@ -385,11 +437,12 @@ const styles = StyleSheet.create({
   },
   segmentText: {
     fontSize: 14,
-    fontWeight: "600",
     color: "#9CA3AF",
+    fontFamily: 'RobotoMono_700Bold',
   },
   segmentTextActive: {
     color: "#FFFFFF",
+    fontFamily: 'RobotoMono_700Bold',
   },
   arrowButton: {
     paddingVertical: 12,
@@ -400,7 +453,7 @@ const styles = StyleSheet.create({
   arrowText: {
     fontSize: 18,
     color: "#FFFFFF",
-    fontWeight: "600",
+    fontFamily: 'RobotoMono_700Bold',
   },
   bottomSpacer: {
     height: 100, // Space for the sticky button
@@ -435,6 +488,27 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  msgBtnFab: {
+    position: 'absolute',
+    right: 14,
+    bottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: "#FF7A00",
+    borderRadius: 32,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    shadowColor: "#FF7120",
+    shadowOpacity: 0.14,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  msgBtnFabLabel: {
+    color: '#fff',
+    fontSize: 15,
+    textAlign: 'center',
+    fontFamily: 'RobotoMono_700Bold',
   },
 });

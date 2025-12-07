@@ -2,28 +2,51 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import Dropdown from '../common/Dropdown';
-import useArea, { Area } from '../../hooks/useArea';
+import useArea from '../../hooks/useArea';
 
 interface Step4Props {
   sessions: { dateISO: string; startTime: string; durationMinutes: number }[];
-  onSubmit: (data: { location: string; description?: string; areaId: number }) => void;
+  onSubmit: (data: { location: string; description?: string; areaId: number; bookingExtraServiceRequests: { extraServiceId: number; quantity: number }[] }) => void;
+  choreographerAreas?: Array<{ id: number; city: string; ward: string }>;
+  extraServices?: Array<{ id: number; name: string; description?: string; price?: number }>;
 }
 
-export default function Step4({ sessions, onSubmit }: Step4Props) {
+export default function Step4({ sessions, onSubmit, choreographerAreas = [], extraServices = [] }: Step4Props) {
   const { areas, loading } = useArea();
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
   const [areaId, setAreaId] = useState<number | null>(null);
+  const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>([]);
 
-  const areaOptions = useMemo(() => areas.map(a => ({ value: String(a.id), label: `${a.ward} - ${a.city}` })), [areas]);
+  // Filter areas to only include those that the choreographer has
+  const areaOptions = useMemo(() => {
+    const choreographerAreaIds = new Set(choreographerAreas.map(a => a.id));
+    return areas
+      .filter(a => choreographerAreaIds.has(a.id))
+      .map(a => ({ value: String(a.id), label: `${a.ward} - ${a.city}` }));
+  }, [areas, choreographerAreas]);
+
+  const bookingExtraServiceRequests = useMemo(
+    () => selectedServiceIds.map(id => ({ extraServiceId: id, quantity: 1 })),
+    [selectedServiceIds]
+  );
+
+  const toggleService = (serviceId: number) => {
+    setSelectedServiceIds(prev =>
+      prev.includes(serviceId) ? prev.filter(id => id !== serviceId) : [...prev, serviceId]
+    );
+  };
 
   const isValid = location.trim().length > 0 && !!areaId;
-//   console.log("Areas:", areas);
-  
 
   const handleSubmit = () => {
     if (!isValid) return;
-    onSubmit({ location: location.trim(), description: description.trim() || undefined, areaId: areaId! });
+    onSubmit({ 
+      location: location.trim(), 
+      description: description.trim() || undefined, 
+      areaId: areaId!, 
+      bookingExtraServiceRequests 
+    });
   };
 
   return (
@@ -61,6 +84,40 @@ export default function Step4({ sessions, onSubmit }: Step4Props) {
         />
       </View>
 
+      {!!extraServices.length && (
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Dịch vụ bổ sung</Text>
+          <View style={styles.servicesList}>
+            {extraServices.map(service => {
+              const selected = selectedServiceIds.includes(service.id);
+              return (
+                <TouchableOpacity
+                  key={service.id}
+                  style={[styles.serviceCard, selected && styles.serviceCardSelected]}
+                  onPress={() => toggleService(service.id)}
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.serviceHeader}>
+                    <Text style={styles.serviceName}>{service.name}</Text>
+                  
+                  </View>
+                  <Text style={styles.servicePrice}>
+                      {service.price ? `${service.price.toLocaleString('vi-VN')}₫` : 'Liên hệ'}
+                    </Text>
+                  {!!service.description && (
+                    <Text style={styles.serviceDescription}>{service.description}</Text>
+                  )}
+                  
+                  <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
+                    {selected && <Text style={styles.checkboxTick}>✓</Text>}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      )}
+
       <TouchableOpacity
         style={[styles.submitBtn, !isValid && styles.submitBtnDisabled]}
         disabled={!isValid}
@@ -88,6 +145,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
     marginBottom: 6,
+    fontFamily: 'RobotoMono_400Regular',
   },
   input: {
     backgroundColor: '#FFFFFF',
@@ -98,6 +156,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     color: '#1F2937',
     fontSize: 14,
+    fontFamily: 'RobotoMono_400Regular',
   },
   multiline: {
     minHeight: 96,
@@ -124,10 +183,72 @@ const styles = StyleSheet.create({
   submitText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'RobotoMono_700Bold',
   },
   submitTextDisabled: {
     color: '#9CA3AF',
+  },
+  servicesList: {
+    gap: 12,
+  },
+  serviceCard: {
+    position: 'relative',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    padding: 16,
+  },
+  serviceCardSelected: {
+    borderColor: '#FF7A00',
+    backgroundColor: '#FFF7ED',
+  },
+  serviceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  serviceName: {
+    fontSize: 15,
+    color: '#1F2937',
+    flex: 1,
+    paddingRight: 12,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  servicePrice: {
+    fontSize: 14,
+    color: '#FF7A00',
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  serviceDescription: {
+    marginTop: 4,
+    fontSize: 13,
+    color: '#4B5563',
+    lineHeight: 18,
+    fontFamily: 'RobotoMono_400Regular',
+  },
+  checkbox: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  checkboxSelected: {
+    backgroundColor: '#FF7A00',
+    borderColor: '#FF7A00',
+  },
+  checkboxTick: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: 'RobotoMono_700Bold',
   },
 });
 

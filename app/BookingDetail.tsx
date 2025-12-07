@@ -1,15 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import { acceptChoreographerBooking, getBookingById } from '../service/api';
-import { useRouter } from 'expo-router';
-import { useConversationStore } from '../states/conversationStore';
-import { useAppModal } from '../hooks/useAppModal';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Image,
+} from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import { getBookingById } from "../service/api";
+import { useRouter } from "expo-router";
+import { useConversationStore } from "../states/conversationStore";
+import { useAppModal } from "../hooks/useAppModal";
+import { useRefetchOnFocus } from "./hooks/useRefetchOnFocus";
 
-const YELLOW = '#FFD540';
-const ORANGE = '#FF7120';
-const ORANGE2 = '#FF7A00';
-const GREEN = '#0F9D58';
+const ORANGE = "#FF7120";
+const ORANGE2 = "#FF7A00";
 
 export default function BookingDetail() {
   const params = useLocalSearchParams();
@@ -20,7 +27,7 @@ export default function BookingDetail() {
     if (Array.isArray(bookingIdParam)) {
       return bookingIdParam[0];
     }
-    if (typeof bookingIdParam === 'string') {
+    if (typeof bookingIdParam === "string") {
       return bookingIdParam;
     }
     return undefined;
@@ -28,7 +35,7 @@ export default function BookingDetail() {
 
   const fallbackBooking = useMemo(() => {
     try {
-      if (typeof bookingParam === 'string') {
+      if (typeof bookingParam === "string") {
         const raw = decodeURIComponent(bookingParam);
         return JSON.parse(raw);
       }
@@ -43,26 +50,24 @@ export default function BookingDetail() {
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
-  useEffect(() => {
-    let active = true;
-
-    const load = async () => {
+  const loadBooking = useCallback(
+    async (isActive: () => boolean = () => true) => {
       if (!bookingId) {
         if (fallbackBooking) {
-          if (active) {
+          if (isActive()) {
             setBooking(fallbackBooking);
             setError(null);
             setLoading(false);
           }
-        } else if (active) {
+        } else if (isActive()) {
           setBooking(null);
-          setError('Không tìm thấy mã đơn đặt lịch.');
+          setError("Không tìm thấy mã đơn đặt lịch.");
           setLoading(false);
         }
         return;
       }
 
-      if (active) {
+      if (isActive()) {
         setLoading(true);
         setError(null);
       }
@@ -72,38 +77,48 @@ export default function BookingDetail() {
         const payload = Array.isArray(res.data) ? res.data[0] : res.data;
 
         if (!payload) {
-          throw new Error('Không tìm thấy đơn đặt lịch.');
+          throw new Error("Không tìm thấy đơn đặt lịch.");
         }
 
-        if (active) {
+        if (isActive()) {
           setBooking(payload);
         }
       } catch (err: any) {
-        if (active) {
-          setError(err?.response?.data?.message || err?.message || 'Không thể tải đơn đặt lịch');
+        if (isActive()) {
+          setError(
+            err?.response?.data?.message ||
+              err?.message ||
+              "Không thể tải đơn đặt lịch"
+          );
           if (!fallbackBooking) {
             setBooking(null);
           }
         }
       } finally {
-        if (active) {
+        if (isActive()) {
           setLoading(false);
         }
       }
-    };
+    },
+    [bookingId, fallbackBooking]
+  );
 
-    load();
-
+  useEffect(() => {
+    let active = true;
+    const checkActive = () => active;
+    loadBooking(checkActive);
     return () => {
       active = false;
     };
-  }, [bookingId, fallbackBooking, reloadToken]);
+  }, [loadBooking, reloadToken]);
+
+  useRefetchOnFocus(loadBooking);
 
   const handleRetry = () => setReloadToken((token) => token + 1);
 
-  const [acceptLoading, setAcceptLoading] = useState(false);
-  const [acceptSuccess, setAcceptSuccess] = useState<boolean|undefined>();
-  const [acceptError, setAcceptError] = useState<string|undefined>();
+  // const [acceptLoading, setAcceptLoading] = useState(false);
+  // const [acceptSuccess, setAcceptSuccess] = useState<boolean|undefined>();
+  // const [acceptError, setAcceptError] = useState<string|undefined>();
   const [chatLoading, setChatLoading] = useState(false);
 
   const router = useRouter();
@@ -124,7 +139,11 @@ export default function BookingDetail() {
       <View style={styles.stateContainer}>
         <Text style={styles.stateMessage}>{error}</Text>
         {bookingId && (
-          <TouchableOpacity style={styles.retryButton} onPress={handleRetry} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={handleRetry}
+            activeOpacity={0.85}
+          >
             <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
         )}
@@ -140,54 +159,78 @@ export default function BookingDetail() {
     );
   }
 
-  const qty = booking.numberOfTrainingSessions ?? (booking.trainingSessions?.length || 0);
+  const qty =
+    booking.numberOfTrainingSessions ?? (booking.trainingSessions?.length || 0);
   const totalPrice = booking.price;
   const perSessionPrice = booking?.choreography?.price;
-  const status = booking.statusName;
-  const feedbacks = Array.isArray(booking.bookingFeedbacks) ? booking.bookingFeedbacks : [];
+  const status = (booking.statusName || "").trim();
+  const isComplaintStatus = status === "Đơn trong trạng thái khiếu nại";
+  const feedbacks = Array.isArray(booking.bookingFeedbacks)
+    ? booking.bookingFeedbacks
+    : [];
   const hasFeedback = feedbacks.length > 0;
 
-  // Determine status color
-  let statusBg = '#E7F5EF';
-  let statusColor = '#0E766E';
-  if (/chờ xác nhận|on hold|pending/i.test(status)) {
-    statusBg = '#FFF9E0';
-    statusColor = ORANGE2;
-  }
+  // Determine status color for main booking status card
+  const { bg: statusBg, color: statusColor } = getBookingStatusStyle(status);
 
   return (
-    <View style={{flex:1, backgroundColor:'#fff'}}>
-      <ScrollView style={styles.root} contentContainerStyle={{ paddingBottom: 104 }}>
+    <View style={{ flex: 1, backgroundColor: "#fff" }}>
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={{ paddingBottom: 104 }}
+      >
         <Text style={styles.header}>Thông tin đặt lịch</Text>
 
         {/* Status Card */}
-        <View style={[styles.statusCard, { backgroundColor: statusBg, borderColor: statusBg }]}> 
-          <Text style={[styles.statusTitle, { color: statusColor }]}>{status}</Text>
+        <View
+          style={[
+            styles.statusCard,
+            { backgroundColor: statusBg, borderColor: statusBg },
+          ]}
+        >
+          <Text style={[styles.statusTitle, { color: statusColor }]}>
+            {status}
+          </Text>
           <Text style={styles.shipStatus}>Ngày đặt</Text>
-          <Text style={styles.shipTime}>{formatDateTime(booking.bookingDate)}</Text>
+          <Text style={styles.shipTime}>
+            {formatDateTime(booking.bookingDate)}
+          </Text>
         </View>
 
+        {isComplaintStatus && (
+          <View style={styles.complaintNotice}>
+            <Text style={styles.complaintNoticeText}>
+              Đơn này đang bị khiếu nại. Xin chờ đợi xử lý
+            </Text>
+          </View>
+        )}
+
         {/* Address / Customer */}
-        <View style={[styles.block, {position:'relative', paddingBottom:52}]}> 
+        <View
+          style={[styles.block, { position: "relative", paddingBottom: 52 }]}
+        >
           <Text style={styles.blockTitle}>Thông tin biên đạo</Text>
           <Text style={styles.addrName}>{booking.choreography?.username}</Text>
           <Text style={styles.addrText}>{booking.address}</Text>
           {!!booking.area && (
-            <Text style={styles.addrText}>{booking.area.ward}, {booking.area.city}</Text>
+            <Text style={styles.addrText}>
+              {booking.area.ward}, {booking.area.city}
+            </Text>
           )}
-          <TouchableOpacity 
-            style={styles.msgBtnFab} 
-            activeOpacity={0.86} 
+          <TouchableOpacity
+            style={styles.msgBtnFab}
+            activeOpacity={0.86}
             onPress={async () => {
               // For BookingDetail, we need to check if booking.choreography has userUUID
               // Based on the structure, it might be booking.choreography.userUUID or booking.choreographerId
-              const choreographerUUID = booking.choreography?.userUUID || booking.choreographerId;
-              
+              const choreographerUUID =
+                booking.choreography?.userUUID || booking.choreographerId;
+
               if (!choreographerUUID) {
                 showModal({
-                  title: 'Lỗi',
-                  message: 'Không tìm thấy thông tin biên đạo',
-                  status: 'error',
+                  title: "Lỗi",
+                  message: "Không tìm thấy thông tin biên đạo",
+                  status: "error",
                 });
                 return;
               }
@@ -195,22 +238,22 @@ export default function BookingDetail() {
               setChatLoading(true);
               try {
                 const conversation = await createConversation({
-                  type: 'DIRECT',
+                  type: "DIRECT",
                   participantIds: [choreographerUUID],
                 });
 
                 router.push({
-                  pathname: '/ChatDetail',
+                  pathname: "/ChatDetail",
                   params: {
                     conversation: JSON.stringify(conversation),
                   },
                 });
               } catch (error: any) {
-                console.error('Failed to create conversation:', error);
+                console.error("Failed to create conversation:", error);
                 showModal({
-                  title: 'Lỗi',
-                  message: error?.message || 'Không thể tạo cuộc trò chuyện',
-                  status: 'error',
+                  title: "Lỗi",
+                  message: error?.message || "Không thể tạo cuộc trò chuyện",
+                  status: "error",
                 });
               } finally {
                 setChatLoading(false);
@@ -229,10 +272,26 @@ export default function BookingDetail() {
         {/* Item block */}
         <View style={styles.itemBlock}>
           <View style={styles.itemRow}>
-            <View style={styles.thumb}><Text style={{fontSize:26}}></Text></View>
-            <View style={{flex:1}}>
-              <Text numberOfLines={1} style={styles.itemTitle}>{booking.choreography?.username}</Text>
-              <Text numberOfLines={1} style={styles.itemSubtitle}>{booking.detail || 'Đặt lịch biên đạo'}</Text>
+            <View style={styles.thumb}>
+              {booking.choreography?.avatarUrl ? (
+                <Image
+                  source={{ uri: booking.choreography.avatarUrl }}
+                  style={styles.thumbImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={styles.thumbInitial}>
+                  {(booking.choreography?.username || "U")[0].toUpperCase()}
+                </Text>
+              )}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text numberOfLines={1} style={styles.itemTitle}>
+                {booking.choreography?.username}
+              </Text>
+              <Text numberOfLines={1} style={styles.itemSubtitle}>
+                {booking.detail || "Đặt lịch biên đạo"}
+              </Text>
             </View>
             <Text style={styles.itemQty}>x{qty}</Text>
           </View>
@@ -250,29 +309,54 @@ export default function BookingDetail() {
           </View>
         </View>
 
-        {/* Training Sessions */}
-        {Array.isArray(booking.trainingSessions) && booking.trainingSessions.length > 0 && (
-          <View style={styles.sessionsBlock}>
-            <Text style={styles.sessionsTitle}>Các buổi tập</Text>
-            {booking.trainingSessions.map((s: any, idx: number) => {
-              const statusName = s.statusName || '';
-              const statusColor = getStatusColor(statusName);
-              const statusText = translateStatus(statusName);
-              
-              return (
-                <View style={styles.sessionCard} key={idx}>
-                  <Text style={styles.sessionHeading}>Buổi #{s.sessionNo || (idx + 1)}</Text>
-                  <Text style={styles.sessionDate}>{sessionSummary(s)}</Text>
-                  {statusText && (
-                    <Text style={[styles.sessionStatus, { color: statusColor }]}>
-                      {statusText}
+        {/* Extra Services */}
+        {Array.isArray(booking.bookingExtraServices) &&
+          booking.bookingExtraServices.length > 0 && (
+            <View style={styles.extraServicesBlock}>
+              <Text style={styles.extraServicesTitle}>Dịch vụ bổ sung</Text>
+              {booking.bookingExtraServices.map((service: any, idx: number) => (
+                <View key={idx} style={styles.extraServiceCard}>
+                  <View style={styles.extraServiceRow}>
+                    <Text style={styles.extraServiceName}>
+                      {service.name || "Dịch vụ"}
                     </Text>
-                  )}
+                  </View>
+                  <Text style={styles.extraServicePrice}>
+                    {formatNumber(service.price || 0)}đ
+                  </Text>
                 </View>
-              );
-            })}
-          </View>
-        )}
+              ))}
+            </View>
+          )}
+
+        {/* Training Sessions */}
+        {Array.isArray(booking.trainingSessions) &&
+          booking.trainingSessions.length > 0 && (
+            <View style={styles.sessionsBlock}>
+              <Text style={styles.sessionsTitle}>Các buổi tập</Text>
+              {booking.trainingSessions.map((s: any, idx: number) => {
+                const statusName = s.statusName || "";
+                const statusColor = getStatusColor(statusName);
+                // const statusText = translateStatus(statusName);
+
+                return (
+                  <View style={styles.sessionCard} key={idx}>
+                    <Text style={styles.sessionHeading}>
+                      Buổi #{s.sessionNo || idx + 1}
+                    </Text>
+                    <Text style={styles.sessionDate}>{sessionSummary(s)}</Text>
+                    {statusName && (
+                      <Text
+                        style={[styles.sessionStatus, { color: statusColor }]}
+                      >
+                        {statusName}
+                      </Text>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          )}
 
         {/* Feedback */}
         {status === "Đơn đặt hoàn tất" && (
@@ -282,20 +366,28 @@ export default function BookingDetail() {
               feedbacks.map((fb: any, idx: number) => (
                 <View key={fb.id || idx} style={styles.feedbackCard}>
                   <View style={styles.feedbackHeader}>
-                    <Text style={styles.feedbackAuthor}>{fb.fromUser || 'Người dùng'}</Text>
-                    <Text style={styles.feedbackRating}>{'★'.repeat(fb.rating || 0)}</Text>
+                    <Text style={styles.feedbackAuthor}>
+                      {fb.fromUser || "Người dùng"}
+                    </Text>
+                    <Text style={styles.feedbackRating}>
+                      {"★".repeat(fb.rating || 0)}
+                    </Text>
                   </View>
-                  {fb.comment ? <Text style={styles.feedbackComment}>{fb.comment}</Text> : null}
+                  {fb.comment ? (
+                    <Text style={styles.feedbackComment}>{fb.comment}</Text>
+                  ) : null}
                 </View>
               ))
             ) : (
               <View style={styles.feedbackEmptyState}>
-                <Text style={styles.feedbackEmpty}>Bạn hãy đánh giá cho biên đạo.</Text>
+                <Text style={styles.feedbackEmpty}>
+                  Bạn hãy đánh giá cho biên đạo.
+                </Text>
                 <TouchableOpacity
                   style={styles.feedbackButton}
                   onPress={() =>
                     router.push({
-                      pathname: '/BookingFeedback',
+                      pathname: "/BookingFeedback",
                       params: { bookingId: booking.id },
                     })
                   }
@@ -307,7 +399,48 @@ export default function BookingDetail() {
             )}
           </View>
         )}
-       
+
+        {/* Cancle Button */}
+        {status === "Đơn đặt chờ xác nhận" && (
+          <View style={styles.complaintBlock}>
+            <TouchableOpacity
+              style={styles.complaintButton}
+              onPress={() => {
+                // TODO: Navigate to complaint screen or show complaint modal
+                showModal({
+                  title: "Hủy đơn",
+                  message:
+                    "Tính năng hủy đơn đang được phát triển. Vui lòng liên hệ hỗ trợ qua chat.",
+                  status: "info",
+                });
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.complaintButtonText}>Hủy đơn</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Complaint Button */}
+        {status !== "Đơn đặt chờ xác nhận" &&
+          status !== "Đơn trong trạng thái khiếu nại" && (
+            <View style={styles.complaintBlock}>
+              <TouchableOpacity
+                style={styles.complaintButton}
+                onPress={() => {
+                  router.push({
+                    pathname: "/Complaint",
+                    params: {
+                      bookingId: booking.id,
+                    },
+                  });
+                }}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.complaintButtonText}>Khiếu nại</Text>
+              </TouchableOpacity>
+            </View>
+          )}
       </ScrollView>
       {/* Floating action buttons */}
       {/* {status === 'Đơn đặt chờ xác nhận' && (
@@ -341,23 +474,35 @@ export default function BookingDetail() {
         </>
       )} */}
 
-      {status === 'Đơn đặt đã kích hoạt' && (
+      {status === "Đơn đặt đã kích hoạt" && (
         <View style={styles.actionBar}>
-          <TouchableOpacity style={styles.checkinBtn} onPress={() => {
-            try {
-              const sessions = Array.isArray(booking.trainingSessions) ? booking.trainingSessions.slice() : [];
-              const sorted = sessions.sort((a: any, b: any) => (a.sessionNo || 0) - (b.sessionNo || 0));
-              const notStarted = sorted.find((s: any) => s?.statusName === 'TRAINING_SESSION_NOT_STARTED');
-              const target = notStarted || sorted[0];
-              if (target?.id) {
-                router.push({ pathname: '/CustomerQRCheckIn', params: { trainingSessionId: String(target.id) } });
-              } else {
-                router.push('/CustomerQRCheckIn');
+          <TouchableOpacity
+            style={styles.checkinBtn}
+            onPress={() => {
+              try {
+                const sessions = Array.isArray(booking.trainingSessions)
+                  ? booking.trainingSessions.slice()
+                  : [];
+                const sorted = sessions.sort(
+                  (a: any, b: any) => (a.sessionNo || 0) - (b.sessionNo || 0)
+                );
+                const notStarted = sorted.find(
+                  (s: any) => s?.statusName === "Buổi tập chưa bắt đầu"
+                );
+                const target = notStarted || sorted[0];
+                if (target?.id) {
+                  router.push({
+                    pathname: "/CustomerQRCheckIn",
+                    params: { trainingSessionId: String(target.id) },
+                  });
+                } else {
+                  router.push("/CustomerQRCheckIn");
+                }
+              } catch {
+                router.push("/CustomerQRCheckIn");
               }
-            } catch {
-              router.push('/CustomerQRCheckIn');
-            }
-          }}>
+            }}
+          >
             <Text style={styles.checkinBtnText}>Check in</Text>
           </TouchableOpacity>
         </View>
@@ -370,347 +515,448 @@ export default function BookingDetail() {
 function formatDateTime(dt: string) {
   try {
     const d = new Date(dt);
-    return d.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+    return d.toLocaleString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
   } catch {
     return dt;
   }
 }
 function formatNumber(n: number) {
-  return n?.toLocaleString('vi-VN') || n;
+  return n?.toLocaleString("vi-VN") || n;
 }
 
 function sessionSummary(s: any) {
   try {
     const d = new Date(s.scheduledTime);
-    const dateStr = d.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
-    const start = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-    let dur = '';
+    const dateStr = d.toLocaleDateString("vi-VN", {
+      weekday: "short",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const start = d.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    let dur = "";
     if (s.durationMinutes) {
-      if (s.durationMinutes >= 60) dur = `${Math.floor(s.durationMinutes/60)} giờ` + (s.durationMinutes % 60 ? ` ${s.durationMinutes%60} phút` : '');
-      else dur = s.durationMinutes + ' phút';
+      if (s.durationMinutes >= 60)
+        dur =
+          `${Math.floor(s.durationMinutes / 60)} giờ` +
+          (s.durationMinutes % 60 ? ` ${s.durationMinutes % 60} phút` : "");
+      else dur = s.durationMinutes + " phút";
     }
-    return `${dateStr}, bắt đầu lúc ${start}` + (dur ? `, thời lượng ${dur}` : '');
+    return (
+      `${dateStr}, bắt đầu lúc ${start}` + (dur ? `, thời lượng ${dur}` : "")
+    );
   } catch {
-    return '';
+    return "";
   }
 }
 
 function translateStatus(statusName: string): string {
   const statusMap: { [key: string]: string } = {
-    'TRAINING_SESSION_SUSSECCFUL': 'Đã hoàn thành',
-    'TRAINING_SESSION_SUSSCECCFUL': 'Đã hoàn thành', // Handle typo variant
-    'TRAINING_SESSION_NOT_STARTED': 'Chưa bắt đầu',
-    'TRAINING_SESSION_STARTED': 'Đang diễn ra',
-    'TRAINING_SESSION_CANCELLED': 'Đã hủy',
+    TRAINING_SESSION_SUSSECCFUL: "Đã hoàn thành",
+    TRAINING_SESSION_SUSSCECCFUL: "Đã hoàn thành", // Handle typo variant
+    TRAINING_SESSION_NOT_STARTED: "Chưa bắt đầu",
+    TRAINING_SESSION_STARTED: "Đang diễn ra",
+    TRAINING_SESSION_CANCELLED: "Đã hủy",
   };
   return statusMap[statusName] || statusName;
 }
 
 function getStatusColor(statusName: string): string {
-  if (statusName === 'TRAINING_SESSION_SUSSECCFUL' || statusName === 'TRAINING_SESSION_SUSSCECCFUL') {
-    return '#0F9D58'; // Green for successful
+  if (
+    statusName === "TRAINING_SESSION_SUSSECCFUL" ||
+    statusName === "TRAINING_SESSION_SUSSCECCFUL"
+  ) {
+    return "#0F9D58"; // Green for successful
   }
-  if (statusName === 'TRAINING_SESSION_NOT_STARTED') {
-    return '#FF7A00'; // Orange for not started
+  if (statusName === "TRAINING_SESSION_NOT_STARTED") {
+    return "#FF7A00"; // Orange for not started
   }
-  if (statusName === 'TRAINING_SESSION_STARTED') {
-    return '#2196F3'; // Blue for started
+  if (statusName === "TRAINING_SESSION_STARTED") {
+    return "#2196F3"; // Blue for started
   }
-  if (statusName === 'TRAINING_SESSION_CANCELLED') {
-    return '#C92A2A'; // Red for cancelled
+  if (statusName === "TRAINING_SESSION_CANCELLED") {
+    return "#C92A2A"; // Red for cancelled
   }
-  return '#6B7280'; // Default gray
+  return "#6B7280"; // Default gray
+}
+
+// Color mapping for overall booking status (Vietnamese status names)
+function getBookingStatusStyle(status: string): { bg: string; color: string } {
+  const normalized = (status || "").trim();
+
+  switch (normalized) {
+    case "Đơn đặt chờ xác nhận":
+      return { bg: "#FEF9C3", color: "#B45309" }; // warm yellow / pending
+    case "Đơn đặt đã kích hoạt":
+      return { bg: "#DBEAFE", color: "#1D4ED8" }; // blue / active
+    case "Đơn đặt không kích hoạt":
+      return { bg: "#E5E7EB", color: "#4B5563" }; // neutral gray
+    case "Đơn đặt đang tiến hành":
+      return { bg: "#E0F2FE", color: "#0369A1" }; // light blue / in progress
+    case "Đơn đặt đã hoàn thành công việc":
+      return { bg: "#DCFCE7", color: "#16A34A" }; // green / work done
+    case "Đơn đặt hoàn tất":
+      return { bg: "#BBF7D0", color: "#15803D" }; // stronger green / fully completed
+    case "Đơn đặt chưa hoàn tất":
+      return { bg: "#F3F4F6", color: "#4B5563" }; // gray / not finished
+    case "Đơn đặt đã hủy":
+      return { bg: "#FEE2E2", color: "#B91C1B" }; // red / cancelled
+    case "Đơn đặt hết chỗ":
+      return { bg: "#FFEDD5", color: "#C2410C" }; // orange / full
+    case "Đơn trong trạng thái khiếu nại":
+      return { bg: "#FEF3C7", color: "#B45309" }; // amber / complaint
+    default:
+      return { bg: "#E7F5EF", color: "#0E766E" }; // default teal
+  }
 }
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   header: {
     marginTop: 10,
     marginBottom: 8,
     fontSize: 22,
     // fontWeight: '800',
-    color: '#111827',
-    textAlign: 'center',
-    fontFamily: 'RobotoMono_700Bold',
+    color: "#111827",
+    textAlign: "center",
+    fontFamily: "RobotoMono_700Bold",
   },
   statusCard: {
     marginHorizontal: 12,
     marginBottom: 12,
-    backgroundColor: '#E7F5EF',
+    backgroundColor: "#E7F5EF",
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#C8EAD9',
+    borderColor: "#C8EAD9",
   },
   statusTitle: {
-    color: '#0E766E',
+    color: "#0E766E",
     // fontWeight: '800',
     fontSize: 16,
     marginBottom: 8,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   shipStatus: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 15,
     marginBottom: 4,
-    fontFamily: 'RobotoMono_400Regular',
+    fontFamily: "RobotoMono_400Regular",
   },
   shipTime: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 13,
-    fontFamily: 'RobotoMono_400Regular',
+    fontFamily: "RobotoMono_400Regular",
   },
   block: {
     marginHorizontal: 12,
     marginBottom: 12,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#EEE',
+    borderColor: "#EEE",
     height: 200,
   },
   blockTitle: {
     fontSize: 15,
     // fontWeight: '800',
-    color: '#111827',
+    color: "#111827",
     marginBottom: 6,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   addrName: {
-    
-    color: '#111827',
+    color: "#111827",
     marginBottom: 2,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   addrText: {
-    color: '#6B7280',
-    fontFamily: 'RobotoMono_400Regular',
+    color: "#6B7280",
+    fontFamily: "RobotoMono_400Regular",
   },
   itemBlock: {
     marginHorizontal: 12,
     marginBottom: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#EEE',
+    borderColor: "#EEE",
   },
   itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   thumb: {
     width: 64,
     height: 64,
     borderRadius: 8,
-    backgroundColor: '#FFF4E8',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#FFF4E8",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 10,
     borderWidth: 1,
-    borderColor: '#FFD8B4',
+    borderColor: "#FFD8B4",
+  },
+  thumbImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 8,
+  },
+  thumbInitial: {
+    fontSize: 26,
+    color: ORANGE2,
+    fontFamily: 'RobotoMono_700Bold',
   },
   itemTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-    fontFamily: 'RobotoMono_400Regular',
+    color: "#111827",
+    fontFamily: "RobotoMono_700Bold",
   },
   itemSubtitle: {
     marginTop: 2,
     fontSize: 13,
-    color: '#6B7280',
-    fontFamily: 'RobotoMono_400Regular',
+    color: "#6B7280",
+    fontFamily: "RobotoMono_400Regular",
   },
   itemQty: {
     marginLeft: 10,
     fontSize: 16,
-    color: '#6B7280',
-    fontWeight: '700',
-    fontFamily: 'RobotoMono_400Regular',
+    color: "#6B7280",
+    fontFamily: "RobotoMono_700Bold",
   },
   priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 10,
     gap: 8,
   },
   oldPrice: {
-    color: '#A7A7A7',
-    textDecorationLine: 'line-through',
+    color: "#A7A7A7",
+    textDecorationLine: "line-through",
     fontSize: 16,
-    fontFamily: 'RobotoMono_400Regular',
+    fontFamily: "RobotoMono_400Regular",
   },
   curPrice: {
     fontSize: 20,
     // fontWeight: '800',
-    color: '#111827',
-    fontFamily: 'RobotoMono_700Bold',
+    color: "#111827",
+    fontFamily: "RobotoMono_700Bold",
   },
   totalBar: {
     marginTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#F1EFEA',
+    borderTopColor: "#F1EFEA",
     paddingTop: 10,
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
   },
   totalLabel: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 15,
-    fontFamily: 'RobotoMono_400Regular',
+    fontFamily: "RobotoMono_400Regular",
   },
   totalValue: {
     color: ORANGE2,
     fontSize: 20,
-    
-    fontFamily: 'RobotoMono_700Bold',
+
+    fontFamily: "RobotoMono_700Bold",
+  },
+  extraServicesBlock: {
+    marginHorizontal: 12,
+    marginBottom: 20,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#FFECD0",
+  },
+  extraServicesTitle: {
+    color: ORANGE2,
+    fontSize: 15,
+    marginBottom: 10,
+    fontFamily: "RobotoMono_700Bold",
+  },
+  extraServiceCard: {
+    backgroundColor: "#FFF9EF",
+    borderRadius: 9,
+    padding: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#FFD8B4",
+  },
+  extraServiceRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  extraServiceName: {
+    flex: 1,
+    color: "#111827",
+    fontSize: 14,
+    fontFamily: "RobotoMono_700Bold",
+  },
+  extraServiceQty: {
+    color: "#6B7280",
+    fontSize: 14,
+    fontFamily: "RobotoMono_400Regular",
+    marginLeft: 8,
+  },
+  extraServicePrice: {
+    color: ORANGE2,
+    fontSize: 15,
+    fontFamily: "RobotoMono_700Bold",
   },
   sessionsBlock: {
     marginHorizontal: 12,
     marginBottom: 28,
     marginTop: 3,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#FFECD0',
+    borderColor: "#FFECD0",
   },
   sessionsTitle: {
-    
     color: ORANGE2,
     fontSize: 15,
     marginBottom: 8,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   sessionCard: {
-    backgroundColor: '#FFF9EF',
+    backgroundColor: "#FFF9EF",
     borderRadius: 9,
     padding: 10,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#FFD8B4',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
+    borderColor: "#FFD8B4",
+    flexDirection: "column",
+    alignItems: "flex-start",
   },
   sessionHeading: {
-    
     color: ORANGE,
     fontSize: 14,
     marginBottom: 2,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   sessionDate: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 13,
-    fontFamily: 'RobotoMono_400Regular',
+    fontFamily: "RobotoMono_400Regular",
     marginBottom: 4,
   },
   sessionStatus: {
     fontSize: 13,
-    fontWeight: '700',
     marginTop: 4,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   feedbackBlock: {
     marginHorizontal: 12,
     marginBottom: 28,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#EEE',
+    borderColor: "#EEE",
   },
   feedbackTitle: {
     color: ORANGE2,
     fontSize: 15,
     marginBottom: 10,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   feedbackCard: {
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderTopColor: '#F1EFEA',
+    borderTopColor: "#F1EFEA",
   },
   feedbackHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 4,
   },
   feedbackAuthor: {
     fontSize: 14,
-    color: '#111827',
-    fontFamily: 'RobotoMono_700Bold',
+    color: "#111827",
+    fontFamily: "RobotoMono_700Bold",
   },
   feedbackRating: {
     fontSize: 14,
-    color: '#F59E0B',
-    fontFamily: 'RobotoMono_700Bold',
+    color: "#F59E0B",
+    fontFamily: "RobotoMono_700Bold",
   },
   feedbackComment: {
     fontSize: 13,
-    color: '#4B5563',
-    fontFamily: 'RobotoMono_400Regular',
+    color: "#4B5563",
+    fontFamily: "RobotoMono_400Regular",
   },
   feedbackEmpty: {
     fontSize: 13,
-    color: '#6B7280',
-    fontFamily: 'RobotoMono_400Regular',
+    color: "#6B7280",
+    fontFamily: "RobotoMono_400Regular",
   },
   feedbackEmptyState: {
     paddingVertical: 8,
     gap: 12,
   },
   feedbackButton: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 999,
     backgroundColor: ORANGE2,
   },
   feedbackButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 14,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   msgBtn: {
     backgroundColor: ORANGE2,
     marginTop: 12,
     borderRadius: 22,
     paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'flex-start',
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "flex-start",
     paddingHorizontal: 22,
     shadowColor: ORANGE,
     shadowOpacity: 0.11,
     shadowRadius: 4,
     elevation: 2,
-    
   },
   msgBtnText: {
-    color: '#fff',
-    
+    color: "#fff",
+
     // fontSize: 15,
     letterSpacing: 0.2,
-    fontFamily: 'RobotoMono_400Regular',
+    fontFamily: "RobotoMono_400Regular",
   },
   fabWrap: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 24,
     right: 18,
-    pointerEvents: 'box-none',
+    pointerEvents: "box-none",
     zIndex: 23,
   },
   fabBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: ORANGE2,
     borderRadius: 32,
     paddingHorizontal: 21,
@@ -722,25 +968,24 @@ const styles = StyleSheet.create({
   },
   fabIcon: {
     fontSize: 22,
-    color: '#fff',
+    color: "#fff",
     marginRight: 7,
-    fontWeight: 'bold',
-    fontFamily: 'Roboto',
+    fontFamily: "RobotoMono_700Bold",
   },
   fabLabel: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 15,
     // fontWeight: 'bold',
     minWidth: 56,
-    textAlign: 'center',
-    fontFamily: 'RobotoMono_700Bold',
+    textAlign: "center",
+    fontFamily: "RobotoMono_700Bold",
   },
   msgBtnFab: {
-    position: 'absolute',
+    position: "absolute",
     right: 14,
     bottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: ORANGE2,
     borderRadius: 32,
     paddingHorizontal: 20,
@@ -752,42 +997,41 @@ const styles = StyleSheet.create({
   },
   msgBtnFabIcon: {
     fontSize: 22,
-    color: '#fff',
+    color: "#fff",
     marginRight: 7,
-    fontWeight: 'bold',
-    fontFamily: 'Roboto',
+    fontFamily: "RobotoMono_700Bold",
   },
   msgBtnFabLabel: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 15,
     // fontWeight: 'bold',
     minWidth: 54,
-    textAlign: 'center',
-    fontFamily: 'RobotoMono_700Bold',
+    textAlign: "center",
+    fontFamily: "RobotoMono_700Bold",
   },
   actionBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 22,
     paddingBottom: 50,
     paddingTop: 8,
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderTopColor: '#F3ECE7',
+    borderTopColor: "#F3ECE7",
     zIndex: 20,
-    gap: 14
+    gap: 14,
   },
   acceptBtn: {
     flex: 1,
     backgroundColor: ORANGE2,
     borderRadius: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     height: 48,
     marginLeft: 6,
     elevation: 2,
@@ -796,54 +1040,54 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   acceptBtnText: {
-    color: '#fff',
+    color: "#fff",
     // fontWeight: 'bold',
     fontSize: 16,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   declineBtn: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     height: 48,
     marginRight: 6,
     borderWidth: 1.5,
-    borderColor: '#DDD',
+    borderColor: "#DDD",
   },
   declineBtnText: {
-    color: '#A66',
+    color: "#A66",
     // fontWeight: 'bold',
     fontSize: 16,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   checkinBtn: {
     flex: 1,
     backgroundColor: ORANGE2,
     borderRadius: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     height: 48,
   },
   checkinBtnText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   stateContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 24,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   stateMessage: {
     marginTop: 16,
-    textAlign: 'center',
-    color: '#6B7280',
+    textAlign: "center",
+    color: "#6B7280",
     fontSize: 15,
-    fontFamily: 'RobotoMono_400Regular',
+    fontFamily: "RobotoMono_400Regular",
   },
   retryButton: {
     marginTop: 20,
@@ -853,10 +1097,43 @@ const styles = StyleSheet.create({
     backgroundColor: ORANGE2,
   },
   retryButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 15,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
+  },
+  complaintBlock: {
+    marginHorizontal: 12,
+    marginBottom: 20,
+    marginTop: 8,
+  },
+  complaintButton: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderWidth: 1.5,
+    borderColor: "#DC2626",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  complaintButtonText: {
+    color: "#DC2626",
+    fontSize: 15,
+    fontFamily: "RobotoMono_700Bold",
+  },
+  complaintNotice: {
+    marginHorizontal: 12,
+    marginBottom: 12,
+    backgroundColor: "#FEF3C7",
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#FCD34D",
+  },
+  complaintNoticeText: {
+    color: "#B45309",
+    fontSize: 14,
+    fontFamily: "RobotoMono_700Bold",
+    textAlign: "center",
   },
 });
-
-

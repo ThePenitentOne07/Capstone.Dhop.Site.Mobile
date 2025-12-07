@@ -196,7 +196,7 @@ const ExploreChoreographersScreen = () => {
           },
           headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "RobotoMono_700Bold",
           },
         }}
       />
@@ -286,8 +286,8 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 16,
-    fontWeight: "600",
     color: "#111827",
+    fontFamily: 'RobotoMono_700Bold',
   },
   emptySubtitle: {
     fontSize: 14,
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: "#FFFFFF",
     textAlign: "center",
-    fontWeight: "600",
+    fontFamily: 'RobotoMono_700Bold',
   },
 });
 

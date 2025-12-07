@@ -8,6 +8,7 @@ interface UserInfo {
   email: string;
   avatar?: string;
   phone?: string;
+  role?: string | string[] | Array<{ name?: string }>;
 
   // Add other user properties as needed
 }

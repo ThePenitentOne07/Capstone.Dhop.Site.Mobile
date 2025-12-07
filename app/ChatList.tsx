@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, 
 import { useRouter } from 'expo-router';
 import { useConversationStore } from '../states/conversationStore';
 import type { ConversationResponse } from '../models/conversation';
+import { useRefetchOnFocus } from './hooks';
+
 
 const ORANGE2 = '#FF7A00';
 
@@ -14,6 +16,7 @@ export default function ChatList() {
   useEffect(() => {
     fetchMyConversations();
   }, []);
+  useRefetchOnFocus(fetchMyConversations)
 
   const onRefresh = async () => {
     setRefreshing(true);

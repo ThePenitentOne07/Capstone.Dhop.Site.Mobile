@@ -41,9 +41,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           onChangeText={onSearchChange}
         />
       </View>
-      <TouchableOpacity style={styles.filterButton} onPress={onFilterPress}>
-        <Text style={styles.filterIcon}>⚙️</Text>
-      </TouchableOpacity>
+     
     </View>
   );
 };
@@ -73,6 +71,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#111827",
+    fontFamily: 'RobotoMono_400Regular',
   },
   filterButton: {
     width: 50,
