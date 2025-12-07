@@ -298,7 +298,7 @@ export default function Complaint() {
       console.error('Failed to submit complaint:', error);
       showModal({
         title: 'Lỗi',
-        message: error?.message || 'Không thể gửi khiếu nại. Vui lòng thử lại sau.',
+        message: error?.response?.data?.message || error?.message || 'Không thể gửi khiếu nại. Vui lòng thử lại sau.',
         status: 'error',
       });
     } finally {

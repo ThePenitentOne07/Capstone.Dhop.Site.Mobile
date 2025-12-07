@@ -421,8 +421,24 @@ export default function DancerBookingDetail() {
 
 function formatDateTime(dt: string) {
   try {
-    const d = new Date(dt);
-    return d.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+    // Parse the date string directly to preserve the exact time
+    // Expected format: "11-12-2025 00:00" or ISO format
+    if (dt.includes("-") && dt.includes(" ")) {
+      // Format: "dd-mm-yyyy HH:mm" or "dd-mm-yyyy HH:MM"
+      const [datePart, timePart] = dt.split(" ");
+      const [day, month, year] = datePart.split("-");
+      const [hours, minutes] = timePart.split(":");
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } else {
+      // Fallback to Date parsing for ISO format
+      const d = new Date(dt);
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, "0");
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
   } catch {
     return dt;
   }

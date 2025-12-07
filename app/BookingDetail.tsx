@@ -9,7 +9,7 @@ import {
   Image,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { getBookingById } from "../service/api";
+import { getBookingById, cancelChoreographerBooking } from "../service/api";
 import { useRouter } from "expo-router";
 import { useConversationStore } from "../states/conversationStore";
 import { useAppModal } from "../hooks/useAppModal";
@@ -120,6 +120,7 @@ export default function BookingDetail() {
   // const [acceptSuccess, setAcceptSuccess] = useState<boolean|undefined>();
   // const [acceptError, setAcceptError] = useState<string|undefined>();
   const [chatLoading, setChatLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   const router = useRouter();
   const { createConversation } = useConversationStore();
@@ -172,6 +173,8 @@ export default function BookingDetail() {
 
   // Determine status color for main booking status card
   const { bg: statusBg, color: statusColor } = getBookingStatusStyle(status);
+  console.log("log time", formatDateTime(booking.bookingDate));
+  
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -400,23 +403,42 @@ export default function BookingDetail() {
           </View>
         )}
 
-        {/* Cancle Button */}
+        {/* Cancel Button */}
         {status === "Đơn đặt chờ xác nhận" && (
           <View style={styles.complaintBlock}>
             <TouchableOpacity
               style={styles.complaintButton}
-              onPress={() => {
-                // TODO: Navigate to complaint screen or show complaint modal
-                showModal({
-                  title: "Hủy đơn",
-                  message:
-                    "Tính năng hủy đơn đang được phát triển. Vui lòng liên hệ hỗ trợ qua chat.",
-                  status: "info",
-                });
+              onPress={async () => {
+                if (!booking?.id || cancelLoading) return;
+                try {
+                  setCancelLoading(true);
+                  await cancelChoreographerBooking(booking.id);
+                  await loadBooking(); // Reload data immediately after success
+                  showModal({
+                    title: "Thành công",
+                    message: "Đã hủy đơn.",
+                    status: "success",
+                    autoCloseAfter: 2000,
+                    onAutoClose: () => router.back(),
+                  });
+                } catch (e: any) {
+                  showModal({
+                    title: "Lỗi",
+                    message: e?.response?.data?.message || e?.message || "Không thể hủy đơn.",
+                    status: "error",
+                  });
+                } finally {
+                  setCancelLoading(false);
+                }
               }}
+              disabled={cancelLoading}
               activeOpacity={0.85}
             >
-              <Text style={styles.complaintButtonText}>Hủy đơn</Text>
+              {cancelLoading ? (
+                <ActivityIndicator color="#DC2626" />
+              ) : (
+                <Text style={styles.complaintButtonText}>Hủy đơn</Text>
+              )}
             </TouchableOpacity>
           </View>
         )}
@@ -514,14 +536,24 @@ export default function BookingDetail() {
 
 function formatDateTime(dt: string) {
   try {
-    const d = new Date(dt);
-    return d.toLocaleString("vi-VN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+    // Parse the date string directly to preserve the exact time
+    // Expected format: "11-12-2025 00:00" or ISO format
+    if (dt.includes("-") && dt.includes(" ")) {
+      // Format: "dd-mm-yyyy HH:mm" or "dd-mm-yyyy HH:MM"
+      const [datePart, timePart] = dt.split(" ");
+      const [day, month, year] = datePart.split("-");
+      const [hours, minutes] = timePart.split(":");
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } else {
+      // Fallback to Date parsing for ISO format
+      const d = new Date(dt);
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, "0");
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
   } catch {
     return dt;
   }
@@ -532,17 +564,30 @@ function formatNumber(n: number) {
 
 function sessionSummary(s: any) {
   try {
-    const d = new Date(s.scheduledTime);
-    const dateStr = d.toLocaleDateString("vi-VN", {
-      weekday: "short",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-    const start = d.toLocaleTimeString("vi-VN", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const dt = s.scheduledTime;
+    let dateStr = "";
+    let start = "";
+    
+    // Parse the date string directly to preserve the exact time
+    if (dt && typeof dt === "string" && dt.includes("-") && dt.includes(" ")) {
+      // Format: "dd-mm-yyyy HH:mm" or "dd-mm-yyyy HH:MM"
+      const [datePart, timePart] = dt.split(" ");
+      const [day, month, year] = datePart.split("-");
+      const [hours, minutes] = timePart.split(":");
+      dateStr = `${day}/${month}/${year}`;
+      start = `${hours}:${minutes}`;
+    } else {
+      // Fallback to Date parsing for ISO format
+      const d = new Date(dt);
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, "0");
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      dateStr = `${day}/${month}/${year}`;
+      start = `${hours}:${minutes}`;
+    }
+    
     let dur = "";
     if (s.durationMinutes) {
       if (s.durationMinutes >= 60)
@@ -552,7 +597,7 @@ function sessionSummary(s: any) {
       else dur = s.durationMinutes + " phút";
     }
     return (
-      `${dateStr}, bắt đầu lúc ${start}` + (dur ? `, thời lượng ${dur}` : "")
+      `${dateStr} ${start}` + (dur ? `, thời lượng ${dur}` : "")
     );
   } catch {
     return "";

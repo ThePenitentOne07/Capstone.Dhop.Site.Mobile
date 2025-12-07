@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { getDancerBookingTotalPrice, createDancerBooking, DancerBooking } from '../../service/api';
@@ -53,6 +53,8 @@ export default function Step5Dancer({
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState<boolean | null>(null);
   const { formatCurrency } = useFormatCurrency();
+  const payloadRef = useRef<string>('');
+  const hasCalculatedRef = useRef(false);
 
   // Build crewId & numberOfPeople based on selection mode
   const crewId = selectionMode === 'manual' ? selectedCrewIds : [];
@@ -103,6 +105,7 @@ export default function Step5Dancer({
 
       if (typeof value === 'number') {
         setTotalPrice(value);
+        setError(null); // Clear error on success
       } else {
         setError('Không thể đọc tổng giá từ phản hồi.');
       }
@@ -114,10 +117,27 @@ export default function Step5Dancer({
   };
 
   useEffect(() => {
-    handleCalculate();
-    console.log("payload dancer booking",payload);
+    // Create a stable string representation of the payload
+    const payloadString = JSON.stringify(payload);
+    
+    // Only recalculate if the payload actually changed
+    if (payloadRef.current !== payloadString) {
+      payloadRef.current = payloadString;
+      hasCalculatedRef.current = true;
+      handleCalculate();
+      console.log("payload dancer booking", payload);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [payload]);
+  }, [
+    dancerId,
+    areaId,
+    location,
+    detail,
+    sessions,
+    bookingExtraServiceRequests,
+    crewId,
+    numberOfPeople,
+  ]);
 
   useEffect(() => {
     setTotalSessions(sessions?.length ?? 0);
@@ -173,7 +193,10 @@ export default function Step5Dancer({
         )}
 
         {error && (
-          <Text style={styles.errorText}>{error}</Text>
+          
+            <Text style={styles.errorText}>{error}</Text>
+          
+          
         )}
 
         <TouchableOpacity
@@ -253,10 +276,31 @@ const styles = StyleSheet.create({
     color: '#78350F',
     fontFamily: 'RobotoMono_700Bold',
   },
-  errorText: {
+  errorContainer: {
     marginTop: 12,
+    padding: 12,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  errorText: {
     color: '#DC2626',
     fontFamily: 'RobotoMono_400Regular',
+    marginBottom: 8,
+  },
+  retryButton: {
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: 'RobotoMono_700Bold',
   },
   sessionsList: {
     marginTop: 8,

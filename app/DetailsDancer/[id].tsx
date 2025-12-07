@@ -121,7 +121,6 @@ export default function DetailsDancerScreen() {
   const imageSource = dancer?.profiles?.[0]?.images?.[0]
     ? { uri: dancer.profiles[0].images[0] }
     : require("../../assets/girl-dancing-2830024-2357254.webp");
-  console.log(imageSource);
   
   const handleTabPress = (tab: "Intro" | "Projects") => {
     setSelectedTab(tab);

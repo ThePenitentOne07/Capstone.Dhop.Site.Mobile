@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getBookingById, confirmBookingCompletion } from '../service/api';
+import { getBookingById, confirmBookingCompletion, cancelDancerBooking } from '../service/api';
 import { useConversationStore } from '../states/conversationStore';
 import { useAppModal } from '../hooks/useAppModal';
 import { useRefetchOnFocus } from './hooks/useRefetchOnFocus';
@@ -88,6 +88,7 @@ export default function DancerBookingDetailCustomer() {
 
   const [chatLoading, setChatLoading] = useState(false);
   const [confirmCompletionLoading, setConfirmCompletionLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   const router = useRouter();
   const { createConversation } = useConversationStore();
@@ -281,7 +282,7 @@ export default function DancerBookingDetailCustomer() {
         {/* Feedback */}
         {status === 'Đơn đặt hoàn tất' && (
           <View style={styles.feedbackBlock}>
-            <Text style={styles.feedbackTitle}>Đánh giá từ khách hàng</Text>
+            <Text style={styles.feedbackTitle}>Đánh giá</Text>
             {hasFeedback ? (
               feedbacks.map((fb: any, idx: number) => (
                 <View key={fb.id || idx} style={styles.feedbackCard}>
@@ -293,8 +294,63 @@ export default function DancerBookingDetailCustomer() {
                 </View>
               ))
             ) : (
-              <Text style={styles.feedbackEmpty}>Khách hàng chưa để lại đánh giá.</Text>
+              <View style={styles.feedbackEmptyState}>
+                <Text style={styles.feedbackEmpty}>
+                  Bạn hãy đánh giá cho nhóm nhảy.
+                </Text>
+                <TouchableOpacity
+                  style={styles.feedbackButton}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/BookingFeedback',
+                      params: { bookingId: booking.id },
+                    })
+                  }
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.feedbackButtonText}>Đánh giá ngay</Text>
+                </TouchableOpacity>
+              </View>
             )}
+          </View>
+        )}
+
+        {/* Cancel Button */}
+        {status === 'Đơn đặt chờ xác nhận' && (
+          <View style={styles.complaintBlock}>
+            <TouchableOpacity
+              style={styles.complaintButton}
+              onPress={async () => {
+                if (!booking?.id || cancelLoading) return;
+                try {
+                  setCancelLoading(true);
+                  await cancelDancerBooking(booking.id);
+                  showModal({
+                    title: 'Thành công',
+                    message: 'Đã hủy đơn.',
+                    status: 'success',
+                    autoCloseAfter: 2000,
+                    onAutoClose: () => router.back(),
+                  });
+                } catch (e: any) {
+                  showModal({
+                    title: 'Lỗi',
+                    message: e?.response?.data?.message || e?.message || 'Không thể hủy đơn.',
+                    status: 'error',
+                  });
+                } finally {
+                  setCancelLoading(false);
+                }
+              }}
+              disabled={cancelLoading}
+              activeOpacity={0.85}
+            >
+              {cancelLoading ? (
+                <ActivityIndicator color="#DC2626" />
+              ) : (
+                <Text style={styles.complaintButtonText}>Hủy đơn</Text>
+              )}
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -326,12 +382,12 @@ export default function DancerBookingDetailCustomer() {
               try {
                 setConfirmCompletionLoading(true);
                 await confirmBookingCompletion(booking.id);
+                await load(); // Reload data immediately after success
                 showModal({
                   title: 'Thành công',
                   message: 'Đã xác nhận hoàn thành.',
                   status: 'success',
                   autoCloseAfter: 2000,
-                  onAutoClose: () => load(),
                 });
               } catch (e: any) {
                 showModal({
@@ -361,8 +417,24 @@ export default function DancerBookingDetailCustomer() {
 
 function formatDateTime(dt: string) {
   try {
-    const d = new Date(dt);
-    return d.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+    // Parse the date string directly to preserve the exact time
+    // Expected format: "11-12-2025 00:00" or ISO format
+    if (dt.includes("-") && dt.includes(" ")) {
+      // Format: "dd-mm-yyyy HH:mm" or "dd-mm-yyyy HH:MM"
+      const [datePart, timePart] = dt.split(" ");
+      const [day, month, year] = datePart.split("-");
+      const [hours, minutes] = timePart.split(":");
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } else {
+      // Fallback to Date parsing for ISO format
+      const d = new Date(dt);
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, "0");
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
   } catch {
     return dt;
   }
@@ -675,6 +747,22 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontFamily: 'RobotoMono_400Regular',
   },
+  feedbackEmptyState: {
+    paddingVertical: 8,
+    gap: 12,
+  },
+  feedbackButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: ORANGE2,
+  },
+  feedbackButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontFamily: 'RobotoMono_700Bold',
+  },
   stateContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -729,6 +817,26 @@ const styles = StyleSheet.create({
   checkinBtnText: {
     color: '#fff',
     fontSize: 16,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  complaintBlock: {
+    marginHorizontal: 12,
+    marginBottom: 20,
+    marginTop: 8,
+  },
+  complaintButton: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderWidth: 1.5,
+    borderColor: '#DC2626',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  complaintButtonText: {
+    color: '#DC2626',
+    fontSize: 15,
     fontFamily: 'RobotoMono_700Bold',
   },
 });

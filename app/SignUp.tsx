@@ -37,7 +37,7 @@ export default function signUp() {
       }
       showModal({
         title: "Thành công",
-        message: "Đăng ký thành công",
+        message: "Chuẩn bị nhập mã OTP",
         status: "success",
         buttons: [
           {

@@ -3,8 +3,9 @@ import React, { useState, useRef, useEffect } from "react"
 import Animated from "react-native-reanimated";
 import { SlideInDown } from "react-native-reanimated";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppModal } from "../hooks/useAppModal";
-import { otpSignUp } from "../service/api";
+import { otpSignUp, getUserInfo } from "../service/api";
 
 export default function OtpSignUp() {
   const router = useRouter();
@@ -61,15 +62,40 @@ export default function OtpSignUp() {
 
     try {
       const response = await otpSignUp(emailValue, otpCode);
+      console.log("OTP verification response:", response?.data ?? response);
       
-      showModal({
-        title: "Thành công",
-        message: "Xác thực OTP thành công!",
-        status: "success",
-        buttons: [
-          { text: "OK", variant: "primary", onPress: () => router.replace("/Login") },
-        ],
-      });
+      const token = response?.data?.accessToken;
+      if (!token) {
+        throw new Error("Không nhận được token từ máy chủ");
+      }
+      
+      // Save token to AsyncStorage
+      await AsyncStorage.setItem("token", token);
+      
+      // Fetch user info to decide where to navigate
+      try {
+        const userRes = await getUserInfo();
+        const role = userRes?.data?.role;
+        const roleUpper = String(role).toUpperCase();
+        console.log("User role after OTP signup:", userRes?.data);
+
+        // Navigate based on role
+        switch (roleUpper) {
+          case "CHOREOGRAPHY":
+          case "CHOREOGRAPHER":
+            router.replace("/Choreographer/ChoreographerHome");
+            break;
+          case "DANCER":
+            router.replace("/Dancer/DancerHome");
+            break;
+          default:
+            router.replace("/Home");
+            break;
+        }
+      } catch {
+        // Fallback to Home if role cannot be fetched
+        router.replace("/Home");
+      }
     } catch (error: any) {
       let message = "Xác thực OTP thất bại";
       

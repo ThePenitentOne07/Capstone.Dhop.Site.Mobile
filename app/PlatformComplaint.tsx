@@ -168,6 +168,8 @@ function ComplaintCard({
     createdAt,
     updatedAt,
   } = complaint;
+  
+  const isComplainCancel = (complaint as any).isComplainCancel === true;
 
   const { formatCurrency } = useFormatCurrency();
   const colorSet = getStatusColors(statusCode);
@@ -246,7 +248,7 @@ function ComplaintCard({
         </View>
       )}
 
-      {statusCode === 'COMPLAIN_NEW' && (
+      {isComplainCancel && (
         <View style={styles.cancelButtonContainer}>
           <TouchableOpacity
             style={styles.cancelButton}

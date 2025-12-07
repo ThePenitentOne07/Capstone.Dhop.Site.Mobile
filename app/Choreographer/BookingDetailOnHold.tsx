@@ -300,24 +300,7 @@ export default function BookingDetailOnHold() {
         )}
 
         {/* Cancle Button */}
-        {status === "Đơn đặt chờ xác nhận" && (
-            <View style={styles.complaintBlock}>
-            <TouchableOpacity
-              style={styles.complaintButton}
-              onPress={() => {
-                // TODO: Navigate to complaint screen or show complaint modal
-                showModal({
-                  title: 'Hủy đơn',
-                  message: 'Tính năng hủy đơn đang được phát triển. Vui lòng liên hệ hỗ trợ qua chat.',
-                  status: 'info',
-                });
-              }}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.complaintButtonText}>Hủy đơn</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+       
 
         {/* Complaint Button */}
           {status !== "Đơn đặt chờ xác nhận" && (
@@ -421,8 +404,24 @@ export default function BookingDetailOnHold() {
 
 function formatDateTime(dt: string) {
   try {
-    const d = new Date(dt);
-    return d.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+    // Parse the date string directly to preserve the exact time
+    // Expected format: "11-12-2025 00:00" or ISO format
+    if (dt.includes("-") && dt.includes(" ")) {
+      // Format: "dd-mm-yyyy HH:mm" or "dd-mm-yyyy HH:MM"
+      const [datePart, timePart] = dt.split(" ");
+      const [day, month, year] = datePart.split("-");
+      const [hours, minutes] = timePart.split(":");
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } else {
+      // Fallback to Date parsing for ISO format
+      const d = new Date(dt);
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, "0");
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
   } catch {
     return dt;
   }
@@ -433,17 +432,43 @@ function formatNumber(n: number) {
 
 function sessionSummary(s: any) {
   try {
-    const d = new Date(s.scheduledTime);
-    const dateStr = d.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
-    const start = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-    let dur = '';
-    if (s.durationMinutes) {
-      if (s.durationMinutes >= 60) dur = `${Math.floor(s.durationMinutes/60)} giờ` + (s.durationMinutes % 60 ? ` ${s.durationMinutes%60} phút` : '');
-      else dur = s.durationMinutes + ' phút';
+    const dt = s.scheduledTime;
+    let dateStr = "";
+    let start = "";
+    
+    // Parse the date string directly to preserve the exact time
+    if (dt && typeof dt === "string" && dt.includes("-") && dt.includes(" ")) {
+      // Format: "dd-mm-yyyy HH:mm" or "dd-mm-yyyy HH:MM"
+      const [datePart, timePart] = dt.split(" ");
+      const [day, month, year] = datePart.split("-");
+      const [hours, minutes] = timePart.split(":");
+      dateStr = `${day}/${month}/${year}`;
+      start = `${hours}:${minutes}`;
+    } else {
+      // Fallback to Date parsing for ISO format
+      const d = new Date(dt);
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, "0");
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      dateStr = `${day}/${month}/${year}`;
+      start = `${hours}:${minutes}`;
     }
-    return `${dateStr}, bắt đầu lúc ${start}` + (dur ? `, thời lượng ${dur}` : '');
+    
+    let dur = "";
+    if (s.durationMinutes) {
+      if (s.durationMinutes >= 60)
+        dur =
+          `${Math.floor(s.durationMinutes / 60)} giờ` +
+          (s.durationMinutes % 60 ? ` ${s.durationMinutes % 60} phút` : "");
+      else dur = s.durationMinutes + " phút";
+    }
+    return (
+      `${dateStr} ${start}` + (dur ? `, thời lượng ${dur}` : "")
+    );
   } catch {
-    return '';
+    return "";
   }
 }
 
