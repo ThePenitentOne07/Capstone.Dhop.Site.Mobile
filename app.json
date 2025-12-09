@@ -26,7 +26,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lehaan.DhopSiteMobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -36,15 +37,20 @@
       "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ],
       "package": "com.lehaan.DhopSiteMobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e3da0d0a-9815-415d-965b-b8cdfbf31486"
+      }
+    },
+    "owner": "kouhako2003"
   },
   "sdkVersion": "54.0.0"
 }
