@@ -47,10 +47,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "e3da0d0a-9815-415d-965b-b8cdfbf31486"
+        "projectId": "95eb10fa-49b7-4660-aaad-94027b8bc9f9"
       }
-    },
-    "owner": "kouhako2003"
+    }
   },
   "sdkVersion": "54.0.0"
 }
