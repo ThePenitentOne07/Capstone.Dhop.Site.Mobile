@@ -5,6 +5,7 @@
   "build": {
     "development": {
       "developmentClient": true,
+      "environment": "development",
       "distribution": "internal",
       "env": {
         "NPM_INSTALL_ARGS": "--legacy-peer-deps"
@@ -19,6 +20,7 @@
     },
     "preview": {
       "distribution": "internal",
+      "environment": "preview",
       "env": {
         "NPM_INSTALL_ARGS": "--legacy-peer-deps"
       },
@@ -30,6 +32,7 @@
       }
     },
     "production": {
+      "environment": "production",
       "env": {
         "NPM_INSTALL_ARGS": "--legacy-peer-deps"
       },
