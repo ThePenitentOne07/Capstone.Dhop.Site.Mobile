@@ -43,13 +43,8 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "6faee593-2ade-4ece-a3a1-af8816e1d853"
-      }
     }
+    
   },
   "sdkVersion": "54.0.0"
 }
