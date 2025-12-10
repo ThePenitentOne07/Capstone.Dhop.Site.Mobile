@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
@@ -13,332 +12,257 @@ const ORANGE2 = '#FF7A00';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
-export default function CustomerMenu(){
-    const router = useRouter();
-    const { user, loading } = useUserInfo();
-    const { showModal, modal } = useAppModal();
-    const username = user?.name || 'Choreographer';
-    const avatarInitial = username?.[0]?.toUpperCase() || 'U';
+export default function CustomerMenu() {
+  const router = useRouter();
+  const { user, loading } = useUserInfo();
+  const { showModal, modal } = useAppModal();
+  const username = user?.name || 'Choreographer';
+  const avatarInitial = username?.[0]?.toUpperCase() || 'U';
 
-    const handleLogout = async () => {
-      showModal({
-        title: 'Đăng xuất',
-        message: 'Bạn chắc chắn muốn đăng xuất?',
-        status: 'info',
-        buttons: [
-          { text: 'Hủy', variant: 'secondary' },
-          {
-            text: 'Đăng xuất',
-            destructive: true,
-            onPress: async () => {
-              await AsyncStorage.multiRemove(['token', 'user']);
-              router.replace('/Login');
-            },
+  // --- FIX START: Animation Logic Moved Inside Component ---
+  const profileOpacity = useSharedValue(0);
+  const profileTranslateY = useSharedValue(18);
+
+  useEffect(() => {
+    profileOpacity.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) });
+    profileTranslateY.value = withTiming(0, { duration: 700, easing: Easing.out(Easing.cubic) });
+  }, []);
+
+  const profileAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: profileOpacity.value,
+    transform: [{ translateY: profileTranslateY.value }],
+  }));
+  // --- FIX END ---
+
+  const handleLogout = async () => {
+    showModal({
+      title: 'Đăng xuất',
+      message: 'Bạn chắc chắn muốn đăng xuất?',
+      status: 'info',
+      buttons: [
+        { text: 'Hủy', variant: 'secondary' },
+        {
+          text: 'Đăng xuất',
+          destructive: true,
+          onPress: async () => {
+            await AsyncStorage.multiRemove(['token', 'user']);
+            router.replace('/Login');
           },
-        ],
-      });
-    };
+        },
+      ],
+    });
+  };
 
-    const handleProfilePress = () => {
-      router.push('/CustomerProfile');
-    };
-    // @ts-ignore: walletBalance might not be defined
-    // const coin = (user && typeof user.walletBalance !== 'undefined') ? user.walletBalance : 1200;
-  
-    return (
-      <View style={styles.root}>
-              <Stack.Screen
-                  options={{ 
-                    headerShown: true,
-                    title: 'Menu',
-                    headerStyle: {
-                      backgroundColor: "#FF7A00",
-                    },
-                    headerTintColor: "#FFFFFF",
-                    headerTitleStyle: {
-                      fontFamily: "RobotoMono_700Bold",
-                    }
-                  }} 
-              />
-  
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-          {/* PROFILE SECTION */}
-          <AnimatedTouchableOpacity
-            style={[styles.profileSection, stylesAnimated.profileAnimated] }
-            activeOpacity={0.9}
-            onPress={handleProfilePress}
-          >
-            <View style={styles.avatarWrapper}>
-              {user?.avatar ? (
-                <Image source={{ uri: user.avatar }} style={styles.profilePic} />
-              ) : (
-                <View style={styles.profileFallback}>
-                  <Text style={styles.profileFallbackText}>{avatarInitial}</Text>
-                </View>
-              )}
-              <View style={styles.editBadge}>
-                <MaterialIcons name="edit" size={12} color="#fff" />
+  const handleProfilePress = () => {
+    router.push('/CustomerProfile');
+  };
+
+  return (
+    <View style={styles.root}>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: 'Menu',
+          headerStyle: {
+            backgroundColor: "#FF7A00",
+          },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: {
+            fontFamily: "RobotoMono_700Bold",
+          },
+        }}
+      />
+
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        {/* PROFILE SECTION */}
+        <AnimatedTouchableOpacity
+          // Use the fixed style variable here
+          style={[styles.profileSection, profileAnimatedStyle]}
+          activeOpacity={0.9}
+          onPress={handleProfilePress}
+        >
+          <View style={styles.avatarWrapper}>
+            {user?.avatar ? (
+              <Image source={{ uri: user.avatar }} style={styles.profilePic} />
+            ) : (
+              <View style={styles.profileFallback}>
+                <Text style={styles.profileFallbackText}>{avatarInitial}</Text>
               </View>
+            )}
+            <View style={styles.editBadge}>
+              <MaterialIcons name="edit" size={12} color="#fff" />
             </View>
-            <View style={{flex:1}}>
-              <Text style={styles.name}>{username}</Text>
-            </View>
-          </AnimatedTouchableOpacity>
-  
-          {/* MENU LIST */}
-          <View style={styles.menuSection}>
-            <MenuButton index={0} icon="" label="Lịch đặt biên đạo" onPress={()=>{router.push('/BookingList')}} />
-            <MenuButton index={0} icon="" label="Lịch đặt nhóm nhảy" onPress={()=>{router.push('/DancerBookingList')}} />
-            <MenuButton index={1} icon="" label="Khiếu nại đơn đặt" onPress={()=>{router.push('/PlatformComplaint')}} />
-            {/* <MenuButton index={2} icon="⚠️" label="Khiếu nại nền tảng" onPress={()=>{router.push('/PlatformComplaint')}} /> */}
-            <MenuButton index={2} icon="" label="Ví tiền" onPress={()=>{router.push('/Wallet')}} />
-            {/* <MenuButton index={4} icon="" label="Lịch sử giao dịch" /> */}
-            <MenuButton index={3} icon="" label="Chat" onPress={()=>{router.push('/ChatList')}} />
-            
-            <MenuButton index={4} icon="" label="Đăng xuất" showLast={true} onPress={handleLogout} />
           </View>
-        {loading && <ActivityIndicator color={ORANGE2} style={{marginTop:20}} />}
-        </ScrollView>
-        {modal}
-      </View>
-    );
-  }
-  
-  function MenuButton({ index = 0, icon, label, showLast, onPress }: { index?: number; icon: string; label: string; showLast?: boolean; onPress?: () => void }) {
-    const scale = useSharedValue(1);
-    const opacity = useSharedValue(0);
-    const translateY = useSharedValue(16);
+          <View style={{ flex: 1 }}>
+            <Text style={styles.name}>{username}</Text>
+          </View>
+        </AnimatedTouchableOpacity>
 
-    useEffect(() => {
-      const delayMs = 220 * index;
-      opacity.value = withDelay(delayMs, withTiming(1, { duration: 900, easing: Easing.out(Easing.cubic) }));
-      translateY.value = withDelay(delayMs, withTiming(0, { duration: 900, easing: Easing.out(Easing.cubic) }));
-    }, [index, opacity, translateY]);
+        {/* MENU LIST */}
+        <View style={styles.menuSection}>
+          <MenuButton index={0} icon="" label="Lịch đặt biên đạo" onPress={() => { router.push('/BookingList') }} />
+          <MenuButton index={0} icon="" label="Lịch đặt nhóm nhảy" onPress={() => { router.push('/DancerBookingList') }} />
+          <MenuButton index={1} icon="" label="Khiếu nại đơn đặt" onPress={() => { router.push('/PlatformComplaint') }} />
+          <MenuButton index={2} icon="" label="Ví tiền" onPress={() => { router.push('/Wallet') }} />
+          <MenuButton index={3} icon="" label="Chat" onPress={() => { router.push('/ChatList') }} />
+          <MenuButton index={4} icon="" label="Đăng xuất" showLast={true} onPress={handleLogout} />
+        </View>
+        {loading && <ActivityIndicator color={ORANGE2} style={{ marginTop: 20 }} />}
+      </ScrollView>
+      {modal}
+    </View>
+  );
+}
 
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }, { translateY: translateY.value }],
-      opacity: opacity.value,
-    }));
+function MenuButton({ index = 0, icon, label, showLast, onPress }: { index?: number; icon: string; label: string; showLast?: boolean; onPress?: () => void }) {
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(16);
 
-    const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+  useEffect(() => {
+    const delayMs = 220 * index;
+    opacity.value = withDelay(delayMs, withTiming(1, { duration: 900, easing: Easing.out(Easing.cubic) }));
+    translateY.value = withDelay(delayMs, withTiming(0, { duration: 900, easing: Easing.out(Easing.cubic) }));
+  }, [index, opacity, translateY]);
 
-    const handlePressIn = () => {
-      scale.value = withSpring(0.8, { damping: 15, stiffness: 180 });
-    };
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }, { translateY: translateY.value }],
+    opacity: opacity.value,
+  }));
 
-    const handlePressOut = () => {
-      scale.value = withSpring(1, { damping: 12, stiffness: 160 });
-    };
+  const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
-    return (
-      <AnimatedTouchable style={[styles.menuBtn, showLast && {marginBottom: 0}, animatedStyle]}
-        activeOpacity={0.9}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={onPress}
-      >
-        <Text style={styles.menuIcon}>{icon}</Text>
-        <Text style={styles.menuLabel}>{label}</Text>
-        <Text style={styles.menuArrow}>›</Text>
-      </AnimatedTouchable>
-    );
-  }
-  
-  const styles = StyleSheet.create({
-    root: {
-      flex: 1,
-      backgroundColor: '#fff',
-    },
-    profileSection: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginTop: 44,
-      marginHorizontal: 24,
-      marginBottom: 32,
-      backgroundColor: '#fff',
-      borderRadius: 36,
-      padding: 18,
-      borderWidth: 2,
-      borderColor: ORANGE2,
-      // very subtle shadow!
-      shadowColor: ORANGE2,
-      shadowOpacity: 0.08,
-      shadowRadius: 9,
-      elevation: 3,
-    },
-    avatarWrapper: {
-      position: 'relative',
-      marginRight: 18,
-    },
-    profilePic: {
-      width: 68,
-      height: 68,
-      borderRadius: 40,
-      borderWidth: 2,
-      borderColor: ORANGE2,
-      backgroundColor: '#fff',
-    },
-    profileFallback: {
-      width: 68,
-      height: 68,
-      borderRadius: 40,
-      borderWidth: 2,
-      borderColor: ORANGE2,
-      backgroundColor: '#fff',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    editBadge: {
-      position: 'absolute',
-      right: -2,
-      bottom: -2,
-      width: 20,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: ORANGE2,
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderWidth: 2,
-      borderColor: '#fff',
-      zIndex: 1,
-    },
-    profileFallbackText: {
-      fontSize: 28,
-      color: ORANGE2,
-      fontFamily: 'RobotoMono_700Bold',
-    },
-    name: {
-      fontSize: 20,
-      color: ORANGE2,
-      fontFamily: 'RobotoMono_700Bold',
-    },
-    location: {
-      color: ORANGE,
-      fontSize: 14,
-      marginTop: 2,
-      fontFamily: 'RobotoMono_400Regular',
-    },
-    coinCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 12,
-      paddingVertical: 7,
-      backgroundColor: 'rgba(255,113,32,0.12)',
-      borderRadius: 24,
-      alignSelf: 'flex-start',
-      marginLeft: 12,
-      minWidth: 64,
-      borderWidth: 1,
-      borderColor: '#FFE1BC',
-    },
-    coinText: {
-      color: ORANGE,
-      fontSize: 15,
-      fontFamily: 'RobotoMono_700Bold',
-    },
-    coinIcon: {
-      fontSize: 18,
-      marginLeft: 2,
-    },
-    tabsRow: {
-      flexDirection: 'row',
-      marginHorizontal: 18,
-      borderRadius: 18,
-      backgroundColor: '#fff',
-      overflow: 'hidden',
-      marginBottom: 24,
-      marginTop: 6,
-      borderWidth: 1,
-      borderColor: '#FFE1BC',
-    },
-    tabActive: {
-      flex: 1,
-      backgroundColor: ORANGE2,
-      borderRadius: 14,
-      margin: 4,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingVertical: 11,
-    },
-    tabActiveText: {
-      color: '#fff',
-      fontSize: 15,
-      fontFamily: 'RobotoMono_700Bold',
-    },
-    tabInactive: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#fff',
-      borderRadius: 14,
-      margin: 4,
-      paddingVertical: 11,
-    },
-    tabInactiveText: {
-      color: ORANGE2,
-      fontSize: 15,
-      opacity: 0.91,
-      fontFamily: 'RobotoMono_700Bold',
-    },
-    menuSection: {
-      marginHorizontal: 20,
-      backgroundColor:'#fff',
-      borderRadius: 0,
-      paddingVertical: 2,
-      borderWidth: 0,
-      borderColor: 'transparent',
-      marginBottom:28,
-      marginTop: 10,
-    },
-    menuBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: 16,
-      paddingHorizontal: 16,
-      marginBottom: 12,
-      backgroundColor: '#fff',
-      borderRadius: 999,
-      borderWidth: 2,
-      borderColor: '#FFD8B4',
-      shadowColor: ORANGE2,
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 2,
-    },
-    menuIcon: {
-      fontSize: 20,
-      marginRight: 14,
-      color: ORANGE2,
-    },
-    menuLabel: {
-      fontSize: 16,
-      flex:1,
-      color: ORANGE2,
-      fontFamily: 'RobotoMono_700Bold',
-    },
-    menuArrow: {
-      fontSize: 20,
-      color: ORANGE2,
-      marginLeft: 8,
-      marginRight:6,
-      opacity: 0.7,
-      fontFamily: 'RobotoMono_700Bold',
-    },
-  });
+  const handlePressIn = () => {
+    scale.value = withSpring(0.8, { damping: 15, stiffness: 180 });
+  };
 
-  // Animated styles that must be created outside render cycle
-  const stylesAnimated = (() => {
-    const profileOpacity = typeof useSharedValue === 'function' ? useSharedValue(0) : { value: 0 as any };
-    const profileTranslateY = typeof useSharedValue === 'function' ? useSharedValue(18) : { value: 18 as any };
-    // kick off on mount
-    useEffect(() => {
-      profileOpacity.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) });
-      profileTranslateY.value = withTiming(0, { duration: 700, easing: Easing.out(Easing.cubic) });
-    }, []);
-    const profileAnimated = useAnimatedStyle(() => ({
-      opacity: profileOpacity.value,
-      transform: [{ translateY: profileTranslateY.value }],
-    }));
-    return { profileAnimated } as const;
-  })();
-  
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 12, stiffness: 160 });
+  };
+
+  return (
+    <AnimatedTouchable style={[styles.menuBtn, showLast && { marginBottom: 0 }, animatedStyle]}
+      activeOpacity={0.9}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onPress}
+    >
+      <Text style={styles.menuIcon}>{icon}</Text>
+      <Text style={styles.menuLabel}>{label}</Text>
+      <Text style={styles.menuArrow}>›</Text>
+    </AnimatedTouchable>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  profileSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 44,
+    marginHorizontal: 24,
+    marginBottom: 32,
+    backgroundColor: '#fff',
+    borderRadius: 36,
+    padding: 18,
+    borderWidth: 2,
+    borderColor: ORANGE2,
+    shadowColor: ORANGE2,
+    shadowOpacity: 0.08,
+    shadowRadius: 9,
+    elevation: 3,
+  },
+  avatarWrapper: {
+    position: 'relative',
+    marginRight: 18,
+  },
+  profilePic: {
+    width: 68,
+    height: 68,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: ORANGE2,
+    backgroundColor: '#fff',
+  },
+  profileFallback: {
+    width: 68,
+    height: 68,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: ORANGE2,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editBadge: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: ORANGE2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+    zIndex: 1,
+  },
+  profileFallbackText: {
+    fontSize: 28,
+    color: ORANGE2,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  name: {
+    fontSize: 20,
+    color: ORANGE2,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  menuSection: {
+    marginHorizontal: 20,
+    backgroundColor: '#fff',
+    borderRadius: 0,
+    paddingVertical: 2,
+    borderWidth: 0,
+    borderColor: 'transparent',
+    marginBottom: 28,
+    marginTop: 10,
+  },
+  menuBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: '#FFD8B4',
+    shadowColor: ORANGE2,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  menuIcon: {
+    fontSize: 20,
+    marginRight: 14,
+    color: ORANGE2,
+  },
+  menuLabel: {
+    fontSize: 16,
+    flex: 1,
+    color: ORANGE2,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  menuArrow: {
+    fontSize: 20,
+    color: ORANGE2,
+    marginLeft: 8,
+    marginRight: 6,
+    opacity: 0.7,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+});
