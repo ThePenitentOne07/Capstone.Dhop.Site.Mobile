@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 
+/**
+ * Runs the callback when the app returns to the foreground.
+ */
 export function useRefetchOnAppForeground(callback: () => void | Promise<void>) {
   const appState = useRef<AppStateStatus>(AppState.currentState);
 

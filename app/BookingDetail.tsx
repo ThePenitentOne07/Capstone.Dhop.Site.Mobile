@@ -13,7 +13,7 @@ import { getBookingById, cancelChoreographerBooking } from "../service/api";
 import { useRouter } from "expo-router";
 import { useConversationStore } from "../states/conversationStore";
 import { useAppModal } from "../hooks/useAppModal";
-import { useRefetchOnFocus } from "./hooks/useRefetchOnFocus";
+import { useRefetchOnFocus } from "./_hooks/useRefetchOnFocus";
 
 const ORANGE = "#FF7120";
 const ORANGE2 = "#FF7A00";

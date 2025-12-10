@@ -11,7 +11,7 @@ import {
 } from "../components";
 import { sharedStyles } from "../styles/shared";
 import Animated, { FadeIn } from "react-native-reanimated";
-import { useRefetchOnFocus } from "./hooks/useRefetchOnFocus";
+import { useRefetchOnFocus } from "./_hooks/useRefetchOnFocus";
 import { getNotifications } from "../service/api";
 import { useNotificationStore } from "../states/notificationStore";
 
