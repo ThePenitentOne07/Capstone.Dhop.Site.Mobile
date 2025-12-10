@@ -5,7 +5,7 @@ import { acceptChoreographerBooking, cancelChoreographerBooking, getBookingById 
 import { useRouter } from 'expo-router';
 import { useConversationStore } from '../../states/conversationStore';
 import { useAppModal } from '../../hooks/useAppModal';
-import { useRefetchOnFocus } from '../_hooks/useRefetchOnFocus';
+import { useRefetchOnFocus } from '../hooks/useRefetchOnFocus';
 
 
 const YELLOW = '#FFD540';

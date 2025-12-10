@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Stack } from 'expo-router';
 import { getUserComplaints, UserComplaintItem, cancelComplaint } from '../service/api';
-import { useRefetchOnFocus } from './_hooks/useRefetchOnFocus';
+import { useRefetchOnFocus } from './hooks/useRefetchOnFocus';
 import { useFormatCurrency } from '../hooks/useFormatCurrency';
 import { useAppModal } from '../hooks/useAppModal';
 

@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getBookingById, dancerAcceptBooking, cancelDancerBooking, dancerStartWorking } from '../../service/api';
 import { useConversationStore } from '../../states/conversationStore';
 import { useAppModal } from '../../hooks/useAppModal';
-import { useRefetchOnFocus } from '../_hooks/useRefetchOnFocus';
+import { useRefetchOnFocus } from '../hooks/useRefetchOnFocus';
 
 const YELLOW = '#FFD540';
 const ORANGE = '#FF7120';
