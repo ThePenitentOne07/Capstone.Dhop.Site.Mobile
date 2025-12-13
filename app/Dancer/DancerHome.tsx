@@ -167,13 +167,20 @@ export default function DancerHome() {
         <View style={styles.menuSection}>
           <MenuButton
             index={0}
-            icon="📜"
+            icon=""
             label="Lịch đặt"
             onPress={() => {
               router.push('/Dancer/DancerBookingList');
             }}
           />
-          <MenuButton index={1} icon="💳" label="Ví tiền" />
+          <MenuButton
+            index={1}
+            icon=""
+            label="Quét Mã"
+            onPress={() => {
+              router.push('/Dancer/CheckInQRDancer');
+            }}
+          />
 
           <MenuButton
             index={2}
@@ -186,7 +193,7 @@ export default function DancerHome() {
 
           <MenuButton
             index={3}
-            icon="🚪"
+            icon=""
             label="Đăng xuất"
             showLast={true}
             onPress={handleLogout}

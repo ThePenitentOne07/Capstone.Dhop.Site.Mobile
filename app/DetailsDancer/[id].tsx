@@ -45,6 +45,7 @@ interface DancerCrew {
 
 interface DancerResult {
   dancerId: number;
+  avatar:string;
   about?: string;
   danceGroupName?: string;
   teamSize?: number;
@@ -118,9 +119,9 @@ export default function DetailsDancerScreen() {
   const profiles = dancer?.profiles || [];
   const extraServices = dancer?.extraServices || [];
 
-  const imageSource = dancer?.profiles?.[0]?.images?.[0]
-    ? { uri: dancer.profiles[0].images[0] }
-    : require("../../assets/girl-dancing-2830024-2357254.webp");
+  const imageSource = dancer?.avatar
+  console.log(imageSource);
+  
   
   const handleTabPress = (tab: "Intro" | "Projects") => {
     setSelectedTab(tab);

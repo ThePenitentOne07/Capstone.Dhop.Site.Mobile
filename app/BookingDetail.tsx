@@ -338,9 +338,10 @@ export default function BookingDetail() {
             <View style={styles.sessionsBlock}>
               <Text style={styles.sessionsTitle}>Các buổi tập</Text>
               {booking.trainingSessions.map((s: any, idx: number) => {
+                // Use statusName for display, statusCode for logic
                 const statusName = s.statusName || "";
-                const statusColor = getStatusColor(statusName);
-                // const statusText = translateStatus(statusName);
+                const statusCode = s.statusCode || "";
+                const statusColor = getStatusColor(statusCode);
 
                 return (
                   <View style={styles.sessionCard} key={idx}>
@@ -496,7 +497,7 @@ export default function BookingDetail() {
         </>
       )} */}
 
-      {status === "Đơn đặt đã kích hoạt" && (
+      {status === "Đơn đặt đã kích hoạt" && (hasTrainingSessionTimeArrived(booking.trainingSessions) || hasStartedSession(booking.trainingSessions)) && (
         <View style={styles.actionBar}>
           <TouchableOpacity
             style={styles.checkinBtn}
@@ -505,20 +506,41 @@ export default function BookingDetail() {
                 const sessions = Array.isArray(booking.trainingSessions)
                   ? booking.trainingSessions.slice()
                   : [];
-                const sorted = sessions.sort(
+                
+                // Find all sessions with TRAINING_SESSION_STARTED status
+                const startedSessions = sessions.filter(
+                  (s: any) => s?.statusCode === "TRAINING_SESSION_STARTED"
+                );
+                
+                // Sort by sessionNo (ascending) and get the lowest one
+                const sortedStarted = startedSessions.sort(
                   (a: any, b: any) => (a.sessionNo || 0) - (b.sessionNo || 0)
                 );
-                const notStarted = sorted.find(
-                  (s: any) => s?.statusName === "Buổi tập chưa bắt đầu"
-                );
-                const target = notStarted || sorted[0];
+                
+                // Get the lowest sessionNo that has started
+                const target = sortedStarted[0];
+                
                 if (target?.id) {
                   router.push({
                     pathname: "/CustomerQRCheckIn",
                     params: { trainingSessionId: String(target.id) },
                   });
                 } else {
-                  router.push("/CustomerQRCheckIn");
+                  // Fallback: try to find any not started session if no started session found
+                  const sorted = sessions.sort(
+                    (a: any, b: any) => (a.sessionNo || 0) - (b.sessionNo || 0)
+                  );
+                  const notStarted = sorted.find(
+                    (s: any) => s?.statusCode === "TRAINING_SESSION_NOT_STARTED"
+                  );
+                  if (notStarted?.id) {
+                    router.push({
+                      pathname: "/CustomerQRCheckIn",
+                      params: { trainingSessionId: String(notStarted.id) },
+                    });
+                  } else {
+                    router.push("/CustomerQRCheckIn");
+                  }
                 }
               } catch {
                 router.push("/CustomerQRCheckIn");
@@ -532,6 +554,72 @@ export default function BookingDetail() {
       {modal}
     </View>
   );
+}
+
+function hasStartedSession(trainingSessions: any[]): boolean {
+  if (!Array.isArray(trainingSessions) || trainingSessions.length === 0) {
+    return false;
+  }
+  
+  // Check if any session has started (use statusCode for comparison)
+  return trainingSessions.some((s: any) => {
+    const statusCode = (s?.statusCode || "").trim();
+    return statusCode === "TRAINING_SESSION_STARTED";
+  });
+}
+
+function hasTrainingSessionTimeArrived(trainingSessions: any[]): boolean {
+  if (!Array.isArray(trainingSessions) || trainingSessions.length === 0) {
+    return false;
+  }
+
+  const now = new Date();
+  
+  // Find sessions that haven't started yet (use statusCode for comparison)
+  const notStartedSessions = trainingSessions.filter((s: any) => {
+    const statusCode = (s?.statusCode || "").trim();
+    return statusCode === "TRAINING_SESSION_NOT_STARTED";
+  });
+
+  if (notStartedSessions.length === 0) {
+    return false;
+  }
+
+  // Check if any not-started session's scheduled time has arrived
+  for (const session of notStartedSessions) {
+    const scheduledTime = session.scheduledTime;
+    if (!scheduledTime) continue;
+
+    try {
+      let sessionDate: Date;
+      
+      // Parse the date string (format: "dd-mm-yyyy HH:mm" or ISO format)
+      if (typeof scheduledTime === "string" && scheduledTime.includes("-") && scheduledTime.includes(" ")) {
+        const [datePart, timePart] = scheduledTime.split(" ");
+        const [day, month, year] = datePart.split("-");
+        const [hours, minutes] = timePart.split(":");
+        sessionDate = new Date(
+          parseInt(year),
+          parseInt(month) - 1,
+          parseInt(day),
+          parseInt(hours),
+          parseInt(minutes)
+        );
+      } else {
+        sessionDate = new Date(scheduledTime);
+      }
+
+      // Check if current time is at or after the scheduled time
+      if (now >= sessionDate) {
+        return true;
+      }
+    } catch (e) {
+      console.error("Error parsing scheduled time:", e);
+      continue;
+    }
+  }
+
+  return false;
 }
 
 function formatDateTime(dt: string) {
@@ -604,31 +692,23 @@ function sessionSummary(s: any) {
   }
 }
 
-function translateStatus(statusName: string): string {
-  const statusMap: { [key: string]: string } = {
-    TRAINING_SESSION_SUSSECCFUL: "Đã hoàn thành",
-    TRAINING_SESSION_SUSSCECCFUL: "Đã hoàn thành", // Handle typo variant
-    TRAINING_SESSION_NOT_STARTED: "Chưa bắt đầu",
-    TRAINING_SESSION_STARTED: "Đang diễn ra",
-    TRAINING_SESSION_CANCELLED: "Đã hủy",
-  };
-  return statusMap[statusName] || statusName;
-}
-
-function getStatusColor(statusName: string): string {
-  if (
-    statusName === "TRAINING_SESSION_SUSSECCFUL" ||
-    statusName === "TRAINING_SESSION_SUSSCECCFUL"
-  ) {
+function getStatusColor(statusCode: string): string {
+  // Use statusCode (ENUM) for comparison logic
+  const code = (statusCode || "").trim();
+  
+  if (code === "TRAINING_SESSION_SUCCESSFUL") {
     return "#0F9D58"; // Green for successful
   }
-  if (statusName === "TRAINING_SESSION_NOT_STARTED") {
+  if (code === "TRAINING_SESSION_NOT_STARTED") {
     return "#FF7A00"; // Orange for not started
   }
-  if (statusName === "TRAINING_SESSION_STARTED") {
+  if (code === "TRAINING_SESSION_STARTED") {
     return "#2196F3"; // Blue for started
   }
-  if (statusName === "TRAINING_SESSION_CANCELLED") {
+  if (code === "TRAINING_SESSION_ABSENT") {
+    return "#F59E0B"; // Amber for absent/not completed
+  }
+  if (code === "TRAINING_SESSION_CANCELLED") {
     return "#C92A2A"; // Red for cancelled
   }
   return "#6B7280"; // Default gray

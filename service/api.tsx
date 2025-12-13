@@ -240,17 +240,41 @@ export const createChoreographerBooking = (payload: ChoreographerBooking) => {
   return api.post(`/booking/choreographer`, payload);
 };
 // Get list of choreographer bookings
-export const getChoreographerBookings = () => {
-  return api.get(`/booking/choreographer`);
+export interface GetChoreographerBookingsParams {
+  status?: string;
+  pageNo?: number;
+  pageSize?: number;
+  sortBy?: string;
+}
+
+export const getChoreographerBookings = (params?: GetChoreographerBookingsParams) => {
+  return api.get(`/booking/choreographer`, {
+    params: {
+      status: params?.status,
+      pageNo: params?.pageNo || 1,
+      pageSize: params?.pageSize || 10,
+      sortBy: params?.sortBy || 'id:DESC',
+    },
+  });
 };
 
 // Get list of dancer bookings for the logged-in dancer
-export const getDancerBookings = () => {
-  // Backend returns an array of bookings like:
-  // [
-  //   { id, address, bookingDate, statusName, numberOfTeamMember, price, area, customer, ... }
-  // ]
-  return api.get(`/booking/dancers`);
+export interface GetDancerBookingsParams {
+  status?: string;
+  pageNo?: number;
+  pageSize?: number;
+  sortBy?: string;
+}
+
+export const getDancerBookings = (params?: GetDancerBookingsParams) => {
+  return api.get(`/booking/dancers`, {
+    params: {
+      status: params?.status,
+      pageNo: params?.pageNo || 1,
+      pageSize: params?.pageSize || 10,
+      sortBy: params?.sortBy || 'id:DESC',
+    },
+  });
 };
 
 export const dancerAcceptBooking= (bookingId: number)=>{
@@ -265,9 +289,23 @@ export const dancerCompleteWork = (bookingId: number, qrCodeData: string) => {
 export const dancerStartWorking = (bookingId: number) => {
   return api.patch(`/dancers/start-work-booking`, { bookingId });
 };
-export const dancerGetBooking = ()=>{
-  return api.get(`/dancers/bookings`)
+export interface GetDancerBookingsParams {
+  status?: string;
+  pageNo?: number;
+  pageSize?: number;
+  sortBy?: string;
 }
+
+export const dancerGetBooking = (params?: GetDancerBookingsParams) => {
+  return api.get(`/dancers/bookings`, {
+    params: {
+      status: params?.status,
+      pageNo: params?.pageNo || 1,
+      pageSize: params?.pageSize || 10,
+      sortBy: params?.sortBy || 'id:DESC',
+    },
+  });
+};
 
 export const getBookingById = (bookingId: string | number) => {
   return api.get(`/booking`, {

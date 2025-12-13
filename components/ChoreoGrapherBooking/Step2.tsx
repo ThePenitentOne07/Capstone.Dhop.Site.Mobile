@@ -89,9 +89,46 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
           : [];
         const grouped = items.reduce<Record<string, OccupiedSession[]>>((acc, session) => {
           if (!session?.scheduledTime) return acc;
-          const key = session.scheduledTime.split('T')[0];
-          if (!acc[key]) acc[key] = [];
-          acc[key].push({
+          
+          // Extract date key from scheduledTime - handle multiple formats
+          let dateKey: string;
+          try {
+            const scheduledTime = session.scheduledTime;
+            // Try ISO format first (YYYY-MM-DDTHH:mm:ss or YYYY-MM-DD)
+            if (scheduledTime.includes('T')) {
+              dateKey = scheduledTime.split('T')[0];
+            } 
+            // Try format like "dd-mm-yyyy HH:mm" or "dd-mm-yyyy"
+            else if (scheduledTime.includes('-') && scheduledTime.includes(' ')) {
+              const [datePart] = scheduledTime.split(' ');
+              const [day, month, year] = datePart.split('-');
+              dateKey = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            }
+            // Try format like "dd-mm-yyyy" only
+            else if (scheduledTime.includes('-') && scheduledTime.split('-').length === 3) {
+              const [day, month, year] = scheduledTime.split('-');
+              dateKey = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            }
+            // Fallback: try to parse as Date
+            else {
+              const date = new Date(scheduledTime);
+              if (!isNaN(date.getTime())) {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                dateKey = `${yyyy}-${mm}-${dd}`;
+              } else {
+                console.warn('Could not parse scheduledTime:', scheduledTime);
+                return acc;
+              }
+            }
+          } catch (error) {
+            console.warn('Error parsing scheduledTime:', session.scheduledTime, error);
+            return acc;
+          }
+          
+          if (!acc[dateKey]) acc[dateKey] = [];
+          acc[dateKey].push({
             scheduledTime: session.scheduledTime,
             endTime: session.endTime,
             durationMinutes: session.durationMinutes,

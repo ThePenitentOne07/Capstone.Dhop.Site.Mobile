@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { getChoreographerBookings } from '../../service/api';
@@ -6,44 +6,106 @@ import { useRefetchOnFocus } from '../hooks';
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
 
+// Status mapping: Display label -> API enum value
+const STATUS_MAP: Record<string, string | undefined> = {
+  'Tất cả': undefined,
+  'Đơn đặt chờ xác nhận': 'BOOKING_PENDING',
+  'Đơn đặt đã kích hoạt': 'BOOKING_ACTIVATE',
+  'Đơn đặt hoàn tất': 'BOOKING_COMPLETE',
+  'Đơn đặt đã hủy': 'BOOKING_CANCELLED',
+  'Đơn trong trạng thái khiếu nại': 'BOOKING_COMPLAIN',
+  'Đơn đặt đã kết thúc do khiếu nại và hoàn tiền': 'BOOKING_FINISH_WITH_COMPLAIN_REFUND',
+};
+
 const STATUS_CHIP_VALUES = [
   'Tất cả',
   'Đơn đặt chờ xác nhận',
   'Đơn đặt đã kích hoạt',
-  'Đơn đặt hoàn tất'
+  'Đơn đặt hoàn tất',
+  'Đơn đặt đã hủy',
+  'Đơn trong trạng thái khiếu nại',
+  'Đơn đặt đã kết thúc do khiếu nại và hoàn tiền',
 ];
 
 export default function RequestBookingList() {
   const router = useRouter();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string|null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>('Tất cả');
+  const [pageNo, setPageNo] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const isLoadingMoreRef = useRef(false);
+  const isLoadingRef = useRef(false);
+  const selectedStatusRef = useRef(selectedStatus);
 
+  // Update ref when selectedStatus changes
   useEffect(() => {
-    let mounted = true;
-    async function fetchData() {
-      try {
+    selectedStatusRef.current = selectedStatus;
+  }, [selectedStatus]);
+
+  const fetchData = useCallback(async (page: number, reset: boolean = false) => {
+    // Prevent duplicate calls
+    if (reset && isLoadingRef.current) return;
+    if (!reset && isLoadingMoreRef.current) return;
+
+    try {
+      if (reset) {
+        isLoadingRef.current = true;
         setLoading(true);
         setError(null);
-        const res = await getChoreographerBookings();
-        if (mounted) {
-          setData(res.data || []);
-        }
-      } catch (e: any) {
-        setError(e?.response?.data?.message || e?.message || 'Lỗi khi tải danh sách đặt lịch');
-      } finally {
-        if (mounted) setLoading(false);
+      } else {
+        isLoadingMoreRef.current = true;
+        setLoadingMore(true);
       }
+
+      const statusEnum = STATUS_MAP[selectedStatusRef.current];
+      const res = await getChoreographerBookings({
+        status: statusEnum,
+        pageNo: page,
+        pageSize: 10,
+        sortBy: 'id:DESC',
+      });
+
+      const items = res.data?.items || [];
+      const totalPage = res.data?.totalPage || 1;
+
+      if (reset) {
+        setData(items);
+      } else {
+        setData(prev => [...prev, ...items]);
+      }
+
+      setTotalPages(totalPage);
+      setHasMore(page < totalPage);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || e?.message || 'Lỗi khi tải danh sách đặt lịch');
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+      isLoadingRef.current = false;
+      isLoadingMoreRef.current = false;
     }
-    fetchData();
-    return () => { mounted = false; };
   }, []);
 
-  const filteredData = useMemo(() => {
-    if (selectedStatus === 'Tất cả') return data;
-    return (data || []).filter((b) => (b?.statusName || '').trim() === selectedStatus);
-  }, [data, selectedStatus]);
+  useEffect(() => {
+    setPageNo(1);
+    setHasMore(true);
+    isLoadingMoreRef.current = false;
+    isLoadingRef.current = false;
+    fetchData(1, true);
+  }, [selectedStatus, fetchData]);
+
+  const handleLoadMore = useCallback(() => {
+    if (isLoadingMoreRef.current || loadingMore || !hasMore || loading || isLoadingRef.current) {
+      return;
+    }
+    const nextPage = pageNo + 1;
+    setPageNo(nextPage);
+    fetchData(nextPage, false);
+  }, [loadingMore, hasMore, loading, pageNo, fetchData]);
 
   const openDetail = (booking: any) => {
     const bookingId = booking?.id;
@@ -100,13 +162,27 @@ export default function RequestBookingList() {
           style={styles.listAbsolute}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 36 }}
+          onScroll={({ nativeEvent }) => {
+            const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+            const paddingToBottom = 20;
+            const isNearBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+            if (isNearBottom && !isLoadingMoreRef.current && hasMore && !loading && !loadingMore) {
+              handleLoadMore();
+            }
+          }}
+          scrollEventThrottle={400}
         >
-          {filteredData.length === 0 ? (
+          {data.length === 0 ? (
             <Text style={styles.emptyText}>Không có đơn nào.</Text>
           ) : (
-            filteredData.map((item, idx) =>
-              <BookingCard key={idx} booking={item} onPress={() => openDetail(item)} />
-            )
+            <>
+              {data.map((item, idx) =>
+                <BookingCard key={item.id || idx} booking={item} onPress={() => openDetail(item)} />
+              )}
+              {loadingMore && (
+                <ActivityIndicator color={ORANGE2} style={{ marginTop: 20, marginBottom: 20 }} />
+              )}
+            </>
           )}
         </ScrollView>
       )}

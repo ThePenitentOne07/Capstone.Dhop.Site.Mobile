@@ -26,7 +26,7 @@ function Wallet() {
         <TotalBallance />
 
         {/* Quick Actions */}
-        <Animated.View 
+        {/* <Animated.View 
           style={styles.section}
           entering={FadeInDown.delay(200).duration(300)}
         >
@@ -53,10 +53,10 @@ function Wallet() {
               label="History"
             />
           </View>
-        </Animated.View>
+        </Animated.View> */}
 
         {/* Recent Transactions */}
-        <Animated.View 
+        {/* <Animated.View 
           style={styles.section}
           entering={FadeInDown.delay(400).duration(300)}
         >
@@ -104,7 +104,7 @@ function Wallet() {
               type="incoming"
             />
           </View>
-        </Animated.View>
+        </Animated.View> */}
       </ScrollView>
     </SafeAreaView>
   );
