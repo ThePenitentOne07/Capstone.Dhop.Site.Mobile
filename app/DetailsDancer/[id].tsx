@@ -119,8 +119,8 @@ export default function DetailsDancerScreen() {
   const profiles = dancer?.profiles || [];
   const extraServices = dancer?.extraServices || [];
 
-  const imageSource = dancer?.avatar
-  console.log(imageSource);
+  const imageSource = dancer?.avatar ? { uri: dancer.avatar } : undefined;
+  
   
   
   const handleTabPress = (tab: "Intro" | "Projects") => {
