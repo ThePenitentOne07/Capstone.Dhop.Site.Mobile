@@ -32,6 +32,7 @@ interface ChoreographerData {
   averageRating?: number;
   profiles?: Profile[];
   extraServices?: Array<{ id: number; name: string; description: string; price: number }>;
+  email?: string;
 }
 
 export default function DetailsScreen() {
@@ -94,6 +95,7 @@ export default function DetailsScreen() {
   const averageRating= choreographerData?.averageRating ;
   const profiles = choreographerData?.profiles || [];
   const extraServices = choreographerData?.extraServices || [];
+  const email = choreographerData?.email || "";
 
   const imageSource = avatar
     ? { uri: avatar }
@@ -127,7 +129,7 @@ export default function DetailsScreen() {
           danceType: danceType || [],
           averageRating: averageRating || 0,
           extraServices,
-          
+          email,
         }} />;
       case "My Account":
         return <ChoreographerProject profiles={profiles} />;
@@ -141,7 +143,8 @@ export default function DetailsScreen() {
           area: area || [],
           danceType: danceType || [],
           averageRating: averageRating || 0,
-          extraServices
+          extraServices,
+          email,
         }} />;
     }
   };

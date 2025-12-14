@@ -138,18 +138,7 @@ export default function NotificationList() {
         } catch (err) {
           console.error('Failed to navigate to chat from notification:', err);
         }
-      } else if (nType === 'BOOKING_CHOREOGRAPHY' && bookingId) {
-        try {
-          router.push({
-            pathname: '/BookingDetail',
-            params: {
-              bookingId: String(bookingId),
-            },
-          });
-        } catch (err) {
-          console.error('Failed to navigate to booking detail from notification:', err);
-        }
-      } else if (nType === 'BOOKING_DANCER' && bookingId) {
+      } else if (nType === 'BOOKING_CHOREOGRAPHER' && bookingId) {
         try {
           const userRole = normalizeRole(user?.role);
           const roleUpper = userRole || '';
@@ -161,7 +150,24 @@ export default function NotificationList() {
                 bookingId: String(bookingId),
               },
             });
-          } else if (roleUpper === 'DANCER') {
+          } else {
+            // Default to customer view
+            router.push({
+              pathname: '/BookingDetail',
+              params: {
+                bookingId: String(bookingId),
+              },
+            });
+          }
+        } catch (err) {
+          console.error('Failed to navigate to booking detail from notification:', err);
+        }
+      } else if (nType === 'BOOKING_DANCER' && bookingId) {
+        try {
+          const userRole = normalizeRole(user?.role);
+          const roleUpper = userRole || '';
+          
+          if (roleUpper === 'DANCER') {
             router.push({
               pathname: '/Dancer/DancerBookingDetail',
               params: {

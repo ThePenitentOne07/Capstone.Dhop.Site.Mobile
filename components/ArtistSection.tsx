@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { useRouter } from 'expo-router';
 import { getDancerUsers } from '../service/api';
 import { useFormatCurrency } from '../hooks/useFormatCurrency';
 
@@ -68,6 +69,7 @@ export const ArtistSection: React.FC<ArtistSectionProps> = ({
   onArtistPress,
   onAddArtist 
 }) => {
+  const router = useRouter();
   const [data, setData] = React.useState<ApiDancerItem[]>([]);
   const [loading, setLoading] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -98,7 +100,10 @@ export const ArtistSection: React.FC<ArtistSectionProps> = ({
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Nhóm nhảy</Text>
-        <TouchableOpacity onPress={onShowMore}>
+        <TouchableOpacity onPress={() => {
+          onShowMore?.();
+          router.push('/Dancer/Explore');
+        }}>
           <Text style={styles.showMore}>Xem tất cả &gt;</Text>
         </TouchableOpacity>
       </View>

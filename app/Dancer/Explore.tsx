@@ -17,12 +17,12 @@ import { Stack } from "expo-router";
 import useArea from "../../hooks/useArea";
 import useDanceType from "../../hooks/useDanceType";
 import FilterControls from "../../components/ChoreographerExplore/FilterControls";
-import ChoreographerCard, {
-  ChoreographerListItem,
-} from "../../components/ChoreographerExplore/ChoreographerCard";
+import DancerCard, {
+  DancerListItem,
+} from "../../components/DancerExplore/DancerCard";
 import { FilterState } from "../../components/ChoreographerExplore/types";
 import {
-  getChoreographyUsers,
+  getDancerUsers,
   ChoreographyUsersQuery,
 } from "../../service/api";
 
@@ -31,7 +31,7 @@ interface ApiResponse {
   pageSize: number;
   totalPage: number;
   totalElements: number;
-  items: ChoreographerListItem[];
+  items: DancerListItem[];
 }
 
 const PAGE_SIZE = 10;
@@ -42,7 +42,7 @@ const defaultFilters: FilterState = {
   name: "",
 };
 
-const ExploreChoreographersScreen = () => {
+const ExploreDancersScreen = () => {
   const { areas, loading: areasLoading } = useArea();
   const { danceTypes, loading: danceTypeLoading } = useDanceType();
 
@@ -50,7 +50,7 @@ const ExploreChoreographersScreen = () => {
   const [debouncedName, setDebouncedName] = useState(
     defaultFilters.name ?? ""
   );
-  const [items, setItems] = useState<ChoreographerListItem[]>([]);
+  const [items, setItems] = useState<DancerListItem[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -109,9 +109,9 @@ const ExploreChoreographersScreen = () => {
           pageSize: PAGE_SIZE,
           ...queryFilters,
         } as ChoreographyUsersQuery & { pageNo: number; pageSize: number };
-        console.log("Fetching choreographers with params:", requestParams);
+        console.log("Fetching dancers with params:", requestParams);
 
-        const response = await getChoreographyUsers(requestParams);
+        const response = await getDancerUsers(requestParams);
         const payload: ApiResponse = response.data;
         const nextItems = Array.isArray(payload?.items) ? payload.items : [];
         setTotalPages(payload?.totalPage ?? pageToLoad);
@@ -135,7 +135,7 @@ const ExploreChoreographersScreen = () => {
         const message =
           err?.response?.data?.message ||
           err?.message ||
-          "Không thể tải danh sách biên đạo.";
+          "Không thể tải danh sách vũ công.";
         setError(message);
       } finally {
         if (mode === "initial") {
@@ -185,7 +185,7 @@ const ExploreChoreographersScreen = () => {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: "Tìm biên đạo",
+          title: "Tìm vũ công",
           headerStyle: {
             backgroundColor: "#FF7A00",
           },
@@ -214,7 +214,7 @@ const ExploreChoreographersScreen = () => {
             danceTypeLoading={danceTypeLoading}
           />
         }
-        renderItem={({ item }) => <ChoreographerCard item={item} />}
+        renderItem={({ item }) => <DancerCard item={item} />}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.3}
         refreshControl={
@@ -223,7 +223,7 @@ const ExploreChoreographersScreen = () => {
         ListEmptyComponent={
           !loading ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>Không tìm thấy biên đạo phù hợp</Text>
+              <Text style={styles.emptyTitle}>Không tìm thấy vũ công phù hợp</Text>
               <Text style={styles.emptySubtitle}>
                 Thử điều chỉnh lại bộ lọc hoặc làm mới danh sách.
               </Text>
@@ -308,5 +308,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ExploreChoreographersScreen;
+export default ExploreDancersScreen;
 
