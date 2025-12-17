@@ -1,4 +1,4 @@
-package com.lehaan.DhopSiteMobile
+package com.dinhbao.DhopSiteMobile
 
 import android.app.Application
 import android.content.res.Configuration
