@@ -13,7 +13,7 @@ export default function Layout() {
     RobotoMono_700Bold,
   });
   
-  // Call the hook on every screen
+  // Call the hook on every screen.
   const { user, loading, error } = useUserInfo();
   const { socket, initSocket, disconnectSocket } = useSocketStore();
   const { addNotification, setNotifications } = useNotificationStore();
