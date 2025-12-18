@@ -13,7 +13,17 @@
         }
       ],
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#FF7A00",
+          "sounds": [],
+          "androidMode": "default",
+          "androidCollapsedTitle": "#{unread_count} new notifications"
+        }
+      ]
     ],
     "version": "1.0.0",
     "orientation": "portrait",
@@ -27,7 +37,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.lehaan.DhopSiteMobile"
+      "bundleIdentifier": "com.lehaan.DhopSiteMobile",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -37,9 +48,11 @@
       "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.POST_NOTIFICATIONS"
       ],
-      "package": "com.lehaan.DhopSiteMobile"
+      "package": "com.lehaan.DhopSiteMobile",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"

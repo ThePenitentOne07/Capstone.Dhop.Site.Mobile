@@ -467,3 +467,18 @@ export const getUserComplaints = ({
 export const cancelComplaint = (complaintId: number) => {
   return api.put(`/api/complain/${complaintId}/cancel`);
 };
+
+// Register FCM token for push notifications
+export interface RegisterFCMTokenPayload {
+  token: string;
+  deviceType: 'ios' | 'android';
+}
+
+export const registerFCMToken = (payload: RegisterFCMTokenPayload) => {
+  return api.post(`/fcm/tokens/register`, payload);
+};
+
+// Unregister FCM token (when user logs out)
+export const unregisterFCMToken = (token: string) => {
+  return api.post(`/notifications/unregister-token`, { token });
+};

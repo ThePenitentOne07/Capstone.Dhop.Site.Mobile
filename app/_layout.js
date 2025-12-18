@@ -1,11 +1,19 @@
 import { Stack } from "expo-router";
 import { useFonts, RobotoMono_400Regular, RobotoMono_700Bold } from "@expo-google-fonts/roboto-mono";
 import { useUserInfo } from "../hooks/useUserInfo";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSocketStore } from "../states/socketStore";
 import { useNotificationStore } from "../states/notificationStore";
-import { getNotifications } from "../service/api";
+import { getNotifications, registerFCMToken } from "../service/api";
+import { Platform } from "react-native";
+import * as Notifications from 'expo-notifications';
+import { 
+  registerForPushNotificationsAsync, 
+  setupNotificationListeners,
+  setBadgeCount 
+} from "../service/notificationService";
+import { logAsyncStorage } from "../utils/logAsyncStorage";
 
 export default function Layout() {
   const [loaded] = useFonts({
@@ -16,7 +24,10 @@ export default function Layout() {
   // Call the hook on every screen
   const { user, loading, error } = useUserInfo();
   const { socket, initSocket, disconnectSocket } = useSocketStore();
-  const { addNotification, setNotifications } = useNotificationStore();
+  const { addNotification, setNotifications, unreadCount } = useNotificationStore();
+  const notificationListener = useRef();
+  const responseListener = useRef();
+  const didDumpStorage = useRef(false);
 
   const mapServerNotification = useCallback((item) => ({
     id: item.id,
@@ -44,6 +55,12 @@ export default function Layout() {
 
   // Initialize socket when user is authenticated
   useEffect(() => {
+    // Dev helper: dump AsyncStorage once per app launch (helps debug auth/session issues)
+    if (__DEV__ && !didDumpStorage.current) {
+      didDumpStorage.current = true;
+      logAsyncStorage();
+    }
+
     const initializeSocket = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
@@ -158,6 +175,79 @@ export default function Layout() {
       fetchInitialNotifications();
     }
   }, [user, loading, fetchInitialNotifications]);
+
+  // Initialize Push Notifications
+  useEffect(() => {
+    if (!user || loading) return;
+
+    let isMounted = true;
+
+    const setupPushNotifications = async () => {
+      try {
+        // Register for push notifications and get token
+        const token = await registerForPushNotificationsAsync();
+        
+        if (token && isMounted) {
+          console.log('📱 Push Notification Token:', token);
+          
+          // Send token to backend
+          try {
+            await registerFCMToken({
+              token,
+              deviceType: Platform.OS === 'ios' ? 'ios' : 'android',
+            });
+            console.log('✅ Token registered with backend');
+          } catch (error) {
+            console.error('❌ Failed to register token with backend:', error);
+          }
+        }
+
+        // Setup notification listeners
+        const cleanup = setupNotificationListeners(
+          // Handler for notification received (foreground)
+          (notification) => {
+            const { title, body, data } = notification.request.content;
+            addNotification({
+              title: title || 'Notification',
+              message: body || '',
+              type: data?.type || 'info',
+              data: data,
+            });
+            fetchInitialNotifications();
+          },
+          // Handler for notification tapped
+          (response) => {
+            const { data } = response.notification.request.content;
+            console.log('Notification tapped with data:', data);
+            // You can navigate to specific screen based on data here
+            // Example: if (data?.link) router.push(data.link);
+          }
+        );
+
+        return cleanup;
+      } catch (error) {
+        console.error('Error setting up push notifications:', error);
+      }
+    };
+
+    setupPushNotifications().then(cleanup => {
+      if (cleanup) {
+        notificationListener.current = cleanup;
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      if (notificationListener.current) {
+        notificationListener.current();
+      }
+    };
+  }, [user, loading, addNotification, fetchInitialNotifications]);
+
+  // Update badge count when unread count changes
+  useEffect(() => {
+    setBadgeCount(unreadCount);
+  }, [unreadCount]);
 
   if (!loaded) return null;
 
