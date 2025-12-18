@@ -1,4 +1,4 @@
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { useFonts, RobotoMono_400Regular, RobotoMono_700Bold } from "@expo-google-fonts/roboto-mono";
 import { useUserInfo } from "../hooks/useUserInfo";
 import { useEffect, useCallback, useRef } from "react";
@@ -16,6 +16,7 @@ import {
 import { logAsyncStorage } from "../utils/logAsyncStorage";
 
 export default function Layout() {
+  const router = useRouter();
   const [loaded] = useFonts({
     RobotoMono_400Regular,
     RobotoMono_700Bold,
@@ -28,6 +29,34 @@ export default function Layout() {
   const notificationListener = useRef();
   const responseListener = useRef();
   const didDumpStorage = useRef(false);
+
+  const normalizeRole = (roleValue) => {
+    if (!roleValue) return undefined;
+    const toUpper = (value) => value.trim().toUpperCase();
+
+    if (typeof roleValue === 'string') {
+      return toUpper(roleValue);
+    }
+
+    if (Array.isArray(roleValue)) {
+      const first = roleValue[0];
+      if (typeof first === 'string') {
+        return toUpper(first);
+      }
+      if (first && typeof first === 'object' && 'name' in first && typeof first.name === 'string') {
+        return toUpper(first.name);
+      }
+    }
+
+    if (typeof roleValue === 'object' && roleValue !== null && 'name' in roleValue) {
+      const name = roleValue.name;
+      if (typeof name === 'string') {
+        return toUpper(name);
+      }
+    }
+
+    return undefined;
+  };
 
   const mapServerNotification = useCallback((item) => ({
     id: item.id,
@@ -219,8 +248,64 @@ export default function Layout() {
           (response) => {
             const { data } = response.notification.request.content;
             console.log('Notification tapped with data:', data);
-            // You can navigate to specific screen based on data here
-            // Example: if (data?.link) router.push(data.link);
+
+            if (!data) return;
+
+            const nType = data.notificationType;
+            const conversationId = data.conversationId;
+            const bookingId = data.bookingId;
+
+            try {
+              if (nType === 'CHAT' && conversationId) {
+                const conversationParam = JSON.stringify({ id: String(conversationId) });
+                router.push({
+                  pathname: '/ChatDetail',
+                  params: {
+                    conversation: conversationParam,
+                  },
+                });
+              } else if (nType === 'BOOKING_CHOREOGRAPHER' && bookingId) {
+                const userRole = normalizeRole(user?.role);
+                const roleUpper = userRole || '';
+
+                if (roleUpper === 'CHOREOGRAPHY' || roleUpper === 'CHOREOGRAPHER') {
+                  router.push({
+                    pathname: '/Choreographer/BookingDetailOnHold',
+                    params: {
+                      bookingId: String(bookingId),
+                    },
+                  });
+                } else {
+                  router.push({
+                    pathname: '/BookingDetail',
+                    params: {
+                      bookingId: String(bookingId),
+                    },
+                  });
+                }
+              } else if (nType === 'BOOKING_DANCER' && bookingId) {
+                const userRole = normalizeRole(user?.role);
+                const roleUpper = userRole || '';
+
+                if (roleUpper === 'DANCER') {
+                  router.push({
+                    pathname: '/Dancer/DancerBookingDetail',
+                    params: {
+                      bookingId: String(bookingId),
+                    },
+                  });
+                } else {
+                  router.push({
+                    pathname: '/DancerBookingDetailCustomer',
+                    params: {
+                      bookingId: String(bookingId),
+                    },
+                  });
+                }
+              }
+            } catch (err) {
+              console.error('Failed to navigate from tapped push notification:', err);
+            }
           }
         );
 
