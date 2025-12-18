@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "878007544208",
+    "project_id": "dhopsitemobile",
+    "storage_bucket": "dhopsitemobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:878007544208:android:8dabae19abb5ea1699eb15",
+        "android_client_info": {
+          "package_name": "com.dinhbao.DhopSiteMobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyYVpNjOEb4HTWY5gK5DGwDoc5TpFCYYE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
