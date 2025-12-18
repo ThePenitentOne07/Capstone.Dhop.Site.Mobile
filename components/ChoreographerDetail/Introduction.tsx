@@ -21,7 +21,6 @@ interface IntroductionProps {
     dancerStatus?: string;
     description?: string;
   }>;
-  email?: string;
 }
 
 export default function Introduction({ props }: { props: IntroductionProps }) {
@@ -41,11 +40,6 @@ export default function Introduction({ props }: { props: IntroductionProps }) {
           {!!props.name && (
             <Animated.Text entering={FadeInLeft.delay(400)} style={styles.subtitle}>
               {props.name}
-            </Animated.Text>
-          )}
-          {!!props.email && (
-            <Animated.Text entering={FadeInLeft.delay(500)} style={styles.emailText}>
-              {props.email}
             </Animated.Text>
           )}
           <View style={styles.headerStats}>
@@ -210,12 +204,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#6B7280', // Gray text for white background
-    marginBottom: 8,
-    fontFamily: 'RobotoMono_400Regular',
-  },
-  emailText: {
-    fontSize: 14,
-    color: '#6B7280', // Lighter gray for email
     marginBottom: 16,
     fontFamily: 'RobotoMono_400Regular',
   },

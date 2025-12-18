@@ -1,5 +1,6 @@
 export interface FilterState {
-  areas: number[];
-  danceTypes: number[];
+  areas: number | null;
+  minExperience?: string;
+  maxExperience?: string;
   name?: string;
 }
