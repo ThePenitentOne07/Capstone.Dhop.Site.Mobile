@@ -497,9 +497,7 @@ export default function BookingDetail() {
         </>
       )} */}
 
-      {status === "Đơn đặt đã kích hoạt" && 
-       !areAllSessionsAbsent(booking.trainingSessions) &&
-       (hasTrainingSessionTimeArrived(booking.trainingSessions) || hasStartedSession(booking.trainingSessions)) && (
+      {status === "Đơn đặt đã kích hoạt" && (hasTrainingSessionTimeArrived(booking.trainingSessions) || hasStartedSession(booking.trainingSessions)) && (
         <View style={styles.actionBar}>
           <TouchableOpacity
             style={styles.checkinBtn}
@@ -567,18 +565,6 @@ function hasStartedSession(trainingSessions: any[]): boolean {
   return trainingSessions.some((s: any) => {
     const statusCode = (s?.statusCode || "").trim();
     return statusCode === "TRAINING_SESSION_STARTED";
-  });
-}
-
-function areAllSessionsAbsent(trainingSessions: any[]): boolean {
-  if (!Array.isArray(trainingSessions) || trainingSessions.length === 0) {
-    return false;
-  }
-  
-  // Check if all sessions are ABSENT
-  return trainingSessions.every((s: any) => {
-    const statusCode = (s?.statusCode || "").trim();
-    return statusCode === "TRAINING_SESSION_ABSENT";
   });
 }
 

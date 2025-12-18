@@ -363,7 +363,7 @@ export default function DancerBookingDetail() {
       )}
 
       {/* Check-in Button */}
-      {status === 'Đơn đặt đã kích hoạt'  && (
+      {status === 'Đơn đặt đã kích hoạt' && (
         <View style={styles.actionBar}>
           <TouchableOpacity 
             style={styles.checkinBtn} 

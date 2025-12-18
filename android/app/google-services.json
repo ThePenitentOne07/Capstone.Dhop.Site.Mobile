@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:878007544208:android:8dabae19abb5ea1699eb15",
+        "mobilesdk_app_id": "1:878007544208:android:ad6fa7150870fb5199eb15",
         "android_client_info": {
-          "package_name": "com.dinhbao.DhopSiteMobile"
+          "package_name": "com.lehaan.DhopSiteMobile"
         }
       },
       "oauth_client": [],
@@ -27,3 +27,9 @@
   ],
   "configuration_version": "1"
 }
+
+
+
+
+
+

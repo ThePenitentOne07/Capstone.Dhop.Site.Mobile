@@ -37,3 +37,7 @@ yarn-error.*
 *.tsbuildinfo
 .env
 .android
+
+# Firebase
+google-services.json
+GoogleService-Info.plist
