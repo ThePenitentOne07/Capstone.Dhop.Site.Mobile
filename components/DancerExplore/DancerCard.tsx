@@ -8,53 +8,51 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 
-export interface ChoreographyProfile {
-  choreographyId: number;
-  nickname?: string;
+export interface DancerProfile {
+  dancerId: number;
+  about?: string;
+  danceGroupName?: string;
+  teamSize?: number;
   price?: number;
   yearExperience?: number;
-  about?: string;
   area?: Array<{ id: number; city: string; ward: string }> | null;
   danceType?: Array<{ id: number; type: string; description: string }> | null;
+  averageRating?: number;
 }
 
-export interface ChoreographerListItem {
+export interface DancerListItem {
   id: number;
   name: string;
   email: string;
   avatar?: string;
-  choreography?: ChoreographyProfile | null;
+  dancer?: DancerProfile | null;
+  averageRating?: number;
 }
 
-export interface ChoreographerCardProps {
-  item: ChoreographerListItem;
-  onPress?: (item: ChoreographerListItem) => void;
+export interface DancerCardProps {
+  item: DancerListItem;
+  onPress?: (item: DancerListItem) => void;
 }
 
 const fallbackAvatar = require("../../assets/logo-icon.png");
 
-const ChoreographerCard: React.FC<ChoreographerCardProps> = ({ item, onPress }) => {
+const DancerCard: React.FC<DancerCardProps> = ({ item, onPress }) => {
   const router = useRouter();
-  const experienceLabel = item?.choreography?.yearExperience
-    ? `${item.choreography.yearExperience} năm kinh nghiệm`
+  const experienceLabel = item?.dancer?.yearExperience
+    ? `${item.dancer.yearExperience} năm kinh nghiệm`
     : "Chưa cập nhật kinh nghiệm";
 
   const priceLabel =
-    typeof item?.choreography?.price === "number"
-      ? `${item.choreography.price.toLocaleString("vi-VN")}₫ / giờ`
+    typeof item?.dancer?.price === "number"
+      ? `${item.dancer.price.toLocaleString("vi-VN")}₫ / giờ`
       : "Giá thoả thuận";
 
   // Format areas array
-  const areaValue = item?.choreography?.area;
-  const areaLabel = (() => {
-    if (!areaValue || !Array.isArray(areaValue) || areaValue.length === 0) {
-      return "Chưa cập nhật khu vực";
-    }
-    return areaValue.map((a) => `${a.city} - ${a.ward}`).join(", ");
-  })();
+//   const areaValue = item?.dancer?.area;
+  
 
   // Get dance types array
-  const danceTypes = item?.choreography?.danceType;
+  const danceTypes = item?.dancer?.danceType;
 
   const avatarSource = item.avatar
     ? { uri: item.avatar }
@@ -64,17 +62,17 @@ const ChoreographerCard: React.FC<ChoreographerCardProps> = ({ item, onPress }) 
     <TouchableOpacity 
       style={styles.card} 
       onPress={() => {
-        console.log('ChoreographerCard pressed, item:', item);
+        console.log('DancerCard pressed, item:', item);
         onPress?.(item);
-        router.push({ pathname: '/DetailsChoreography/[id]', params: { id: String(item.choreography?.choreographyId) } });
+        router.push({ pathname: '/DetailsDancer/[id]', params: { id: String(item.dancer?.dancerId) } });
       }}
     >
       <Image source={avatarSource} style={styles.avatar} />
       <View style={styles.content}>
-        {item.choreography?.nickname ? (
-          <Text style={styles.nickname}>{item.choreography.nickname}</Text>
+        {item.dancer?.danceGroupName ? (
+          <Text style={styles.nickname}>{item.dancer.danceGroupName}</Text>
         ) : null}
-        <Text style={styles.name}>{item.name}</Text>
+        {/* <Text style={styles.name}>{item.name}</Text> */}
         <Text style={styles.detail}>{experienceLabel}</Text>
         {/* <Text style={styles.detail}>{areaLabel}</Text> */}
         {danceTypes && danceTypes.length > 0 ? (
@@ -156,6 +154,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChoreographerCard;
-
-
+export default DancerCard;

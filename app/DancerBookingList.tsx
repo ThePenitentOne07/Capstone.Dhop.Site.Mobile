@@ -80,7 +80,9 @@ export default function CustomerDancerBookingList() {
         sortBy: 'id:DESC',
       });
 
-      const items = res.data?.items || [];
+      const items = res.data.items || [];
+      
+      
       const totalPage = res.data?.totalPage || 1;
 
       if (reset) {

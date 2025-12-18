@@ -516,4 +516,3 @@ const styles = StyleSheet.create({
     fontFamily: 'RobotoMono_700Bold',
   },
 });
-

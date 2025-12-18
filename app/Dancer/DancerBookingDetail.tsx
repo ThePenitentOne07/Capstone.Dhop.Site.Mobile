@@ -363,7 +363,7 @@ export default function DancerBookingDetail() {
       )}
 
       {/* Check-in Button */}
-      {status === 'Đơn đặt đã kích hoạt' && (
+      {status === 'Đơn đặt đã kích hoạt'  && (
         <View style={styles.actionBar}>
           <TouchableOpacity 
             style={styles.checkinBtn} 
@@ -871,5 +871,4 @@ function getBookingStatusStyle(status: string): { bg: string; color: string } {
       return { bg: '#E7F5EF', color: '#0E766E' }; // default teal
   }
 }
-
 

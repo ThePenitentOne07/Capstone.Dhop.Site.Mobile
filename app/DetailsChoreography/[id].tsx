@@ -1,111 +1,135 @@
-import { View, Text, Button, Image, ScrollView, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator } from "react-native";
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } from "react-native-reanimated";
-import { Introduction, ChoreographerProject } from "../../components/ChoreographerDetail/index";
-import CommentSection from "../../components/ChoreographerDetail/CommentSection";
-import { getChoreographerById } from "../../service/api";
+import { Introduction, ChoreographerProject } from "../../components/ChoreographerDetail";
+import { getDancerById } from "../../service/api";
 import { useConversationStore } from "../../states/conversationStore";
 import { useAppModal } from "../../hooks/useAppModal";
 
-interface Profile {
+const ORANGE2 = "#FF7A00";
+
+interface DancerProfile {
   profileId: number;
   videos: string[];
   images: string[];
   achievements: string[];
+  experiences: {
+    id: number;
+    title: string;
+    subject: string;
+    years: string;
+  }[];
 }
 
-interface ChoreographerData {
-  id: string;
-  userId?: string;
-  userUUID?: string;
-  title?: string;
-  nickname?: string;
-  name?: string;
-  artist?: string;
-  avatar?: string;
-  price?: number;
+interface DancerArea {
+  id: number;
+  city: string;
+  ward: string;
+}
+
+interface DancerDanceType {
+  id: number;
+  type: string;
+  description: string;
+}
+
+interface DancerCrew {
+  crewId: number;
+  dancerName: string;
+  dancerStatus: string;
+  sex: boolean;
+  description: string;
+  dancerId: number;
+}
+
+interface DancerResult {
+  dancerId: number;
+  avatar:string;
   about?: string;
+  danceGroupName?: string;
+  teamSize?: number;
+  bankAccount?: string;
+  businessLicense?: string;
+  price?: number;
   yearExperience?: number;
-  danceType?: any[];
-  area?: any[];
-  averageRating?: number;
-  profiles?: Profile[];
+  area?: DancerArea[];
+  danceType?: DancerDanceType[];
+  profiles?: DancerProfile[];
   extraServices?: Array<{ id: number; name: string; description: string; price: number }>;
+  crews?: DancerCrew[];
+  email?: string;
 }
 
-export default function DetailsScreen() {
+export default function DetailsDancerScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [selectedTab, setSelectedTab] = useState("My Progress");
+  const [selectedTab, setSelectedTab] = useState<"Intro" | "Projects">("Intro");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState("")
-  const [choreographerData, setChoreographerData] = useState<ChoreographerData | null>(null);
+  const [dancer, setDancer] = useState<DancerResult | null>(null);
   const [chatLoading, setChatLoading] = useState(false);
   const { createConversation } = useConversationStore();
   const { showModal, modal } = useAppModal();
 
-  // Get screen dimensions for responsive animation
-  const screenWidth = Dimensions.get('window').width;
-  const segmentControlWidth = screenWidth - 50; // 20px margin on each side
-  const slideDistance = segmentControlWidth / 2; // Each segment takes half the width
+  const dancerId = params.id ? String(params.id) : "";
 
-  // Animation values
+  // Screen / segment animation metrics
+  const screenWidth = Dimensions.get("window").width;
+  const segmentControlWidth = screenWidth - 50;
+  const slideDistance = segmentControlWidth / 2;
   const slideValue = useSharedValue(0);
 
-  const id = String(params.id || "");
-
-  // Fetch choreographer data
+  // Fetch dancer data
   useEffect(() => {
-    const fetchChoreographerData = async () => {
-      if (!id) {
-        setError("Choreographer ID is required");
+    const fetchDancer = async () => {
+      if (!dancerId) {
+        setError("Dancer ID is required");
         setLoading(false);
         return;
       }
-
       try {
         setLoading(true);
         setError(null);
-        const response = await getChoreographerById(id);
-        setChoreographerData(response.data);
-        setUserId(response.data.userId)
+        const response = await getDancerById(dancerId);
+        const result: DancerResult = response.data?.result ?? response.data;
+        setDancer(result);
       } catch (err: any) {
-        console.error("Failed to fetch choreographer data:", err);
-        setError(err?.response?.data?.message || "Failed to load choreographer details");
+        console.error("Failed to fetch dancer data:", err);
+        setError(err?.response?.data?.message || "Failed to load dancer details");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchChoreographerData();
-  }, [id]);
+    fetchDancer();
+  }, [dancerId]);
 
-  // Extract data from fetched response
-  const title = choreographerData?.title || choreographerData?.nickname || "Choreography";
-  const name = choreographerData?.name || choreographerData?.artist || "";
-  const avatar = choreographerData?.avatar;
-  const price = choreographerData?.price;
-  const about = choreographerData?.about;
-  const yearExperience = choreographerData?.yearExperience;
-  const danceType = choreographerData?.danceType || [];
-  const area = choreographerData?.area || [];
-  const averageRating= choreographerData?.averageRating ;
-  const profiles = choreographerData?.profiles || [];
-  const extraServices = choreographerData?.extraServices || [];
+  // Map dancer data into props expected by shared components
+  const title = dancer?.danceGroupName || "Dancer crew";
+  const name = dancer?.danceGroupName || "";
+  const price = dancer?.price || 0;
+  const about = dancer?.about || "";
+  const yearExperience = dancer?.yearExperience || 0;
+  const area = dancer?.area || [];
+  const danceType = dancer?.danceType?.map((d) => ({
+    id: d.id,
+    type: d.type,
+    description: d.description,
+  })) || [];
+  const profiles = dancer?.profiles || [];
+  const extraServices = dancer?.extraServices || [];
+  const email = (dancer as any)?.email || "";
 
-  const imageSource = avatar
-    ? { uri: avatar }
-    : require("../../assets/girl-dancing-2830024-2357254.webp");
-
-  // Handle tab selection with animation
-  const handleTabPress = (tab: string) => {
+  const imageSource = dancer?.avatar ? { uri: dancer.avatar } : undefined;
+  
+  
+  
+  const handleTabPress = (tab: "Intro" | "Projects") => {
     setSelectedTab(tab);
-    slideValue.value = withTiming(tab === "My Progress" ? 0 : 1, { duration: 300 });
+    slideValue.value = withTiming(tab === "Intro" ? 0 : 1, { duration: 300 });
   };
 
-  // Animated style for the sliding background
   const animatedBackgroundStyle = useAnimatedStyle(() => {
     const translateX = interpolate(slideValue.value, [0, 1], [0, slideDistance]);
     return {
@@ -113,58 +137,43 @@ export default function DetailsScreen() {
     };
   });
 
-  // Function to render the appropriate component based on selected tab
   const renderTabContent = () => {
-    switch (selectedTab) {
-      case "My Progress":
-        return <Introduction props={{ 
-          title, 
-          name, 
-          price: price || 0, 
-          yearExperience: yearExperience || 0, 
-          about: about || "",
-          area: area || [],
-          danceType: danceType || [],
-          averageRating: averageRating || 0,
-          extraServices,
-          
-        }} />;
-      case "My Account":
-        return <ChoreographerProject profiles={profiles} />;
-      default:
-        return <Introduction props={{ 
-          title, 
-          name, 
-          price: price || 0, 
-          yearExperience: yearExperience || 0, 
-          about: about || "",
-          area: area || [],
-          danceType: danceType || [],
-          averageRating: averageRating || 0,
-          extraServices
-        }} />;
+    if (selectedTab === "Intro") {
+      return (
+        <Introduction
+          props={{
+            title,
+            name,
+            price,
+            yearExperience,
+            about,
+            area,
+            danceType,
+            averageRating: 0,
+            extraServices,
+            crews: dancer?.crews || [],
+            email,
+          }}
+        />
+      );
     }
+    return <ChoreographerProject profiles={profiles} />;
   };
 
-  // Loading state
   if (loading) {
     return (
       <View style={[styles.screenRoot, styles.centerContainer]}>
-        <ActivityIndicator size="large" color="#FF7A00" />
-        <Text style={styles.loadingText}>Đang tải thông tin...</Text>
+        <ActivityIndicator size="large" color={ORANGE2} />
+        <Text style={styles.loadingText}>Đang tải thông tin dancer...</Text>
       </View>
     );
   }
 
-  // Error state
-  if (error || !choreographerData) {
+  if (error || !dancer) {
     return (
       <View style={[styles.screenRoot, styles.centerContainer]}>
-        <Text style={styles.errorText}>{error || "Không tìm thấy thông tin"}</Text>
-        <TouchableOpacity 
-          style={styles.retryButton} 
-          onPress={() => router.back()}
-        >
+        <Text style={styles.errorText}>{error || "Không tìm thấy thông tin dancer"}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => router.back()}>
           <Text style={styles.retryButtonText}>Quay lại</Text>
         </TouchableOpacity>
       </View>
@@ -175,12 +184,12 @@ export default function DetailsScreen() {
     <View style={styles.screenRoot}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.imageContainer}>
-          <Image source={imageSource} style={styles.coverImage} resizeMode="contain" />
+          <Image source={imageSource} style={styles.coverImage} resizeMode="cover" />
           <TouchableOpacity 
             style={styles.msgBtnFab} 
             activeOpacity={0.86} 
             onPress={async () => {
-              const userUUID = choreographerData?.userUUID || choreographerData?.userId;
+              const userUUID = (dancer as any)?.uuid;
               if (!userUUID) {
                 showModal({
                   title: 'Lỗi',
@@ -224,38 +233,31 @@ export default function DetailsScreen() {
           </TouchableOpacity>
         </View>
 
-        
-
         <View style={styles.segmentedControl}>
           <Animated.View style={[styles.slidingBackground, animatedBackgroundStyle]} />
-          <TouchableOpacity 
-            style={styles.segment} 
-            onPress={() => handleTabPress("My Progress")}
-          >
-            <Text style={[
-              styles.segmentText,
-              selectedTab === "My Progress" && styles.segmentTextActive
-            ]}>
+          <TouchableOpacity style={styles.segment} onPress={() => handleTabPress("Intro")}>
+            <Text
+              style={[
+                styles.segmentText,
+                selectedTab === "Intro" && styles.segmentTextActive,
+              ]}
+            >
               Giới thiệu
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.segment} 
-            onPress={() => handleTabPress("My Account")}
-          >
-            <Text style={[
-              styles.segmentText,
-              selectedTab === "My Account" && styles.segmentTextActive
-            ]}>
+          <TouchableOpacity style={styles.segment} onPress={() => handleTabPress("Projects")}>
+            <Text
+              style={[
+                styles.segmentText,
+                selectedTab === "Projects" && styles.segmentTextActive,
+              ]}
+            >
               Dự án
             </Text>
           </TouchableOpacity>
         </View>
-        
+
         {renderTabContent()}
-        {selectedTab === "My Progress" && (
-          <CommentSection choreographyId={id} avgRating={averageRating || 0} />
-        )}
         <View style={styles.bottomSpacer} />
       </ScrollView>
       
@@ -265,11 +267,12 @@ export default function DetailsScreen() {
           style={styles.primaryBtn} 
           activeOpacity={0.9} 
           onPress={() => router.push({
-            pathname: '/ChoreographerBooking/[id]',
+            pathname: '/DancerBooking/[id]',
             params: { 
-              userId, 
+              userId: dancerId,
+              id: dancerId,
               name, 
-              avatar, 
+              avatar: dancer?.profiles?.[0]?.images?.[0] || '', 
               price: String(price || 0), 
               about, 
               yearExperience: String(yearExperience || 0), 
@@ -287,8 +290,6 @@ export default function DetailsScreen() {
   );
 }
 
-
-
 const styles = StyleSheet.create({
   screenRoot: {
     flex: 1,
@@ -303,17 +304,15 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: "#6B7280",
-    fontFamily: 'RobotoMono_400Regular',
   },
   errorText: {
     fontSize: 16,
     color: "#C92A2A",
     textAlign: "center",
     marginBottom: 16,
-    fontFamily: 'RobotoMono_400Regular',
   },
   retryButton: {
-    backgroundColor: "#FF7A00",
+    backgroundColor: ORANGE2,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -329,81 +328,12 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
     width: "100%",
-    minHeight: 300,
+    minHeight: 260,
   },
   coverImage: {
     width: "100%",
-    height: 300,
+    height: 260,
     backgroundColor: "#F3F4F6",
-  },
-  profileSection: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#FF7A00",
-    borderRadius: 12,
-    width: "95%",
-    alignSelf: "center",
-    marginTop: 20,
-    shadowColor: "#000000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  profileInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    borderWidth: 2,
-    borderColor: "white",
-  },
-  userDetails: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 16,
-    color: "#FFFFFF",
-    marginBottom: 2,
-    fontFamily: 'RobotoMono_700Bold',
-  },
-  userLocation: {
-    fontSize: 14,
-    color: "#D1D5DB",
-    fontFamily: 'RobotoMono_400Regular',
-  },
-  coinsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-  },
-  coinsIcon: {
-    fontSize: 16,
-    
-  },
-  coinsText: {
-    fontSize: 14,
-    color: "#FFFFFF",
-    marginRight: 6,
-    fontFamily: 'RobotoMono_700Bold',
   },
   segmentedControl: {
     flexDirection: "row",
@@ -423,7 +353,7 @@ const styles = StyleSheet.create({
     left: 4,
     right: 4,
     bottom: 4,
-    backgroundColor: "#FF7A00",
+    backgroundColor: ORANGE2,
     borderRadius: 8,
     width: "50%",
   },
@@ -442,18 +372,6 @@ const styles = StyleSheet.create({
   },
   segmentTextActive: {
     color: "#FFFFFF",
-    fontFamily: 'RobotoMono_700Bold',
-  },
-  arrowButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  arrowText: {
-    fontSize: 18,
-    color: "#FFFFFF",
-    fontFamily: 'RobotoMono_700Bold',
   },
   bottomSpacer: {
     height: 100, // Space for the sticky button
@@ -512,3 +430,4 @@ const styles = StyleSheet.create({
     fontFamily: 'RobotoMono_700Bold',
   },
 });
+

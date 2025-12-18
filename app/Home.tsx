@@ -156,11 +156,11 @@ export default function HomeScreen() {
           onAddArtist={handleAddArtist}
         />
 
-        <ClassesSection
+        {/* <ClassesSection
           onEditPress={handleClassesEdit}
           onFilterChange={handleClassesFilterChange}
           onClassPress={handleClassPress}
-        />
+        /> */}
       </ScrollView>
     </SafeAreaView>
   );

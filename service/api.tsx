@@ -61,11 +61,8 @@ export const markAllNotificationsAsRead = () => {
 export interface ChoreographyUsersQuery {
   pageNo?: number;
   pageSize?: number;
-  areas?: number | null;
-  minExperience?: number | null;
-  maxExperience?: number | null;
-  minPrice?: number | null;
-  maxPrice?: number | null;
+  areas?: number[];
+  danceTypes?: number[];
   name?: string;
 }
 
@@ -73,24 +70,51 @@ export const getChoreographyUsers = ({
   pageNo = 1,
   pageSize = 10,
   areas,
-  minExperience,
-  maxExperience,
-  minPrice,
-  maxPrice,
+  danceTypes,
   name,
 }: ChoreographyUsersQuery = {}) => {
-  const params = {
+  const params: any = {
     pageNo,
     pageSize,
-    areas: areas ?? undefined,
-    minExperience: minExperience ?? undefined,
-    maxExperience: maxExperience ?? undefined,
-    minPrice: minPrice ?? undefined,
-    maxPrice: maxPrice ?? undefined,
-    name: name?.trim() || undefined,
   };
+  
+  // Only add params that are actually chosen/selected
+  if (name?.trim()) {
+    params.name = name.trim();
+  }
+  
+  if (areas && areas.length > 0) {
+    params.areas = areas;
+  }
+  
+  if (danceTypes && danceTypes.length > 0) {
+    params.danceTypes = danceTypes;
+  }
+  
+  // Use paramsSerializer to format arrays as repeated params instead of array notation
+  const paramsSerializer = (params: any) => {
+    const parts: string[] = [];
+    Object.keys(params).forEach((key) => {
+      const value = params[key];
+      if (value !== undefined && value !== null && value !== '') {
+        if ((key === 'areas' || key === 'danceTypes') && Array.isArray(value) && value.length > 0) {
+          // Format as areas=2&areas=4 or danceTypes=2&danceTypes=4
+          value.forEach((id: number) => {
+            parts.push(`${key}=${encodeURIComponent(id)}`);
+          });
+        } else if (key !== 'areas' && key !== 'danceTypes') {
+          parts.push(`${key}=${encodeURIComponent(value)}`);
+        }
+      }
+    });
+    return parts.join('&');
+  };
+  
   console.log("API getChoreographyUsers params:", params);
-  return api.get(`/users/CHOREOGRAPHY`, { params });
+  return api.get(`/users/CHOREOGRAPHY`, { 
+    params,
+    paramsSerializer 
+  });
 };
 
 // Fetch list of users with DANCER role
@@ -98,22 +122,27 @@ export const getDancerUsers = ({
   pageNo = 1,
   pageSize = 10,
   areas,
-  minExperience,
-  maxExperience,
-  minPrice,
-  maxPrice,
+  danceTypes,
   name,
 }: ChoreographyUsersQuery = {}) => {
-  const params = {
+  const params: any = {
     pageNo,
     pageSize,
-    areas: areas ?? undefined,
-    minExperience: minExperience ?? undefined,
-    maxExperience: maxExperience ?? undefined,
-    minPrice: minPrice ?? undefined,
-    maxPrice: maxPrice ?? undefined,
-    name: name?.trim() || undefined,
   };
+  
+  // Only add params that are actually chosen/selected
+  if (name?.trim()) {
+    params.name = name.trim();
+  }
+  
+  if (areas && areas.length > 0) {
+    params.areas = areas;
+  }
+  
+  if (danceTypes && danceTypes.length > 0) {
+    params.danceTypes = danceTypes;
+  }
+  
   console.log("API getDancerUsers params:", params);
   return api.get(`/users/DANCER`, { params });
 };
@@ -468,17 +497,35 @@ export const cancelComplaint = (complaintId: number) => {
   return api.put(`/api/complain/${complaintId}/cancel`);
 };
 
-// Register FCM token for push notifications
-export interface RegisterFCMTokenPayload {
-  token: string;
-  deviceType: 'ios' | 'android';
+// Chat Box AI Query
+export interface ChatBoxQueryRequest {
+  message: string;
 }
 
-export const registerFCMToken = (payload: RegisterFCMTokenPayload) => {
-  return api.post(`/fcm/tokens/register`, payload);
-};
+export interface DancerData {
+  id: number;
+  danceCrewName: string;
+  avatar: string;
+  yearExperience: number;
+  danceTypes: string[];
+  areas: string[];
+}
 
-// Unregister FCM token (when user logs out)
-export const unregisterFCMToken = (token: string) => {
-  return api.post(`/notifications/unregister-token`, { token });
+export interface ChoreographerData {
+  id: number;
+  nickName: string;
+  avatar: string;
+  yearExperience: number;
+  danceTypes: string[];
+  areas: string[];
+}
+
+export interface ChatBoxQueryResponse {
+  type: 'dancer' | 'choreographer' | 'general';
+  data?: DancerData[] | ChoreographerData[];
+  message?: string;
+}
+
+export const chatBoxQuery = (payload: ChatBoxQueryRequest) => {
+  return api.post<ChatBoxQueryResponse>(`/chat-box/query`, payload);
 };

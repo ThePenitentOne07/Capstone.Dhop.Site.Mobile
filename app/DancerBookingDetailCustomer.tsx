@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { getBookingById, confirmBookingCompletion, cancelDancerBooking } from '../service/api';
 import { useConversationStore } from '../states/conversationStore';
 import { useAppModal } from '../hooks/useAppModal';
@@ -139,8 +139,20 @@ export default function DancerBookingDetailCustomer() {
 
   return (
     <View style={{flex:1, backgroundColor:'#fff'}}>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: "Chi tiết đơn đặt",
+          headerStyle: {
+            backgroundColor: "#FF7A00",
+          },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: {
+            fontFamily: "RobotoMono_700Bold",
+          },
+        }}
+      />
       <ScrollView style={styles.root} contentContainerStyle={{ paddingBottom: 104 }}>
-        <Text style={styles.header}>Thông tin đặt lịch</Text>
 
         {/* Status Card */}
         <View style={[styles.statusCard, { backgroundColor: statusBg, borderColor: statusBg }]}> 
@@ -148,6 +160,14 @@ export default function DancerBookingDetailCustomer() {
           <Text style={styles.shipStatus}>Ngày đặt</Text>
           <Text style={styles.shipTime}>{formatDateTime(booking.bookingDate)}</Text>
         </View>
+
+        {/* Check-in Info Message */}
+        {status === 'Đơn đặt đang tiến hành' &&
+         !hasBookingTimeArrived(booking.startTime) && (
+          <View style={styles.infoMessage}>
+            <Text style={styles.infoMessageText}>Chỉ có thể check in khi đã tới giờ diễn</Text>
+          </View>
+        )}
 
         {/* Address / Dancer */}
         <View style={[styles.block, {position:'relative', paddingBottom:52}]}>
@@ -356,7 +376,8 @@ export default function DancerBookingDetailCustomer() {
       </ScrollView>
 
       {/* Check-in Button */}
-      {status === 'Đơn đặt đã kích hoạt' && (
+      {status === 'Đơn đặt đang tiến hành' &&
+       hasBookingTimeArrived(booking.startTime) && (
         <View style={styles.actionBar}>
           <TouchableOpacity
             style={styles.checkinBtn}
@@ -415,6 +436,40 @@ export default function DancerBookingDetailCustomer() {
   );
 }
 
+function hasBookingTimeArrived(startTime: string | undefined | null): boolean {
+  if (!startTime) {
+    return false;
+  }
+
+  const now = new Date();
+
+  try {
+    let bookingDate: Date;
+    
+    // Parse the date string (format: "dd-mm-yyyy HH:mm" or ISO format)
+    if (typeof startTime === "string" && startTime.includes("-") && startTime.includes(" ")) {
+      const [datePart, timePart] = startTime.split(" ");
+      const [day, month, year] = datePart.split("-");
+      const [hours, minutes] = timePart.split(":");
+      bookingDate = new Date(
+        parseInt(year),
+        parseInt(month) - 1,
+        parseInt(day),
+        parseInt(hours),
+        parseInt(minutes)
+      );
+    } else {
+      bookingDate = new Date(startTime);
+    }
+
+    // Check if current time is at or after the start time
+    return now >= bookingDate;
+  } catch (e) {
+    console.error("Error parsing booking start time:", e);
+    return false;
+  }
+}
+
 function formatDateTime(dt: string) {
   try {
     // Parse the date string directly to preserve the exact time
@@ -465,6 +520,21 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: '#C8EAD9',
+  },
+  infoMessage: {
+    marginHorizontal: 12,
+    marginBottom: 12,
+    backgroundColor: '#FEF3C7',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  infoMessageText: {
+    color: '#B45309',
+    fontSize: 14,
+    textAlign: 'center',
+    fontFamily: 'RobotoMono_400Regular',
   },
   statusTitle: {
     color: '#0E766E',
@@ -870,4 +940,3 @@ function getBookingStatusStyle(status: string): { bg: string; color: string } {
       return { bg: '#E7F5EF', color: '#0E766E' }; // default teal
   }
 }
-

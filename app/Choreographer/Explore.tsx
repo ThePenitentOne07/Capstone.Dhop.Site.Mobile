@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { Stack } from "expo-router";
 import useArea from "../../hooks/useArea";
+import useDanceType from "../../hooks/useDanceType";
 import FilterControls from "../../components/ChoreographerExplore/FilterControls";
 import ChoreographerCard, {
   ChoreographerListItem,
@@ -36,14 +37,14 @@ interface ApiResponse {
 const PAGE_SIZE = 10;
 
 const defaultFilters: FilterState = {
-  areas: null,
+  areas: [],
+  danceTypes: [],
   name: "",
-  // minExperience: "",
-  // maxExperience: "",
 };
 
 const ExploreChoreographersScreen = () => {
   const { areas, loading: areasLoading } = useArea();
+  const { danceTypes, loading: danceTypeLoading } = useDanceType();
 
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [debouncedName, setDebouncedName] = useState(
@@ -59,11 +60,6 @@ const ExploreChoreographersScreen = () => {
 
   const inFlight = useRef(false);
 
-  const safeParseNumber = useCallback((value: string) => {
-    if (!value) return undefined;
-    const parsed = parseInt(value, 10);
-    return Number.isNaN(parsed) ? undefined : parsed;
-  }, []);
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -74,12 +70,11 @@ const ExploreChoreographersScreen = () => {
 
   const queryFilters: ChoreographyUsersQuery = useMemo(
     () => ({
-      areas: filters.areas,
-      // minExperience: safeParseNumber(filters.minExperience),
-      // maxExperience: safeParseNumber(filters.maxExperience),
+      areas: filters.areas && filters.areas.length > 0 ? filters.areas : undefined,
+      danceTypes: filters.danceTypes && filters.danceTypes.length > 0 ? filters.danceTypes : undefined,
       name: debouncedName || undefined,
     }),
-    [filters.areas, debouncedName /* safeParseNumber */]
+    [filters.areas, filters.danceTypes, debouncedName]
   );
 
   useEffect(() => {
@@ -215,6 +210,8 @@ const ExploreChoreographersScreen = () => {
             onClearFilters={handleClearFilters}
             areas={areas}
             areaLoading={areasLoading}
+            danceTypes={danceTypes}
+            danceTypeLoading={danceTypeLoading}
           />
         }
         renderItem={({ item }) => <ChoreographerCard item={item} />}
@@ -312,4 +309,3 @@ const styles = StyleSheet.create({
 });
 
 export default ExploreChoreographersScreen;
-

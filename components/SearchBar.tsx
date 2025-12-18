@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 
 interface SearchBarProps {
   placeholder?: string;
@@ -8,10 +9,11 @@ interface SearchBarProps {
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({ 
-  placeholder = "Tìm biên đạo, nhóm nhảy",
+  placeholder = "Tìm biên đạo, nhóm nhảy với AI",
   onSearchChange,
   onFilterPress 
 }) => {
+  const router = useRouter();
   const [typedPlaceholder, setTypedPlaceholder] = useState('');
   const [isTypingComplete, setIsTypingComplete] = useState(false);
 
@@ -30,17 +32,26 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     return () => clearInterval(typingInterval);
   }, [placeholder]);
 
+  const handlePress = () => {
+    router.push('/ChatBoxAI');
+  };
+
   return (
     <View style={styles.searchContainer}>
-      <View style={styles.searchBar}>
+      <TouchableOpacity 
+        style={styles.searchBar}
+        onPress={handlePress}
+        activeOpacity={0.7}
+      >
         <Text style={styles.searchIcon}>🔍</Text>
         <TextInput 
           style={styles.searchInput}
           placeholder={isTypingComplete ? placeholder : typedPlaceholder}
           placeholderTextColor="#999"
           onChangeText={onSearchChange}
+          editable={false}
         />
-      </View>
+      </TouchableOpacity>
      
     </View>
   );
@@ -63,13 +74,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   searchIcon: {
-    fontSize: 16,
+    fontSize: 12,
     color: "#6B7280",
     marginRight: 12,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 13,
     color: "#111827",
     fontFamily: 'RobotoMono_400Regular',
   },
@@ -86,4 +97,3 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
 });
-
