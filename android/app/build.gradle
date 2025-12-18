@@ -181,5 +181,4 @@ dependencies {
     }
 }
 
-// Must be applied at the bottom: https://developers.google.com/android/guides/google-services-plugin
-apply plugin: "com.google.gms.google-services"
+apply plugin: 'com.google.gms.google-services'
