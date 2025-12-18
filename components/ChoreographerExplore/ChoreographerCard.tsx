@@ -14,8 +14,8 @@ export interface ChoreographyProfile {
   price?: number;
   yearExperience?: number;
   about?: string;
-  area?: Array<{ id: number; city: string; ward: string }> | null;
-  danceType?: Array<{ id: number; type: string; description: string }> | null;
+  area?: string | { id: number; city: string; ward: string } | null;
+  danceType?: string;
 }
 
 export interface ChoreographerListItem {
@@ -41,20 +41,16 @@ const ChoreographerCard: React.FC<ChoreographerCardProps> = ({ item, onPress }) 
 
   const priceLabel =
     typeof item?.choreography?.price === "number"
-      ? `${item.choreography.price.toLocaleString("vi-VN")}₫ / giờ`
+      ? `${item.choreography.price.toLocaleString("vi-VN")}₫ / buổi`
       : "Giá thoả thuận";
 
-  // Format areas array
   const areaValue = item?.choreography?.area;
-  const areaLabel = (() => {
-    if (!areaValue || !Array.isArray(areaValue) || areaValue.length === 0) {
-      return "Chưa cập nhật khu vực";
-    }
-    return areaValue.map((a) => `${a.city} - ${a.ward}`).join(", ");
-  })();
-
-  // Get dance types array
-  const danceTypes = item?.choreography?.danceType;
+  const areaLabel =
+    typeof areaValue === "string"
+      ? areaValue
+      : areaValue && typeof areaValue === "object"
+      ? `${areaValue.city} - ${areaValue.ward}`
+      : "Chưa cập nhật khu vực";
 
   const avatarSource = item.avatar
     ? { uri: item.avatar }
@@ -71,22 +67,13 @@ const ChoreographerCard: React.FC<ChoreographerCardProps> = ({ item, onPress }) 
     >
       <Image source={avatarSource} style={styles.avatar} />
       <View style={styles.content}>
+        <Text style={styles.name}>{item.name}</Text>
         {item.choreography?.nickname ? (
           <Text style={styles.nickname}>{item.choreography.nickname}</Text>
         ) : null}
-        <Text style={styles.name}>{item.name}</Text>
         <Text style={styles.detail}>{experienceLabel}</Text>
-        {/* <Text style={styles.detail}>{areaLabel}</Text> */}
-        {danceTypes && danceTypes.length > 0 ? (
-          <View style={styles.chipsContainer}>
-            {danceTypes.map((dt) => (
-              <View key={dt.id} style={styles.chip}>
-                <Text style={styles.chipText}>{dt.type}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-        {/* <Text style={styles.price}>{priceLabel}</Text> */}
+        <Text style={styles.detail}>{areaLabel}</Text>
+        <Text style={styles.price}>{priceLabel}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -117,14 +104,14 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   name: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#111827",
-    fontFamily: 'RobotoMono_400Regular',
+    fontFamily: 'RobotoMono_700Bold',
   },
   nickname: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#F97316",
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: 'RobotoMono_400Regular',
   },
   detail: {
     fontSize: 13,
@@ -135,23 +122,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 14,
     color: "#047857",
-    fontFamily: 'RobotoMono_700Bold',
-  },
-  chipsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 4,
-  },
-  chip: {
-    backgroundColor: "#F97316",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  chipText: {
-    fontSize: 11,
-    color: "#FFFFFF",
     fontFamily: 'RobotoMono_700Bold',
   },
 });

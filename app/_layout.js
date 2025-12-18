@@ -1,13 +1,22 @@
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { useFonts, RobotoMono_400Regular, RobotoMono_700Bold } from "@expo-google-fonts/roboto-mono";
 import { useUserInfo } from "../hooks/useUserInfo";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSocketStore } from "../states/socketStore";
 import { useNotificationStore } from "../states/notificationStore";
-import { getNotifications } from "../service/api";
+import { getNotifications, registerFCMToken } from "../service/api";
+import { Platform } from "react-native";
+import * as Notifications from 'expo-notifications';
+import { 
+  registerForPushNotificationsAsync, 
+  setupNotificationListeners,
+  setBadgeCount 
+} from "../service/notificationService";
+import { logAsyncStorage } from "../utils/logAsyncStorage";
 
 export default function Layout() {
+  const router = useRouter();
   const [loaded] = useFonts({
     RobotoMono_400Regular,
     RobotoMono_700Bold,
@@ -16,7 +25,38 @@ export default function Layout() {
   // Call the hook on every screen.
   const { user, loading, error } = useUserInfo();
   const { socket, initSocket, disconnectSocket } = useSocketStore();
-  const { addNotification, setNotifications } = useNotificationStore();
+  const { addNotification, setNotifications, unreadCount } = useNotificationStore();
+  const notificationListener = useRef();
+  const responseListener = useRef();
+  const didDumpStorage = useRef(false);
+
+  const normalizeRole = (roleValue) => {
+    if (!roleValue) return undefined;
+    const toUpper = (value) => value.trim().toUpperCase();
+
+    if (typeof roleValue === 'string') {
+      return toUpper(roleValue);
+    }
+
+    if (Array.isArray(roleValue)) {
+      const first = roleValue[0];
+      if (typeof first === 'string') {
+        return toUpper(first);
+      }
+      if (first && typeof first === 'object' && 'name' in first && typeof first.name === 'string') {
+        return toUpper(first.name);
+      }
+    }
+
+    if (typeof roleValue === 'object' && roleValue !== null && 'name' in roleValue) {
+      const name = roleValue.name;
+      if (typeof name === 'string') {
+        return toUpper(name);
+      }
+    }
+
+    return undefined;
+  };
 
   const mapServerNotification = useCallback((item) => ({
     id: item.id,
@@ -44,6 +84,12 @@ export default function Layout() {
 
   // Initialize socket when user is authenticated
   useEffect(() => {
+    // Dev helper: dump AsyncStorage once per app launch (helps debug auth/session issues)
+    if (__DEV__ && !didDumpStorage.current) {
+      didDumpStorage.current = true;
+      logAsyncStorage();
+    }
+
     const initializeSocket = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
@@ -158,6 +204,135 @@ export default function Layout() {
       fetchInitialNotifications();
     }
   }, [user, loading, fetchInitialNotifications]);
+
+  // Initialize Push Notifications
+  useEffect(() => {
+    if (!user || loading) return;
+
+    let isMounted = true;
+
+    const setupPushNotifications = async () => {
+      try {
+        // Register for push notifications and get token
+        const token = await registerForPushNotificationsAsync();
+        
+        if (token && isMounted) {
+          console.log('📱 Push Notification Token:', token);
+          
+          // Send token to backend
+          try {
+            await registerFCMToken({
+              token,
+              deviceType: Platform.OS === 'ios' ? 'ios' : 'android',
+            });
+            console.log('✅ Token registered with backend');
+          } catch (error) {
+            console.error('❌ Failed to register token with backend:', error);
+          }
+        }
+
+        // Setup notification listeners
+        const cleanup = setupNotificationListeners(
+          // Handler for notification received (foreground)
+          (notification) => {
+            const { title, body, data } = notification.request.content;
+            addNotification({
+              title: title || 'Notification',
+              message: body || '',
+              type: data?.type || 'info',
+              data: data,
+            });
+            fetchInitialNotifications();
+          },
+          // Handler for notification tapped
+          (response) => {
+            const { data } = response.notification.request.content;
+            console.log('Notification tapped with data:', data);
+
+            if (!data) return;
+
+            const nType = data.notificationType;
+            const conversationId = data.conversationId;
+            const bookingId = data.bookingId;
+
+            try {
+              if (nType === 'CHAT' && conversationId) {
+                const conversationParam = JSON.stringify({ id: String(conversationId) });
+                router.push({
+                  pathname: '/ChatDetail',
+                  params: {
+                    conversation: conversationParam,
+                  },
+                });
+              } else if (nType === 'BOOKING_CHOREOGRAPHER' && bookingId) {
+                const userRole = normalizeRole(user?.role);
+                const roleUpper = userRole || '';
+
+                if (roleUpper === 'CHOREOGRAPHY' || roleUpper === 'CHOREOGRAPHER') {
+                  router.push({
+                    pathname: '/Choreographer/BookingDetailOnHold',
+                    params: {
+                      bookingId: String(bookingId),
+                    },
+                  });
+                } else {
+                  router.push({
+                    pathname: '/BookingDetail',
+                    params: {
+                      bookingId: String(bookingId),
+                    },
+                  });
+                }
+              } else if (nType === 'BOOKING_DANCER' && bookingId) {
+                const userRole = normalizeRole(user?.role);
+                const roleUpper = userRole || '';
+
+                if (roleUpper === 'DANCER') {
+                  router.push({
+                    pathname: '/Dancer/DancerBookingDetail',
+                    params: {
+                      bookingId: String(bookingId),
+                    },
+                  });
+                } else {
+                  router.push({
+                    pathname: '/DancerBookingDetailCustomer',
+                    params: {
+                      bookingId: String(bookingId),
+                    },
+                  });
+                }
+              }
+            } catch (err) {
+              console.error('Failed to navigate from tapped push notification:', err);
+            }
+          }
+        );
+
+        return cleanup;
+      } catch (error) {
+        console.error('Error setting up push notifications:', error);
+      }
+    };
+
+    setupPushNotifications().then(cleanup => {
+      if (cleanup) {
+        notificationListener.current = cleanup;
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      if (notificationListener.current) {
+        notificationListener.current();
+      }
+    };
+  }, [user, loading, addNotification, fetchInitialNotifications]);
+
+  // Update badge count when unread count changes
+  useEffect(() => {
+    setBadgeCount(unreadCount);
+  }, [unreadCount]);
 
   if (!loaded) return null;
 

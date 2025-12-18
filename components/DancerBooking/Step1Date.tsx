@@ -209,9 +209,9 @@ export default function Step1Date({ dancerId, onNext }: Step1DateProps) {
             </Text>
           ))}
         </View>
-        {/* <Text style={styles.sessionLegend}>
+        <Text style={styles.sessionLegend}>
           Số trong vòng tròn thể hiện số buổi nhóm nhảy đã nhận trong ngày đó 
-        </Text> */}
+        </Text>
 
         {monthMatrix.map((row, rowIdx) => (
           <View key={rowIdx} style={styles.weekRow}>

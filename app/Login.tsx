@@ -141,12 +141,12 @@ export default function LoginScreen() {
           <Text style={styles.errorText}>{error}</Text>
         )}
 
-        {/* <View style={styles.rowBetween}>
+        <View style={styles.rowBetween}>
           <View />
           <TouchableOpacity>
             <Text style={styles.forgotText}>Quên mật khẩu?</Text>
           </TouchableOpacity>
-        </View> */}
+        </View>
 
         <TouchableOpacity style={[styles.loginButton, loading && { opacity: 0.7 }]} activeOpacity={0.9} onPress={handleLogin} disabled={loading}>
           {loading ? (

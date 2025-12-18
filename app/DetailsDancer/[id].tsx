@@ -58,7 +58,6 @@ interface DancerResult {
   profiles?: DancerProfile[];
   extraServices?: Array<{ id: number; name: string; description: string; price: number }>;
   crews?: DancerCrew[];
-  email?: string;
 }
 
 export default function DetailsDancerScreen() {
@@ -119,10 +118,9 @@ export default function DetailsDancerScreen() {
   })) || [];
   const profiles = dancer?.profiles || [];
   const extraServices = dancer?.extraServices || [];
-  const email = (dancer as any)?.email || "";
 
-  const imageSource = dancer?.avatar ? { uri: dancer.avatar } : undefined;
-  
+  const imageSource = dancer?.avatar
+  console.log(imageSource);
   
   
   const handleTabPress = (tab: "Intro" | "Projects") => {
@@ -152,7 +150,6 @@ export default function DetailsDancerScreen() {
             averageRating: 0,
             extraServices,
             crews: dancer?.crews || [],
-            email,
           }}
         />
       );

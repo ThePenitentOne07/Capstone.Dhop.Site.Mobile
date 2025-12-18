@@ -303,7 +303,7 @@ export default function BookingDetailOnHold() {
        
 
         {/* Complaint Button */}
-          {status !== "Đơn đặt chờ xác nhận" && status !=="Đơn trong trạng thái khiếu nại" && (
+          {status !== "Đơn đặt chờ xác nhận" && (
             <View style={styles.complaintBlock}>
             <TouchableOpacity
               style={styles.complaintButton}
@@ -389,7 +389,7 @@ export default function BookingDetailOnHold() {
         </>
       )}
 
-      {status === 'Đơn đặt đã kích hoạt' && !areAllSessionsAbsent(booking.trainingSessions) && (
+      {status === 'Đơn đặt đã kích hoạt' && (
         <View style={styles.actionBar}>
           <TouchableOpacity style={styles.checkinBtn} onPress={() => { router.push('/Choreographer/CheckInQr'); }}>
             <Text style={styles.checkinBtnText}>Check in</Text>
@@ -497,18 +497,6 @@ function getStatusColor(statusName: string): string {
     return '#C92A2A'; // Red for cancelled
   }
   return '#6B7280'; // Default gray
-}
-
-function areAllSessionsAbsent(trainingSessions: any[]): boolean {
-  if (!Array.isArray(trainingSessions) || trainingSessions.length === 0) {
-    return false;
-  }
-  
-  // Check if all sessions are ABSENT
-  return trainingSessions.every((s: any) => {
-    const statusCode = (s?.statusCode || "").trim();
-    return statusCode === "TRAINING_SESSION_ABSENT";
-  });
 }
 
 const styles = StyleSheet.create({
