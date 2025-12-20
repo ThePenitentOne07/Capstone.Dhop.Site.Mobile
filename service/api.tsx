@@ -529,3 +529,17 @@ export interface ChatBoxQueryResponse {
 export const chatBoxQuery = (payload: ChatBoxQueryRequest) => {
   return api.post<ChatBoxQueryResponse>(`/chat-box/query`, payload);
 };
+// Register FCM token for push notifications
+export interface RegisterFCMTokenPayload {
+  token: string;
+  deviceType: 'ios' | 'android';
+}
+
+export const registerFCMToken = (payload: RegisterFCMTokenPayload) => {
+  return api.post(`/fcm/tokens/register`, payload);
+};
+
+// Unregister FCM token (when user logs out)
+export const unregisterFCMToken = (token: string) => {
+  return api.post(`/notifications/unregister-token`, { token });
+};

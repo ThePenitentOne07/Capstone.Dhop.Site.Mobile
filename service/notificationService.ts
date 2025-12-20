@@ -29,6 +29,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF7A00',
       sound: 'default',
+      showBadge: true, // Enable badge on app icon for Android 8.0+
     });
   }
 
