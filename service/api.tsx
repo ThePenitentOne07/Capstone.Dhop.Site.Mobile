@@ -77,43 +77,47 @@ export const getChoreographyUsers = ({
     pageNo,
     pageSize,
   };
-  
+
   // Only add params that are actually chosen/selected
   if (name?.trim()) {
     params.name = name.trim();
   }
-  
+
   if (areas && areas.length > 0) {
     params.areas = areas;
   }
-  
+
   if (danceTypes && danceTypes.length > 0) {
     params.danceTypes = danceTypes;
   }
-  
+
   // Use paramsSerializer to format arrays as repeated params instead of array notation
   const paramsSerializer = (params: any) => {
     const parts: string[] = [];
     Object.keys(params).forEach((key) => {
       const value = params[key];
-      if (value !== undefined && value !== null && value !== '') {
-        if ((key === 'areas' || key === 'danceTypes') && Array.isArray(value) && value.length > 0) {
+      if (value !== undefined && value !== null && value !== "") {
+        if (
+          (key === "areas" || key === "danceTypes") &&
+          Array.isArray(value) &&
+          value.length > 0
+        ) {
           // Format as areas=2&areas=4 or danceTypes=2&danceTypes=4
           value.forEach((id: number) => {
             parts.push(`${key}=${encodeURIComponent(id)}`);
           });
-        } else if (key !== 'areas' && key !== 'danceTypes') {
+        } else if (key !== "areas" && key !== "danceTypes") {
           parts.push(`${key}=${encodeURIComponent(value)}`);
         }
       }
     });
-    return parts.join('&');
+    return parts.join("&");
   };
-  
+
   console.log("API getChoreographyUsers params:", params);
-  return api.get(`/users/CHOREOGRAPHY`, { 
+  return api.get(`/users/CHOREOGRAPHY`, {
     params,
-    paramsSerializer 
+    paramsSerializer,
   });
 };
 
@@ -129,20 +133,20 @@ export const getDancerUsers = ({
     pageNo,
     pageSize,
   };
-  
+
   // Only add params that are actually chosen/selected
   if (name?.trim()) {
     params.name = name.trim();
   }
-  
+
   if (areas && areas.length > 0) {
     params.areas = areas;
   }
-  
+
   if (danceTypes && danceTypes.length > 0) {
     params.danceTypes = danceTypes;
   }
-  
+
   console.log("API getDancerUsers params:", params);
   return api.get(`/users/DANCER`, { params });
 };
@@ -191,9 +195,12 @@ export const getChoreographyFeedbacks = (
   pageNo: number = 1,
   pageSize: number = 2
 ) => {
-  return api.get<ChoreographyFeedbackResponse>(`/choreography/${choreographyId}/feedbacks`, {
-    params: { pageNo, pageSize },
-  });
+  return api.get<ChoreographyFeedbackResponse>(
+    `/choreography/${choreographyId}/feedbacks`,
+    {
+      params: { pageNo, pageSize },
+    }
+  );
 };
 
 // Get dancer details by ID
@@ -244,11 +251,46 @@ export interface DancerBooking {
   crewId?: number[];
   // total number of people requested
   numberOfPeople?: number;
+  bookingNature?: "STANDARD" | "URGENT";
+  goalId?: number;
+  referenceLink?: string;
+  danceTypeIds?: number[];
+  specificSong?: string;
+  performanceDurationMinutes?: number;
+  callTime?: string;
+  desiredSongLinks?: string[];
 }
 
-export const getDancerBookingTotalPrice = (
-  payload: DancerBooking
+export interface BookingGoal {
+  id: number;
+  name: string;
+  description?: string;
+  providerType: "DANCER" | "CHOREOGRAPHER";
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const getBookingGoalsActive = (
+  providerType: "DANCER" | "CHOREOGRAPHER"
 ) => {
+  return api.get(`/booking-goals/active`, {
+    params: { providerType },
+  });
+};
+
+export interface StudentLevel {
+  id: number;
+  name: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+export const getStudentLevelsActive = () => {
+  return api.get(`/student-levels/active`);
+};
+
+export const getDancerBookingTotalPrice = (payload: DancerBooking) => {
   return api.post(`/booking/dancers/total-price`, payload);
 };
 
@@ -276,13 +318,15 @@ export interface GetChoreographerBookingsParams {
   sortBy?: string;
 }
 
-export const getChoreographerBookings = (params?: GetChoreographerBookingsParams) => {
+export const getChoreographerBookings = (
+  params?: GetChoreographerBookingsParams
+) => {
   return api.get(`/booking/choreographer`, {
     params: {
       status: params?.status,
       pageNo: params?.pageNo || 1,
       pageSize: params?.pageSize || 10,
-      sortBy: params?.sortBy || 'id:DESC',
+      sortBy: params?.sortBy || "id:DESC",
     },
   });
 };
@@ -301,17 +345,14 @@ export const getDancerBookings = (params?: GetDancerBookingsParams) => {
       status: params?.status,
       pageNo: params?.pageNo || 1,
       pageSize: params?.pageSize || 10,
-      sortBy: params?.sortBy || 'id:DESC',
+      sortBy: params?.sortBy || "id:DESC",
     },
   });
 };
 
-export const dancerAcceptBooking= (bookingId: number)=>{
-  return api.patch(
-    `/dancers/apply-booking`,
-    { bookingId }
-  )
-}
+export const dancerAcceptBooking = (bookingId: number) => {
+  return api.patch(`/dancers/apply-booking`, { bookingId });
+};
 export const dancerCompleteWork = (bookingId: number, qrCodeData: string) => {
   return api.post(`/dancers/complete-work`, { bookingId, qrCodeData });
 };
@@ -331,15 +372,13 @@ export const dancerGetBooking = (params?: GetDancerBookingsParams) => {
       status: params?.status,
       pageNo: params?.pageNo || 1,
       pageSize: params?.pageSize || 10,
-      sortBy: params?.sortBy || 'id:DESC',
+      sortBy: params?.sortBy || "id:DESC",
     },
   });
 };
 
 export const getBookingById = (bookingId: string | number) => {
-  return api.get(`/booking`, {
-    params: { bookingId },
-  });
+  return api.get(`/booking/${bookingId}`);
 };
 
 export const confirmBookingCompletion = (bookingId: number) => {
@@ -352,13 +391,9 @@ export const acceptChoreographerBooking = (
   statusName: string = "BOOKING_ACTIVATE"
 ) => {
   // console.log("acceptChoreographerBooking request", { bookingId, statusName });
-  return api.patch(
-    `/booking/choreographer/status`,
-    null,
-    {
-      params: { bookingId, statusName },
-    }
-  );
+  return api.patch(`/booking/choreographer/status`, null, {
+    params: { bookingId, statusName },
+  });
 };
 
 export const cancelChoreographerBooking = (bookingId: string | number) => {
@@ -521,7 +556,7 @@ export interface ChoreographerData {
 }
 
 export interface ChatBoxQueryResponse {
-  type: 'dancer' | 'choreographer' | 'general';
+  type: "dancer" | "choreographer" | "general";
   data?: DancerData[] | ChoreographerData[];
   message?: string;
 }
@@ -532,7 +567,7 @@ export const chatBoxQuery = (payload: ChatBoxQueryRequest) => {
 // Register FCM token for push notifications
 export interface RegisterFCMTokenPayload {
   token: string;
-  deviceType: 'ios' | 'android';
+  deviceType: "ios" | "android";
 }
 
 export const registerFCMToken = (payload: RegisterFCMTokenPayload) => {

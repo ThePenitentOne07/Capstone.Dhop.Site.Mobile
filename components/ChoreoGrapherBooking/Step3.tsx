@@ -7,6 +7,7 @@ import type { OccupiedSession } from './Step2';
 interface Step3Props {
   selectedDatesISO: string[];
   occupiedSessionsByDate?: Record<string, OccupiedSession[]>;
+  bookingNature?: 'STANDARD' | 'URGENT';
   onSubmit: (sessions: { dateISO: string; startTime: string; durationMinutes: number }[]) => void;
 }
 
@@ -29,33 +30,35 @@ function generateTimeOptions(): string[] {
 
 const durationOptions = [30, 60, 90, 120, 150, 180];
 
-export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, onSubmit }: Step3Props) {
+export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, bookingNature = 'STANDARD', onSubmit }: Step3Props) {
   const timeOptions = useMemo(() => generateTimeOptions(), []);
+  const minBookingTime = useMemo(() => new Date(Date.now() + 48 * 60 * 60 * 1000), []);
 
-  // Check if a session time is within 48 hours from now (must be at least 48 hours)
+  // Check if a session time is within 48 hours from now
   const isWithin48Hours = (dateISO: string, startTime: string): boolean => {
     try {
       const date = new Date(dateISO);
       const [hours, minutes] = startTime.split(':').map(Number);
       const sessionDateTime = new Date(date);
       sessionDateTime.setHours(hours, minutes, 0, 0);
-      
-      const now = new Date();
-      const minBookingTime = new Date(now.getTime() + 48 * 60 * 60 * 1000); // 48 hours from now
-      
-      // Session must be at least 48 hours from now (>=)
+
       return sessionDateTime <= minBookingTime;
     } catch {
       return false;
     }
   };
 
-  // Get available time options for a specific date (filtering out times within 48 hours)
+  // Get available time options based on booking nature
   const getAvailableTimeOptions = (dateISO: string): string[] => {
+    if (bookingNature === 'URGENT') {
+      // Urgent: allow any time (first session will be validated separately)
+      return timeOptions;
+    }
+    // Standard: must be at least 48h away
     return timeOptions.filter((time) => !isWithin48Hours(dateISO, time));
   };
 
-  // Get a safe default time that's not within 48 hours
+  // Get a safe default time
   const getDefaultTime = (dateISO: string): string => {
     const availableTimes = getAvailableTimeOptions(dateISO);
     if (availableTimes.length > 0) {
@@ -127,7 +130,7 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, o
     return selectedDatesISO.some((dateISO) => hasConflictForDate(dateISO, sessions));
   }, [selectedDatesISO, sessions]);
 
-  // Check if any session is within 48 hours
+  // For standard: block sessions within 48h. For urgent: require earliest session within 48h.
   const hasSessionWithin48Hours = useMemo(() => {
     return selectedDatesISO.some((dateISO) => {
       const session = sessions[dateISO];
@@ -136,9 +139,31 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, o
     });
   }, [selectedDatesISO, sessions]);
 
+  const earliestSessionDateTime = useMemo(() => {
+    const list = selectedDatesISO
+      .map((dateISO) => {
+        const session = sessions[dateISO];
+        if (!session?.startTime) return null;
+        const date = new Date(dateISO);
+        const [hours, minutes] = session.startTime.split(':').map(Number);
+        const dt = new Date(date);
+        dt.setHours(hours, minutes, 0, 0);
+        return dt;
+      })
+      .filter((d): d is Date => !!d)
+      .sort((a, b) => a.getTime() - b.getTime());
+    return list[0];
+  }, [selectedDatesISO, sessions]);
+
+  const urgentFirstSessionValid =
+    bookingNature !== 'URGENT' || (earliestSessionDateTime && earliestSessionDateTime <= minBookingTime);
+
+  const hasSessionTooSoonForStandard = bookingNature === 'STANDARD' && hasSessionWithin48Hours;
+
   const canSubmit =
     !hasAnyConflict &&
-    !hasSessionWithin48Hours &&
+    !hasSessionTooSoonForStandard &&
+    urgentFirstSessionValid &&
     selectedDatesISO.every(
       (d) => !!sessions[d]?.startTime && !!sessions[d]?.durationMinutes
     );
@@ -238,7 +263,7 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, o
                   Khung giờ này trùng với lịch đã có. Vui lòng chọn khung giờ khác.
                 </Text>
               )}
-              {isWithin48Hours(dateISO, s.startTime) && (
+              {bookingNature === 'STANDARD' && isWithin48Hours(dateISO, s.startTime) && (
                 <Text style={styles.warningText}>
                   ⚠️ Phải đặt lịch trước ít nhất 48 giờ. Vui lòng chọn giờ muộn hơn.
                 </Text>
@@ -247,10 +272,17 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, o
           );
         })}
 
-        {hasSessionWithin48Hours && (
+        {bookingNature === 'STANDARD' && hasSessionWithin48Hours && (
           <View style={styles.warningCard}>
             <Text style={styles.warningCardText}>
               ⚠️ Một hoặc nhiều buổi tập được đặt trong vòng 48 giờ. Vui lòng chọn thời gian muộn hơn.
+            </Text>
+          </View>
+        )}
+        {bookingNature === 'URGENT' && !urgentFirstSessionValid && (
+          <View style={styles.warningCard}>
+            <Text style={styles.warningCardText}>
+              ⚠️ Buổi tập đầu tiên phải nằm trong 48 giờ tới.
             </Text>
           </View>
         )}

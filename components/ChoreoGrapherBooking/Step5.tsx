@@ -1,10 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
-import { getChoreographerBookingTotalPrice, createChoreographerBooking } from '../../service/api';
-import { ChoreographerBooking } from '../../models/choreographerBooking';
-import { useFormatCurrency } from '../../hooks/useFormatCurrency';
-import Successful from './Successful';
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
+import {
+  getChoreographerBookingTotalPrice,
+  createChoreographerBooking,
+} from "../../service/api";
+import { ChoreographerBooking } from "../../models/choreographerBooking";
+import { useFormatCurrency } from "../../hooks/useFormatCurrency";
+import Successful from "./Successful";
 
 interface Step5Props {
   choreographerId: string;
@@ -13,15 +22,40 @@ interface Step5Props {
   detail?: string;
   sessions: { dateISO: string; startTime: string; durationMinutes: number }[]; // from Step3
   bookingExtraServiceRequests?: { extraServiceId: number; quantity: number }[];
+  bookingNature: "STANDARD" | "URGENT";
+  goalId?: number;
+  numberOfStudents?: number;
+  averageAge?: number;
+  studentLevelId?: number;
+  studentGender?: "BOTH" | "MALE" | "FEMALE";
+  desiredSongLinks?: string[];
+  numberOfMaleStudents?: number;
+  numberOfFemaleStudents?: number;
 }
 
 function toScheduledISO(dateISO: string, hhmm: string): string {
-  const datePart = dateISO.split('T')[0];
-  const [hh, mm] = hhmm.split(':');
+  const datePart = dateISO.split("T")[0];
+  const [hh, mm] = hhmm.split(":");
   return `${datePart}T${hh}:${mm}:00`;
 }
 
-export default function Step5({ choreographerId, areaId, location, detail, sessions, bookingExtraServiceRequests = [] }: Step5Props) {
+export default function Step5({
+  choreographerId,
+  areaId,
+  location,
+  detail,
+  sessions,
+  bookingExtraServiceRequests = [],
+  bookingNature,
+  goalId,
+  numberOfStudents,
+  averageAge,
+  studentLevelId,
+  studentGender,
+  desiredSongLinks = [],
+  numberOfMaleStudents,
+  numberOfFemaleStudents,
+}: Step5Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalPrice, setTotalPrice] = useState<number | null>(null);
@@ -29,17 +63,37 @@ export default function Step5({ choreographerId, areaId, location, detail, sessi
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState<boolean | null>(null);
   const { formatCurrency } = useFormatCurrency();
-  const payload: ChoreographerBooking = useMemo(() => ({
-    choreographerId,
-    areaId: String(areaId),
-    location,
-    detail: detail ?? '',
-    trainingSessionRequests: sessions.map((s) => ({
-      durationMinutes: s.durationMinutes,
-      scheduledTime: toScheduledISO(s.dateISO, s.startTime),
-    })),
-    bookingExtraServiceRequests,
-  }), [choreographerId, areaId, location, detail, sessions, bookingExtraServiceRequests]);
+  const payload: ChoreographerBooking = useMemo(
+    () => ({
+      choreographerId,
+      areaId: String(areaId),
+      location,
+      detail: detail ?? "",
+      goalId,
+      numberOfStudents,
+      averageAge,
+      studentLevelId,
+      studentGender,
+      desiredSongLinks,
+      numberOfMaleStudents,
+      numberOfFemaleStudents,
+      trainingSessionRequests: sessions.map((s) => ({
+        durationMinutes: s.durationMinutes,
+        scheduledTime: toScheduledISO(s.dateISO, s.startTime),
+      })),
+      bookingExtraServiceRequests,
+      bookingNature,
+    }),
+    [
+      choreographerId,
+      areaId,
+      location,
+      detail,
+      sessions,
+      bookingExtraServiceRequests,
+      bookingNature,
+    ]
+  );
 
   const handleCalculate = async () => {
     setLoading(true);
@@ -49,13 +103,15 @@ export default function Step5({ choreographerId, areaId, location, detail, sessi
       // Expecting API to return { totalPrice: number } or similar
       const value = res?.data?.totalPrice ?? res?.data?.data ?? res?.data;
 
-      if (typeof value === 'number') {
+      if (typeof value === "number") {
         setTotalPrice(value);
       } else {
-        setError('Không thể đọc tổng giá từ phản hồi.');
+        setError("Không thể đọc tổng giá từ phản hồi.");
       }
     } catch (e: any) {
-      setError(e?.response?.data?.message || 'Đã xảy ra lỗi khi tính tổng giá.');
+      setError(
+        e?.response?.data?.message || "Đã xảy ra lỗi khi tính tổng giá."
+      );
     } finally {
       setLoading(false);
     }
@@ -63,7 +119,7 @@ export default function Step5({ choreographerId, areaId, location, detail, sessi
 
   useEffect(() => {
     handleCalculate();
-    console.log("payload booking",payload);
+    console.log("payload booking", payload);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payload]);
 
@@ -77,11 +133,10 @@ export default function Step5({ choreographerId, areaId, location, detail, sessi
     setBookingSuccess(null);
     try {
       await createChoreographerBooking(payload);
-      
-      
+
       setBookingSuccess(true);
     } catch (e: any) {
-      setError(e?.response?.data?.message || 'Đặt lịch thất bại.');
+      setError(e?.response?.data?.message || "Đặt lịch thất bại.");
       setBookingSuccess(false);
     } finally {
       setBookingLoading(false);
@@ -93,49 +148,149 @@ export default function Step5({ choreographerId, areaId, location, detail, sessi
       {bookingSuccess === true ? (
         <Successful totalPrice={totalPrice ?? 0} sessions={sessions} />
       ) : (
-      <View style={styles.card}>
-        <Text style={styles.title}>Tổng giá tiền là:</Text>
-        <Text style={styles.subtitle}>{totalSessions} buổi </Text>
-        {/* <Text style={styles.subtitle}>{formatCurrency(totalPrice ?? 0)}</Text> */}
+        <View style={styles.card}>
+          <Text style={styles.title}>Tổng giá tiền là:</Text>
+          <Text style={styles.subtitle}>{totalSessions} buổi </Text>
+          {/* <Text style={styles.subtitle}>{formatCurrency(totalPrice ?? 0)}</Text> */}
 
-        <View style={styles.sessionsList}>
-          {sessions.map((s, idx) => {
-            const d = new Date(s.dateISO);
-            const dateStr = d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
-            return (
-              <Text key={idx} style={styles.sessionItem}>
-                {dateStr} • {s.startTime} • {s.durationMinutes} phút
-              </Text>
-            );
-          })}
-        </View>
+          {/* Booking Details */}
+          <View style={styles.detailsSection}>
+            <Text style={styles.sectionTitle}>Chi tiết đặt lịch</Text>
 
-        {typeof totalPrice === 'number' && (
-          <View style={styles.result}>
-            <Text style={styles.resultLabel}>Tổng giá ước tính</Text>
-            <Text style={styles.resultValue}> {formatCurrency(totalPrice ?? 0)}</Text>
+            {goalId !== undefined && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Mục tiêu:</Text>
+                <Text style={styles.detailValue}>{goalId}</Text>
+              </View>
+            )}
+
+            {numberOfStudents !== undefined && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Số lượng học viên:</Text>
+                <Text style={styles.detailValue}>{numberOfStudents}</Text>
+              </View>
+            )}
+
+            {numberOfMaleStudents !== undefined &&
+              numberOfFemaleStudents !== undefined && (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Nam / Nữ:</Text>
+                  <Text style={styles.detailValue}>
+                    {numberOfMaleStudents} / {numberOfFemaleStudents}
+                  </Text>
+                </View>
+              )}
+
+            {averageAge !== undefined && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Tuổi trung bình:</Text>
+                <Text style={styles.detailValue}>{averageAge}</Text>
+              </View>
+            )}
+
+            {studentLevelId !== undefined && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Cấp độ học viên:</Text>
+                <Text style={styles.detailValue}>{studentLevelId}</Text>
+              </View>
+            )}
+
+            {studentGender !== undefined && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Giới tính:</Text>
+                <Text style={styles.detailValue}>
+                  {studentGender === "BOTH"
+                    ? "Cả nam và nữ"
+                    : studentGender === "MALE"
+                    ? "Nam"
+                    : "Nữ"}
+                </Text>
+              </View>
+            )}
+
+            {bookingNature !== undefined && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Loại đặt lịch:</Text>
+                <Text
+                  style={[
+                    styles.detailValue,
+                    bookingNature === "URGENT" && { color: "#DC2626" },
+                  ]}
+                >
+                  {bookingNature === "STANDARD" ? "Chuẩn" : "Khẩn cấp"}
+                </Text>
+              </View>
+            )}
+
+            {desiredSongLinks && desiredSongLinks.length > 0 && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Bài hát yêu cầu:</Text>
+                <View style={styles.songLinksContainer}>
+                  {desiredSongLinks.map((link, idx) => (
+                    <TouchableOpacity
+                      key={idx}
+                      onPress={() => {
+                        // Handle link opening if needed
+                      }}
+                    >
+                      <Text style={styles.songLink} numberOfLines={1}>
+                        🎵 Bài {idx + 1}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
           </View>
-        )}
 
-        {error && (
-          <Text style={styles.errorText}>{error}</Text>
-        )}
+          <View style={styles.sessionsList}>
+            {sessions.map((s, idx) => {
+              const d = new Date(s.dateISO);
+              const dateStr = d.toLocaleDateString("vi-VN", {
+                weekday: "long",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              });
+              return (
+                <Text key={idx} style={styles.sessionItem}>
+                  {dateStr} • {s.startTime} • {s.durationMinutes} phút
+                </Text>
+              );
+            })}
+          </View>
 
-        <TouchableOpacity
-          style={[styles.bookBtn, (loading || bookingLoading || totalPrice == null) && styles.bookBtnDisabled]}
-          onPress={handleBook}
-          disabled={loading || bookingLoading || totalPrice == null}
-          activeOpacity={0.8}
-        >
-          {bookingLoading ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.bookBtnText}>Đặt lịch!</Text>
+          {typeof totalPrice === "number" && (
+            <View style={styles.result}>
+              <Text style={styles.resultLabel}>Tổng giá ước tính</Text>
+              <Text style={styles.resultValue}>
+                {" "}
+                {formatCurrency(totalPrice ?? 0)}
+              </Text>
+            </View>
           )}
-        </TouchableOpacity>
 
-        {/* Success handled by rendering <Successful /> above */}
-      </View>
+          {error && <Text style={styles.errorText}>{error}</Text>}
+
+          <TouchableOpacity
+            style={[
+              styles.bookBtn,
+              (loading || bookingLoading || totalPrice == null) &&
+                styles.bookBtnDisabled,
+            ]}
+            onPress={handleBook}
+            disabled={loading || bookingLoading || totalPrice == null}
+            activeOpacity={0.8}
+          >
+            {bookingLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.bookBtnText}>Đặt lịch!</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Success handled by rendering <Successful /> above */}
+        </View>
       )}
     </Animated.View>
   );
@@ -144,77 +299,77 @@ export default function Step5({ choreographerId, areaId, location, detail, sessi
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 24,
   },
   card: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: "#F9FAFB",
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: "#E5E7EB",
     padding: 16,
   },
   title: {
     fontSize: 20,
-    color: '#1F2937',
+    color: "#1F2937",
     marginBottom: 8,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   subtitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: "#6B7280",
     marginBottom: 16,
-    fontFamily: 'RobotoMono_400Regular',
+    fontFamily: "RobotoMono_400Regular",
   },
   loadingRow: {
     marginTop: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   loadingText: {
     marginLeft: 8,
-    color: '#6B7280',
+    color: "#6B7280",
   },
   result: {
     marginTop: 16,
-    backgroundColor: '#FFFBEB',
+    backgroundColor: "#FFFBEB",
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: "#FDE68A",
   },
   resultLabel: {
     fontSize: 12,
-    color: '#92400E',
+    color: "#92400E",
     marginBottom: 4,
   },
   resultValue: {
     fontSize: 20,
-    color: '#78350F',
-    fontFamily: 'RobotoMono_700Bold',
+    color: "#78350F",
+    fontFamily: "RobotoMono_700Bold",
   },
   errorText: {
     marginTop: 12,
-    color: '#DC2626',
+    color: "#DC2626",
   },
   sessionsList: {
     marginTop: 8,
   },
   sessionItem: {
     fontSize: 13,
-    color: '#374151',
+    color: "#374151",
     marginBottom: 6,
   },
   bookBtn: {
-    backgroundColor: '#FF7A00',
+    backgroundColor: "#FF7A00",
     borderRadius: 12,
     paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#FF7A00',
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#FF7A00",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -222,19 +377,59 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   bookBtnDisabled: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: "#E5E7EB",
     shadowOpacity: 0,
     elevation: 0,
   },
   bookBtnText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   successText: {
     marginTop: 12,
-    color: '#059669',
-    fontFamily: 'RobotoMono_700Bold',
+    color: "#059669",
+    fontFamily: "RobotoMono_700Bold",
+  },
+  detailsSection: {
+    marginTop: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  sectionTitle: {
+    fontSize: 14,
+    color: "#1F2937",
+    fontFamily: "RobotoMono_700Bold",
+    marginBottom: 12,
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  detailLabel: {
+    fontSize: 13,
+    color: "#6B7280",
+    fontFamily: "RobotoMono_500Medium",
+  },
+  detailValue: {
+    fontSize: 13,
+    color: "#1F2937",
+    fontFamily: "RobotoMono_700Bold",
+  },
+  songLinksContainer: {
+    marginTop: 6,
+  },
+  songLink: {
+    fontSize: 12,
+    color: "#3B82F6",
+    paddingVertical: 4,
+    textDecorationLine: "underline",
   },
 });
-

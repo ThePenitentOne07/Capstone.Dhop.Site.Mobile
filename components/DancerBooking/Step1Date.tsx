@@ -5,6 +5,7 @@ import { getDancerSchedule } from '../../service/api';
 
 interface Step1DateProps {
   dancerId: string;
+  bookingNature?: 'STANDARD' | 'URGENT';
   onNext: (
     selectedDatesISO: string[],
     occupiedSessionsByDate: Record<string, OccupiedSession[]>
@@ -43,7 +44,7 @@ function formatDateKey(date: Date) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-export default function Step1Date({ dancerId, onNext }: Step1DateProps) {
+export default function Step1Date({ dancerId, bookingNature = 'STANDARD', onNext }: Step1DateProps) {
   const numberOfDays = 1;
   const today = new Date();
   const [visibleMonth, setVisibleMonth] = useState<number>(today.getMonth());
@@ -116,9 +117,9 @@ export default function Step1Date({ dancerId, onNext }: Step1DateProps) {
     fetchSchedule();
   }, [dancerId, visibleMonth, visibleYear]);
 
+  const minBookingTime = useMemo(() => new Date(Date.now() + 48 * 60 * 60 * 1000), []);
+
   const isWithin48Hours = (date: Date) => {
-    const now = new Date();
-    const minBookingTime = new Date(now.getTime() + 48 * 60 * 60 * 1000);
     const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const startOfMinBookingDate = new Date(
       minBookingTime.getFullYear(),
@@ -135,7 +136,18 @@ export default function Step1Date({ dancerId, onNext }: Step1DateProps) {
   };
 
   const isDisabled = (date: Date) => {
-    return isPast(date) || isWithin48Hours(date);
+    if (isPast(date)) return true;
+    if (bookingNature === 'STANDARD') {
+      return isWithin48Hours(date);
+    }
+    // URGENT: only allow dates within the next 48 hours
+    const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const endOfAllowedDate = new Date(
+      minBookingTime.getFullYear(),
+      minBookingTime.getMonth(),
+      minBookingTime.getDate()
+    );
+    return startOfDate > endOfAllowedDate;
   };
 
   const handlePrevMonth = () => {
@@ -172,7 +184,20 @@ export default function Step1Date({ dancerId, onNext }: Step1DateProps) {
     setSelectedDates([date]);
   };
 
-  const canProceed = selectedDates.length === numberOfDays;
+  const canProceed =
+    selectedDates.length === numberOfDays &&
+    (bookingNature !== 'URGENT' ||
+      (selectedDates[0] &&
+        new Date(
+          selectedDates[0].getFullYear(),
+          selectedDates[0].getMonth(),
+          selectedDates[0].getDate()
+        ) <=
+          new Date(
+            minBookingTime.getFullYear(),
+            minBookingTime.getMonth(),
+            minBookingTime.getDate()
+          )));
   const selectedDatesISO = selectedDates
     .slice()
     .sort((a, b) => a.getTime() - b.getTime())
@@ -183,7 +208,11 @@ export default function Step1Date({ dancerId, onNext }: Step1DateProps) {
       <View style={styles.header}>
         <Text style={styles.title}>Chọn ngày biểu diễn</Text>
         <Text style={styles.subtitle}>Nhóm nhảy chỉ nhận biểu diễn trong một ngày</Text>
-        <Text style={styles.warningText}>⚠️ Phải đặt lịch trước ít nhất 48 giờ</Text>
+        {bookingNature === 'STANDARD' ? (
+          <Text style={styles.warningText}>⚠️ Phải đặt lịch trước ít nhất 48 giờ</Text>
+        ) : (
+          <Text style={styles.warningText}>⚠️ Chỉ chọn ngày trong 48 giờ tới</Text>
+        )}
         {sessionsError ? <Text style={styles.errorText}>{sessionsError}</Text> : null}
       </View>
 
@@ -286,7 +315,9 @@ export default function Step1Date({ dancerId, onNext }: Step1DateProps) {
         </Text>
         {!canProceed && (
           <Text style={styles.selectionHint}>
-            Hãy chọn 1 ngày để tiếp tục
+            {bookingNature === 'URGENT'
+              ? 'Ngày biểu diễn phải trong 48 giờ tới'
+              : 'Hãy chọn 1 ngày để tiếp tục'}
           </Text>
         )}
       </Animated.View>

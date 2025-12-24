@@ -7,6 +7,7 @@ import type { OccupiedSession } from './Step1Date';
 interface Step3DancerProps {
   selectedDatesISO: string[];
   occupiedSessionsByDate?: Record<string, OccupiedSession[]>;
+  bookingNature?: 'STANDARD' | 'URGENT';
   onSubmit: (sessions: { dateISO: string; startTime: string; durationMinutes: number }[]) => void;
 }
 
@@ -38,9 +39,11 @@ const MAX_SESSION_MINUTES = 4 * 60;
 export default function Step3Dancer({
   selectedDatesISO,
   occupiedSessionsByDate = {},
+  bookingNature = 'STANDARD',
   onSubmit,
 }: Step3DancerProps) {
   const timeOptions = useMemo(() => generateTimeOptions(), []);
+  const minBookingTime = useMemo(() => new Date(Date.now() + 48 * 60 * 60 * 1000), []);
 
   const isWithin48Hours = (dateISO: string, startTime: string): boolean => {
     try {
@@ -49,9 +52,6 @@ export default function Step3Dancer({
       const sessionDateTime = new Date(date);
       sessionDateTime.setHours(hours, minutes, 0, 0);
 
-      const now = new Date();
-      const minBookingTime = new Date(now.getTime() + 48 * 60 * 60 * 1000);
-
       return sessionDateTime <= minBookingTime;
     } catch {
       return false;
@@ -59,6 +59,9 @@ export default function Step3Dancer({
   };
 
   const getAvailableTimeOptions = (dateISO: string): string[] => {
+    if (bookingNature === 'URGENT') {
+      return timeOptions.filter((time) => isWithin48Hours(dateISO, time));
+    }
     return timeOptions.filter((time) => !isWithin48Hours(dateISO, time));
   };
 
@@ -68,9 +71,9 @@ export default function Step3Dancer({
       return availableTimes[0];
     }
     const now = new Date();
-    const minBookingTime = new Date(now.getTime() + 48 * 60 * 60 * 1000 + 60 * 60 * 1000);
-    const hours = String(minBookingTime.getHours()).padStart(2, '0');
-    const minutes = String(minBookingTime.getMinutes()).padStart(2, '0');
+    const minBooking = new Date(now.getTime() + 48 * 60 * 60 * 1000 + 60 * 60 * 1000);
+    const hours = String(minBooking.getHours()).padStart(2, '0');
+    const minutes = String(minBooking.getMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
   };
 
@@ -170,10 +173,14 @@ export default function Step3Dancer({
     });
   }, [selectedDatesISO, sessions]);
 
+  const standardInvalid = bookingNature === 'STANDARD' && hasSessionWithin48Hours;
+  const urgentInvalid = bookingNature === 'URGENT' && !hasSessionWithin48Hours;
+
   const canSubmit =
     !hasAnyConflict &&
-    !hasSessionWithin48Hours &&
     !isEndBeforeStartForAny &&
+    !standardInvalid &&
+    !urgentInvalid &&
     selectedDatesISO.every(
       (d) => !!sessions[d]?.startTime && !!sessions[d]?.endTime
     );
@@ -296,7 +303,7 @@ export default function Step3Dancer({
                   Khung giờ này trùng với lịch đã có. Vui lòng chọn khung giờ khác.
                 </Text>
               )}
-              {s?.startTime && isWithin48Hours(dateISO, s.startTime) && (
+              {bookingNature === 'STANDARD' && s?.startTime && isWithin48Hours(dateISO, s.startTime) && (
                 <Text style={styles.warningText}>
                   ⚠️ Phải đặt lịch trước ít nhất 48 giờ. Vui lòng chọn giờ muộn hơn.
                 </Text>
@@ -305,10 +312,17 @@ export default function Step3Dancer({
           );
         })}
 
-        {hasSessionWithin48Hours && (
+        {bookingNature === 'STANDARD' && hasSessionWithin48Hours && (
           <View style={styles.warningCard}>
             <Text style={styles.warningCardText}>
               ⚠️ Một hoặc nhiều buổi tập được đặt trong vòng 48 giờ. Vui lòng chọn thời gian muộn hơn.
+            </Text>
+          </View>
+        )}
+        {bookingNature === 'URGENT' && !hasSessionWithin48Hours && (
+          <View style={styles.warningCard}>
+            <Text style={styles.warningCardText}>
+              ⚠️ Buổi diễn phải nằm trong 48 giờ tới.
             </Text>
           </View>
         )}

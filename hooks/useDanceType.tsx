@@ -18,8 +18,8 @@ export default function useDanceType() {
       setLoading(true);
       setError(null);
       try {
-        const res = await api.get<DanceType[]>('/dance-types');
-        if (!cancelled) setDanceTypes(res.data ?? []);
+        const res = await api.get<DanceType[]>('/dance-types/active');
+        if (!cancelled) setDanceTypes(res.data.result ?? []);
         console.log("DanceTypes:", res.data);
       } catch (e: any) {
         if (!cancelled) setError(e?.message ?? 'Failed to load dance types');

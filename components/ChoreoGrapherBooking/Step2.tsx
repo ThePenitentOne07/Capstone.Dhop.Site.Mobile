@@ -6,6 +6,7 @@ import { getChoreographySchedule } from '../../service/api';
 interface Step2Props {
   choreographerId: string;
   numberOfDays: number;
+  bookingNature?: 'STANDARD' | 'URGENT';
   onNext: (
     selectedDatesISO: string[],
     occupiedSessionsByDate: Record<string, OccupiedSession[]>
@@ -45,7 +46,7 @@ function formatDateKey(date: Date) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Props) {
+export default function Step2({ choreographerId, numberOfDays, bookingNature = 'STANDARD', onNext }: Step2Props) {
   const today = new Date();
   const [visibleMonth, setVisibleMonth] = useState<number>(today.getMonth());
   const [visibleYear, setVisibleYear] = useState<number>(today.getFullYear());
@@ -166,6 +167,18 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
     return startOfDate < startOfMinBookingDate;
   };
 
+  const isBeyond48Hours = (date: Date) => {
+    const now = new Date();
+    const maxBookingTime = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+    const endOfAllowedDate = new Date(
+      maxBookingTime.getFullYear(),
+      maxBookingTime.getMonth(),
+      maxBookingTime.getDate()
+    );
+    const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return startOfDate > endOfAllowedDate;
+  };
+
   const isPast = (date: Date) => {
     const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -173,7 +186,11 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
   };
 
   const isDisabled = (date: Date) => {
-    return isPast(date) || isWithin48Hours(date);
+    if (bookingNature === 'STANDARD') {
+      return isPast(date) || isWithin48Hours(date);
+    }
+    // URGENT: allow picking any future date; only prevent past dates
+    return isPast(date);
   };
 
   const handlePrevMonth = () => {
@@ -211,7 +228,15 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
     setSelectedDates([...selectedDates, date]);
   };
 
-  const canProceed = selectedDates.length === numberOfDays;
+  const earliestSelected = selectedDates
+    .slice()
+    .sort((a, b) => a.getTime() - b.getTime())[0];
+  const earliestWithin48 = earliestSelected ? isBeyond48Hours(earliestSelected) === false : false;
+  const requiresUrgentFirst = bookingNature === 'URGENT' ? earliestWithin48 : true;
+
+  const canProceed =
+    selectedDates.length === numberOfDays &&
+    requiresUrgentFirst;
   const selectedDatesISO = selectedDates
     .slice()
     .sort((a, b) => a.getTime() - b.getTime())
@@ -222,7 +247,11 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
       <View style={styles.header}>
         <Text style={styles.title}>Chọn ngày</Text>
         <Text style={styles.subtitle}>Chọn {numberOfDays} ngày riêng lẻ để đặt lịch</Text>
-        <Text style={styles.warningText}>⚠️ Phải đặt lịch trước ít nhất 48 giờ</Text>
+        {bookingNature === 'STANDARD' ? (
+          <Text style={styles.warningText}>⚠️ Phải đặt lịch trước ít nhất 48 giờ</Text>
+        ) : (
+          <Text style={styles.warningText}>⚠️ Buổi đầu tiên phải trong 48 giờ tới</Text>
+        )}
         {sessionsError ? <Text style={styles.errorText}>{sessionsError}</Text> : null}
       </View>
 
@@ -269,7 +298,8 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
                     styles.dayCell,
                     isSelected && styles.dayCellSelected,
                     disabled && styles.dayCellDisabled,
-                    within48Hours && styles.dayCellWithin48Hours,
+                    within48Hours && bookingNature === 'STANDARD' && styles.dayCellWithin48Hours,
+                    within48Hours && bookingNature === 'STANDARD' && styles.dayCellWithin48Hours,
                   ]}
                   onPress={() => handleSelectDate(cell)}
                   activeOpacity={disabled ? 1 : 0.7}
@@ -325,7 +355,11 @@ export default function Step2({ choreographerId, numberOfDays, onNext }: Step2Pr
         </Text>
         {!canProceed && (
           <Text style={styles.selectionHint}>
-            Chọn thêm {Math.max(0, numberOfDays - selectedDates.length)} ngày
+            {selectedDates.length < numberOfDays
+              ? `Chọn thêm ${Math.max(0, numberOfDays - selectedDates.length)} ngày`
+              : bookingNature === 'URGENT' && !earliestWithin48
+                ? 'Buổi đầu tiên cần nằm trong 48 giờ tới'
+                : ''}
           </Text>
         )}
       </Animated.View>
