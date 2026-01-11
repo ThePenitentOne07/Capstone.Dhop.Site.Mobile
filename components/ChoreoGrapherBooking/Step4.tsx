@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -29,6 +29,16 @@ interface ChoreographerPayload {
   numberOfMaleStudents?: number;
   numberOfFemaleStudents?: number;
   bookingNature?: "STANDARD" | "URGENT";
+  customerPrice?: number;
+}
+
+interface ActItem {
+  songName: string;
+  danceTypeId: number;
+  durationMinutes: number;
+  description: string;
+  referenceLink: string;
+  orderIndex: number;
 }
 
 interface DancerPayload {
@@ -37,13 +47,12 @@ interface DancerPayload {
   areaId: number;
   bookingExtraServiceRequests: { extraServiceId: number; quantity: number }[];
   goalId?: number;
-  referenceLink?: string;
   danceTypeIds?: number[];
-  specificSong?: string;
   performanceDurationMinutes?: number;
   bookingNature?: "STANDARD" | "URGENT";
   callTime?: string;
-  desiredSongLinks?: string[];
+  actItems?: ActItem[];
+  customerPrice?: number;
 }
 
 interface Step4Props {
@@ -66,11 +75,10 @@ interface Step4Props {
   numberOfMaleStudents?: number;
   numberOfFemaleStudents?: number;
   bookingNature?: "STANDARD" | "URGENT";
-  referenceLink?: string;
   danceTypeIds?: number[];
-  specificSong?: string;
   performanceDurationMinutes?: number;
   callTime?: string;
+  customerPrice?: number;
 }
 
 export default function Step4({
@@ -88,11 +96,10 @@ export default function Step4({
   numberOfMaleStudents,
   numberOfFemaleStudents,
   bookingNature,
-  referenceLink,
   danceTypeIds = [],
-  specificSong,
   performanceDurationMinutes,
   callTime,
+  customerPrice,
 }: Step4Props) {
   const isDancer = providerType === "DANCER";
   const { areas, loading } = useArea();
@@ -126,24 +133,47 @@ export default function Step4({
   const [bookingNatureInput, setBookingNatureInput] = useState(
     bookingNature ?? "STANDARD"
   );
-  const [desiredSongLinksInput, setDesiredSongLinksInput] = useState(
-    desiredSongLinks?.join("\n") ?? ""
-  );
 
   // Dancer-specific fields
-  const [referenceLinkInput, setReferenceLinkInput] = useState(
-    referenceLink ?? ""
-  );
-  const [danceTypeIdsInput, setDanceTypeIdsInput] = useState(
-    danceTypeIds.length ? String(danceTypeIds[0]) : ""
-  );
-  const [specificSongInput, setSpecificSongInput] = useState(
-    specificSong ?? ""
-  );
-  const [performanceDurationInput, setPerformanceDurationInput] = useState(
-    performanceDurationMinutes?.toString() ?? ""
-  );
   const [callTimeInput, setCallTimeInput] = useState(callTime ?? "");
+  const [customerPriceInput, setCustomerPriceInput] = useState(
+    customerPrice?.toString() ?? ""
+  );
+
+  // ActItems state for dancer booking
+  const [actItems, setActItems] = useState<ActItem[]>([]);
+  const [newActItem, setNewActItem] = useState<Partial<ActItem>>({
+    songName: "",
+    danceTypeId: undefined,
+    durationMinutes: 0,
+    description: "",
+    referenceLink: "",
+  });
+
+  // Calculate total performance duration from sessions
+  const totalSessionDuration = useMemo(() => {
+    return sessions.reduce(
+      (total, session) => total + session.durationMinutes,
+      0
+    );
+  }, [sessions]);
+
+  const performanceDurationDisplay = useMemo(() => {
+    return String(totalSessionDuration);
+  }, [totalSessionDuration]);
+
+  // Calculate total act items duration
+  const totalActItemsDuration = useMemo(() => {
+    return actItems.reduce((total, item) => total + item.durationMinutes, 0);
+  }, [actItems]);
+
+  // Calculate available time for act items (performanceDuration - 15 minutes buffer)
+  const availableActItemsDuration = useMemo(() => {
+    return Math.max(0, totalSessionDuration - 15);
+  }, [totalSessionDuration]);
+
+  // Check if we can add more act items
+  const canAddMoreActItems = totalActItemsDuration < availableActItemsDuration;
 
   // Filter areas to only include those that the choreographer has
   const areaOptions = useMemo(() => {
@@ -188,6 +218,14 @@ export default function Step4({
     }));
   }, [danceTypes, danceTypeIds]);
 
+  // For actItems, always use all available dance types without filtering
+  const actItemsDanceTypeOptions = useMemo(() => {
+    return danceTypes.map((dt) => ({
+      value: String(dt.id),
+      label: dt.type,
+    }));
+  }, [danceTypes]);
+
   const toggleService = (serviceId: number) => {
     setSelectedServiceIds((prev) =>
       prev.includes(serviceId)
@@ -195,6 +233,61 @@ export default function Step4({
         : [...prev, serviceId]
     );
   };
+
+  const handleNewActItemChange = useCallback(
+    (field: keyof ActItem, value: any) => {
+      setNewActItem((prev) => ({ ...prev, [field]: value }));
+    },
+    []
+  );
+
+  const addActItem = useCallback(() => {
+    if (
+      !newActItem.songName?.trim() ||
+      !newActItem.danceTypeId ||
+      !newActItem.durationMinutes ||
+      !newActItem.description?.trim() ||
+      !newActItem.referenceLink?.trim()
+    ) {
+      return;
+    }
+
+    // Check if adding this act item would exceed the available duration
+    if (
+      totalActItemsDuration + newActItem.durationMinutes >
+      availableActItemsDuration
+    ) {
+      return;
+    }
+
+    const item: ActItem = {
+      songName: newActItem.songName.trim(),
+      danceTypeId: newActItem.danceTypeId,
+      durationMinutes: newActItem.durationMinutes,
+      description: newActItem.description.trim(),
+      referenceLink: newActItem.referenceLink.trim(),
+      orderIndex: actItems.length + 1,
+    };
+    setActItems([...actItems, item]);
+    setNewActItem({
+      songName: "",
+      danceTypeId: undefined,
+      durationMinutes: 0,
+      description: "",
+      referenceLink: "",
+    });
+  }, [newActItem, totalActItemsDuration, availableActItemsDuration, actItems]);
+
+  const removeActItem = useCallback((index: number) => {
+    setActItems((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      const reordered = updated.map((item, i) => ({
+        ...item,
+        orderIndex: i + 1,
+      }));
+      return reordered;
+    });
+  }, []);
 
   const isValid = location.trim().length > 0 && !!areaId;
 
@@ -212,19 +305,13 @@ export default function Step4({
     if (isDancer) {
       const dancerPayload: DancerPayload = {
         ...basePayload,
-        referenceLink: referenceLinkInput.trim() || undefined,
-        danceTypeIds: danceTypeIdsInput.trim()
-          ? [parseInt(danceTypeIdsInput)]
-          : undefined,
-        specificSong: specificSongInput.trim() || undefined,
-        performanceDurationMinutes: performanceDurationInput
-          ? parseInt(performanceDurationInput)
-          : undefined,
+        performanceDurationMinutes: totalSessionDuration || undefined,
         bookingNature:
           (bookingNatureInput as "STANDARD" | "URGENT") || undefined,
         // callTime: callTimeInput.trim() || undefined,
-        desiredSongLinks: desiredSongLinksInput.trim()
-          ? desiredSongLinksInput.split("\n").filter((link) => link.trim())
+        actItems: actItems.length > 0 ? actItems : undefined,
+        customerPrice: customerPriceInput
+          ? parseInt(customerPriceInput)
           : undefined,
       };
       onSubmit(dancerPayload);
@@ -240,9 +327,6 @@ export default function Step4({
           : undefined,
         studentGender:
           (studentGenderInput as "BOTH" | "MALE" | "FEMALE") || undefined,
-        desiredSongLinks: desiredSongLinksInput.trim()
-          ? desiredSongLinksInput.split("\n").filter((link) => link.trim())
-          : undefined,
         numberOfMaleStudents: numberOfMaleStudentsInput
           ? parseInt(numberOfMaleStudentsInput)
           : undefined,
@@ -251,6 +335,9 @@ export default function Step4({
           : undefined,
         bookingNature:
           (bookingNatureInput as "STANDARD" | "URGENT") || undefined,
+        customerPrice: customerPriceInput
+          ? parseInt(customerPriceInput)
+          : undefined,
       };
       onSubmit(choreographerPayload);
     }
@@ -279,6 +366,18 @@ export default function Step4({
           onChangeText={setDescription}
           multiline
           numberOfLines={4}
+        />
+      </View>
+
+      <View style={styles.fieldGroup}>
+        <Text style={styles.label}>Giá tiền (tuỳ chọn)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Nhập giá tiền..."
+          placeholderTextColor="#9CA3AF"
+          value={customerPriceInput}
+          onChangeText={setCustomerPriceInput}
+          keyboardType="decimal-pad"
         />
       </View>
 
@@ -345,6 +444,22 @@ export default function Step4({
           </View>
 
           <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Thể loại nhảy</Text>
+            <Dropdown
+              data={danceTypeOptions}
+              onChange={(item) => {
+                // For choreographer, we might want to store selected dance types
+                // This could be added to the payload if needed
+              }}
+              placeholder={
+                danceTypesLoading
+                  ? "Đang tải..."
+                  : "Chọn thể loại nhảy (tuỳ chọn)"
+              }
+            />
+          </View>
+
+          <View style={styles.fieldGroup}>
             <Text style={styles.label}>Giới tính</Text>
             <View style={styles.genderRow}>
               {["MALE", "FEMALE", "BOTH"].map((gender) => (
@@ -379,54 +494,196 @@ export default function Step4({
       {isDancer && (
         <>
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Link tham khảo</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nhập link YouTube..."
-              placeholderTextColor="#9CA3AF"
-              value={referenceLinkInput}
-              onChangeText={setReferenceLinkInput}
-            />
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>
-              Loại múa (ID, cách nhau bằng dấu phẩy)
-            </Text>
-            <Dropdown
-              data={danceTypeOptions}
-              onChange={(item) => setDanceTypeIdsInput(item.value)}
-              placeholder={
-                danceTypesLoading
-                  ? "Đang tải..."
-                  : danceTypeOptions.length
-                  ? "Chọn loại múa"
-                  : "Không có loại múa khả dụng"
-              }
-            />
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Bài hát cụ thể</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ví dụ: Shape of You - Ed Sheeran"
-              placeholderTextColor="#9CA3AF"
-              value={specificSongInput}
-              onChangeText={setSpecificSongInput}
-            />
-          </View>
-
-          <View style={styles.fieldGroup}>
             <Text style={styles.label}>Thời lượng biểu diễn (phút)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, styles.readOnlyInput]}
               placeholder="Nhập thời lượng..."
               placeholderTextColor="#9CA3AF"
-              value={performanceDurationInput}
-              onChangeText={setPerformanceDurationInput}
-              keyboardType="number-pad"
+              value={performanceDurationDisplay}
+              editable={false}
             />
+          </View>
+
+          {/* Act Items Section for Dancer */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Các tiết mục biểu diễn</Text>
+
+            {/* Display Added Act Items */}
+            {actItems.length > 0 && (
+              <View style={styles.actItemsList}>
+                {actItems.map((item, index) => (
+                  <View key={index} style={styles.actItemCard}>
+                    <View style={styles.actItemHeader}>
+                      <Text style={styles.actItemIndex}>
+                        #{item.orderIndex}
+                      </Text>
+                      <Text style={styles.actItemSong}>{item.songName}</Text>
+                      <TouchableOpacity
+                        onPress={() => removeActItem(index)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        <Text style={styles.actItemRemove}>✕</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.actItemDetails}>
+                      <Text style={styles.actItemDetailText}>
+                        Thể loại:{" "}
+                        {danceTypeOptions.find(
+                          (o) => o.value === String(item.danceTypeId)
+                        )?.label || `ID: ${item.danceTypeId}`}
+                      </Text>
+                      <Text style={styles.actItemDetailText}>
+                        Thời lượng: {item.durationMinutes} phút
+                      </Text>
+                    </View>
+                    <Text style={styles.actItemDesc}>{item.description}</Text>
+                    <Text style={styles.actItemLink} numberOfLines={1}>
+                      {item.referenceLink}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Add New Act Item Form */}
+            <View style={styles.addActItemContainer}>
+              <Text style={styles.addActItemTitle}>
+                {actItems.length > 0
+                  ? "Thêm tiết mục khác"
+                  : "Thêm tiết mục mới"}
+              </Text>
+
+              {/* Time Remaining Info */}
+              <View style={styles.timeRemainingContainer}>
+                <Text style={styles.timeRemainingText}>
+                  Thời gian sẵn có:{" "}
+                  <Text style={styles.timeRemainingValue}>
+                    {availableActItemsDuration} phút
+                  </Text>
+                </Text>
+                <Text style={styles.timeRemainingText}>
+                  Đã sử dụng:{" "}
+                  <Text style={styles.timeUsedValue}>
+                    {totalActItemsDuration} phút
+                  </Text>
+                </Text>
+                <Text
+                  style={[
+                    styles.timeRemainingText,
+                    availableActItemsDuration - totalActItemsDuration <= 0 &&
+                      styles.timeWarning,
+                  ]}
+                >
+                  Còn lại:{" "}
+                  <Text style={styles.timeRemainingValue}>
+                    {Math.max(
+                      0,
+                      availableActItemsDuration - totalActItemsDuration
+                    )}{" "}
+                    phút
+                  </Text>
+                </Text>
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Tên bài hát (bắt buộc)"
+                  placeholderTextColor="#9CA3AF"
+                  value={newActItem.songName || ""}
+                  onChangeText={(text) =>
+                    handleNewActItemChange("songName", text)
+                  }
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Dropdown
+                  data={actItemsDanceTypeOptions}
+                  onChange={(item) =>
+                    handleNewActItemChange("danceTypeId", parseInt(item.value))
+                  }
+                  placeholder={
+                    danceTypesLoading
+                      ? "Đang tải..."
+                      : "Chọn loại múa (bắt buộc)"
+                  }
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Thời lượng (phút, bắt buộc)"
+                  placeholderTextColor="#9CA3AF"
+                  value={String(newActItem.durationMinutes || "")}
+                  onChangeText={(text) =>
+                    handleNewActItemChange(
+                      "durationMinutes",
+                      text ? parseInt(text) : 0
+                    )
+                  }
+                  keyboardType="number-pad"
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <TextInput
+                  style={[styles.input, styles.multiline]}
+                  placeholder="Mô tả tiết mục (bắt buộc)"
+                  placeholderTextColor="#9CA3AF"
+                  value={newActItem.description || ""}
+                  onChangeText={(text) =>
+                    handleNewActItemChange("description", text)
+                  }
+                  multiline
+                  numberOfLines={2}
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Link tham khảo (YouTube, bắt buộc)"
+                  placeholderTextColor="#9CA3AF"
+                  value={newActItem.referenceLink || ""}
+                  onChangeText={(text) =>
+                    handleNewActItemChange("referenceLink", text)
+                  }
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.addActItemBtn,
+                  !newActItem.songName?.trim() ||
+                  !newActItem.danceTypeId ||
+                  !newActItem.durationMinutes ||
+                  !newActItem.description?.trim() ||
+                  !newActItem.referenceLink?.trim() ||
+                  !canAddMoreActItems
+                    ? styles.addActItemBtnDisabled
+                    : null,
+                ]}
+                onPress={addActItem}
+                disabled={
+                  !newActItem.songName?.trim() ||
+                  !newActItem.danceTypeId ||
+                  !newActItem.durationMinutes ||
+                  !newActItem.description?.trim() ||
+                  !newActItem.referenceLink?.trim() ||
+                  !canAddMoreActItems
+                }
+              >
+                <Text style={styles.addActItemBtnText}>+ Thêm tiết mục</Text>
+              </TouchableOpacity>
+
+              {!canAddMoreActItems && actItems.length > 0 && (
+                <Text style={styles.durationWarningText}>
+                  ⚠️ Đã đạt giới hạn thời gian cho tiết mục
+                </Text>
+              )}
+            </View>
           </View>
 
           {/* <View style={styles.fieldGroup}>
@@ -441,19 +698,6 @@ export default function Step4({
           </View> */}
         </>
       )}
-
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>Bài hát yêu cầu (một URL mỗi dòng)</Text>
-        <TextInput
-          style={[styles.input, styles.multiline]}
-          placeholder="Dán URL YouTube mỗi dòng..."
-          placeholderTextColor="#9CA3AF"
-          value={desiredSongLinksInput}
-          onChangeText={setDesiredSongLinksInput}
-          multiline
-          numberOfLines={3}
-        />
-      </View>
 
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>Khu vực</Text>
@@ -563,6 +807,10 @@ const styles = StyleSheet.create({
   multiline: {
     minHeight: 96,
     textAlignVertical: "top",
+  },
+  readOnlyInput: {
+    backgroundColor: "#F3F4F6",
+    color: "#6B7280",
   },
   submitBtn: {
     backgroundColor: "#FF7A00",
@@ -708,6 +956,126 @@ const styles = StyleSheet.create({
   },
   natureTextSelected: {
     color: "#FF7A00",
+    fontFamily: "RobotoMono_700Bold",
+  },
+  // ActItems Styles
+  actItemsList: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  actItemCard: {
+    backgroundColor: "#F0F9FF",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    padding: 12,
+  },
+  actItemHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+    gap: 8,
+  },
+  actItemIndex: {
+    fontSize: 12,
+    color: "#FF7A00",
+    fontFamily: "RobotoMono_700Bold",
+    backgroundColor: "#FFF7ED",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  actItemSong: {
+    fontSize: 14,
+    color: "#1F2937",
+    fontFamily: "RobotoMono_700Bold",
+    flex: 1,
+  },
+  actItemRemove: {
+    fontSize: 18,
+    color: "#EF4444",
+    fontFamily: "RobotoMono_700Bold",
+  },
+  actItemDetails: {
+    marginBottom: 8,
+    gap: 4,
+  },
+  actItemDetailText: {
+    fontSize: 12,
+    color: "#4B5563",
+    fontFamily: "RobotoMono_400Regular",
+  },
+  actItemDesc: {
+    fontSize: 12,
+    color: "#6B7280",
+    fontFamily: "RobotoMono_400Regular",
+    marginBottom: 6,
+    lineHeight: 16,
+  },
+  actItemLink: {
+    fontSize: 11,
+    color: "#3B82F6",
+    fontFamily: "RobotoMono_400Regular",
+  },
+  addActItemContainer: {
+    backgroundColor: "#FFF7ED",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#FFD8B4",
+    padding: 14,
+  },
+  timeRemainingContainer: {
+    backgroundColor: "#F0F9FF",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    padding: 12,
+    marginBottom: 12,
+  },
+  timeRemainingText: {
+    fontSize: 12,
+    color: "#4B5563",
+    fontFamily: "RobotoMono_400Regular",
+    marginBottom: 6,
+  },
+  timeRemainingValue: {
+    color: "#FF7A00",
+    fontFamily: "RobotoMono_700Bold",
+  },
+  timeUsedValue: {
+    color: "#EF4444",
+    fontFamily: "RobotoMono_700Bold",
+  },
+  timeWarning: {
+    color: "#EF4444",
+  },
+  durationWarningText: {
+    fontSize: 12,
+    color: "#EF4444",
+    fontFamily: "RobotoMono_500Medium",
+    marginTop: 8,
+    textAlign: "center",
+  },
+  addActItemTitle: {
+    fontSize: 13,
+    color: "#FF7A00",
+    fontFamily: "RobotoMono_700Bold",
+    marginBottom: 12,
+  },
+  addActItemBtn: {
+    backgroundColor: "#FF7A00",
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+  },
+  addActItemBtnDisabled: {
+    backgroundColor: "#E5E7EB",
+  },
+  addActItemBtnText: {
+    color: "#FFFFFF",
+    fontSize: 14,
     fontFamily: "RobotoMono_700Bold",
   },
 });

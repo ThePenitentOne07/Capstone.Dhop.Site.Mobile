@@ -421,6 +421,11 @@ export const cancelDancerBooking = (bookingId: string | number) => {
     params: { bookingId },
   });
 };
+
+export const updateDancerBooking = (bookingId: number, payload: any) => {
+  return api.patch(`/booking/${bookingId}`, payload);
+};
+
 // Check-in training session via QR
 export const qrTrainingSession = (
   trainingSessionId: number,
@@ -575,6 +580,11 @@ export const registerFCMToken = (payload: RegisterFCMTokenPayload) => {
 };
 
 // Unregister FCM token (when user logs out)
-export const unregisterFCMToken = (token: string) => {
-  return api.post(`/notifications/unregister-token`, { token });
+export const unregisterFCMToken = () => {
+  return api.delete(`/fcm/tokens`);
+};
+
+// pay booking
+export const payBooking = (bookingId: number) => {
+  return api.post(`/booking/${bookingId}/pay`);
 };

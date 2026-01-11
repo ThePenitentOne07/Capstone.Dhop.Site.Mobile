@@ -1,31 +1,55 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
-import { useRouter, Stack } from 'expo-router';
-import { useUserInfo } from '../hooks/useUserInfo';
-import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming, Easing } from 'react-native-reanimated';
-import { MaterialIcons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAppModal } from '../hooks/useAppModal';
+import React, { useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
+import { useRouter, Stack } from "expo-router";
+import { useUserInfo } from "../hooks/useUserInfo";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
+import { MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAppModal } from "../hooks/useAppModal";
+import { unregisterFCMToken } from "../service/api";
+import messaging from "@react-native-firebase/messaging";
 
-const ORANGE = '#FF7120';
-const ORANGE2 = '#FF7A00';
+const ORANGE = "#FF7120";
+const ORANGE2 = "#FF7A00";
 
-const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
+const AnimatedTouchableOpacity =
+  Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function CustomerMenu() {
   const router = useRouter();
   const { user, loading } = useUserInfo();
   const { showModal, modal } = useAppModal();
-  const username = user?.name || 'Choreographer';
-  const avatarInitial = username?.[0]?.toUpperCase() || 'U';
+  const username = user?.name || "Choreographer";
+  const avatarInitial = username?.[0]?.toUpperCase() || "U";
 
   // --- FIX START: Animation Logic Moved Inside Component ---
   const profileOpacity = useSharedValue(0);
   const profileTranslateY = useSharedValue(18);
 
   useEffect(() => {
-    profileOpacity.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) });
-    profileTranslateY.value = withTiming(0, { duration: 700, easing: Easing.out(Easing.cubic) });
+    profileOpacity.value = withTiming(1, {
+      duration: 700,
+      easing: Easing.out(Easing.cubic),
+    });
+    profileTranslateY.value = withTiming(0, {
+      duration: 700,
+      easing: Easing.out(Easing.cubic),
+    });
   }, []);
 
   const profileAnimatedStyle = useAnimatedStyle(() => ({
@@ -36,17 +60,24 @@ export default function CustomerMenu() {
 
   const handleLogout = async () => {
     showModal({
-      title: 'Đăng xuất',
-      message: 'Bạn chắc chắn muốn đăng xuất?',
-      status: 'info',
+      title: "Đăng xuất",
+      message: "Bạn chắc chắn muốn đăng xuất?",
+      status: "info",
       buttons: [
-        { text: 'Hủy', variant: 'secondary' },
+        { text: "Hủy", variant: "secondary" },
         {
-          text: 'Đăng xuất',
+          text: "Đăng xuất",
           destructive: true,
           onPress: async () => {
-            await AsyncStorage.multiRemove(['token', 'user']);
-            router.replace('/Login');
+            try {
+              // Get FCM token and unregister it
+
+              await unregisterFCMToken();
+            } catch (error) {
+              console.error("Error unregistering FCM token:", error);
+            }
+            await AsyncStorage.multiRemove(["token", "user"]);
+            router.replace("/Login");
           },
         },
       ],
@@ -54,7 +85,7 @@ export default function CustomerMenu() {
   };
 
   const handleProfilePress = () => {
-    router.push('/CustomerProfile');
+    router.push("/CustomerProfile");
   };
 
   return (
@@ -62,7 +93,7 @@ export default function CustomerMenu() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: 'Menu',
+          title: "Menu",
           headerStyle: {
             backgroundColor: "#FF7A00",
           },
@@ -100,29 +131,90 @@ export default function CustomerMenu() {
 
         {/* MENU LIST */}
         <View style={styles.menuSection}>
-          <MenuButton index={0} icon="" label="Lịch đặt biên đạo" onPress={() => { router.push('/BookingList') }} />
-          <MenuButton index={0} icon="" label="Lịch đặt nhóm nhảy" onPress={() => { router.push('/DancerBookingList') }} />
-          <MenuButton index={1} icon="" label="Khiếu nại đơn đặt" onPress={() => { router.push('/PlatformComplaint') }} />
-          <MenuButton index={2} icon="" label="Ví tiền" onPress={() => { router.push('/Wallet') }} />
-          <MenuButton index={3} icon="" label="Chat" onPress={() => { router.push('/ChatList') }} />
-          <MenuButton index={4} icon="" label="Đăng xuất" showLast={true} onPress={handleLogout} />
+          <MenuButton
+            index={0}
+            icon=""
+            label="Lịch đặt biên đạo"
+            onPress={() => {
+              router.push("/BookingList");
+            }}
+          />
+          <MenuButton
+            index={0}
+            icon=""
+            label="Lịch đặt nhóm nhảy"
+            onPress={() => {
+              router.push("/DancerBookingList");
+            }}
+          />
+          <MenuButton
+            index={1}
+            icon=""
+            label="Khiếu nại đơn đặt"
+            onPress={() => {
+              router.push("/PlatformComplaint");
+            }}
+          />
+          <MenuButton
+            index={2}
+            icon=""
+            label="Ví tiền"
+            onPress={() => {
+              router.push("/Wallet");
+            }}
+          />
+          <MenuButton
+            index={3}
+            icon=""
+            label="Chat"
+            onPress={() => {
+              router.push("/ChatList");
+            }}
+          />
+          <MenuButton
+            index={4}
+            icon=""
+            label="Đăng xuất"
+            showLast={true}
+            onPress={handleLogout}
+          />
         </View>
-        {loading && <ActivityIndicator color={ORANGE2} style={{ marginTop: 20 }} />}
+        {loading && (
+          <ActivityIndicator color={ORANGE2} style={{ marginTop: 20 }} />
+        )}
       </ScrollView>
       {modal}
     </View>
   );
 }
 
-function MenuButton({ index = 0, icon, label, showLast, onPress }: { index?: number; icon: string; label: string; showLast?: boolean; onPress?: () => void }) {
+function MenuButton({
+  index = 0,
+  icon,
+  label,
+  showLast,
+  onPress,
+}: {
+  index?: number;
+  icon: string;
+  label: string;
+  showLast?: boolean;
+  onPress?: () => void;
+}) {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(16);
 
   useEffect(() => {
     const delayMs = 220 * index;
-    opacity.value = withDelay(delayMs, withTiming(1, { duration: 900, easing: Easing.out(Easing.cubic) }));
-    translateY.value = withDelay(delayMs, withTiming(0, { duration: 900, easing: Easing.out(Easing.cubic) }));
+    opacity.value = withDelay(
+      delayMs,
+      withTiming(1, { duration: 900, easing: Easing.out(Easing.cubic) })
+    );
+    translateY.value = withDelay(
+      delayMs,
+      withTiming(0, { duration: 900, easing: Easing.out(Easing.cubic) })
+    );
   }, [index, opacity, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -141,7 +233,8 @@ function MenuButton({ index = 0, icon, label, showLast, onPress }: { index?: num
   };
 
   return (
-    <AnimatedTouchable style={[styles.menuBtn, showLast && { marginBottom: 0 }, animatedStyle]}
+    <AnimatedTouchable
+      style={[styles.menuBtn, showLast && { marginBottom: 0 }, animatedStyle]}
       activeOpacity={0.9}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -157,15 +250,15 @@ function MenuButton({ index = 0, icon, label, showLast, onPress }: { index?: num
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   profileSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 44,
     marginHorizontal: 24,
     marginBottom: 32,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 36,
     padding: 18,
     borderWidth: 2,
@@ -176,7 +269,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   avatarWrapper: {
-    position: 'relative',
+    position: "relative",
     marginRight: 18,
   },
   profilePic: {
@@ -185,7 +278,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     borderWidth: 2,
     borderColor: ORANGE2,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   profileFallback: {
     width: 68,
@@ -193,54 +286,54 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     borderWidth: 2,
     borderColor: ORANGE2,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
   },
   editBadge: {
-    position: 'absolute',
+    position: "absolute",
     right: -2,
     bottom: -2,
     width: 20,
     height: 20,
     borderRadius: 10,
     backgroundColor: ORANGE2,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: "#fff",
     zIndex: 1,
   },
   profileFallbackText: {
     fontSize: 28,
     color: ORANGE2,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   name: {
     fontSize: 20,
     color: ORANGE2,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   menuSection: {
     marginHorizontal: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 0,
     paddingVertical: 2,
     borderWidth: 0,
-    borderColor: 'transparent',
+    borderColor: "transparent",
     marginBottom: 28,
     marginTop: 10,
   },
   menuBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 16,
     paddingHorizontal: 16,
     marginBottom: 12,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 999,
     borderWidth: 2,
-    borderColor: '#FFD8B4',
+    borderColor: "#FFD8B4",
     shadowColor: ORANGE2,
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -255,7 +348,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flex: 1,
     color: ORANGE2,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   menuArrow: {
     fontSize: 20,
@@ -263,6 +356,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     marginRight: 6,
     opacity: 0.7,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
 });

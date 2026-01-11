@@ -15,6 +15,15 @@ import {
 import { useFormatCurrency } from "../../hooks/useFormatCurrency";
 import Successful from "../ChoreoGrapherBooking/Successful";
 
+interface ActItem {
+  songName: string;
+  danceTypeId: number;
+  durationMinutes: number;
+  description: string;
+  referenceLink: string;
+  orderIndex: number;
+}
+
 interface Step5DancerProps {
   dancerId: string;
   areaId: number;
@@ -24,7 +33,7 @@ interface Step5DancerProps {
   bookingExtraServiceRequests?: { extraServiceId: number; quantity: number }[];
   crewMembers?: number;
   selectionMode?: "auto" | "manual";
-  selectedCrewIds?: number[];
+
   dancerName?: string;
   price?: number;
   yearExperience?: number;
@@ -32,11 +41,12 @@ interface Step5DancerProps {
   bookingNature: "STANDARD" | "URGENT";
   goalId?: number;
   referenceLink?: string;
-  danceTypeIds?: number[];
+
   specificSong?: string;
   performanceDurationMinutes?: number;
   callTime?: string;
   desiredSongLinks?: string[];
+  actItems?: ActItem[];
 }
 
 function addMinutesToTime(hhmm: string, minutesToAdd: number): string {
@@ -58,7 +68,7 @@ export default function Step5Dancer({
   bookingExtraServiceRequests = [],
   crewMembers,
   selectionMode,
-  selectedCrewIds = [],
+
   dancerName,
   price,
   yearExperience,
@@ -66,11 +76,12 @@ export default function Step5Dancer({
   bookingNature,
   goalId,
   referenceLink,
-  danceTypeIds = [],
+
   specificSong,
   performanceDurationMinutes,
   callTime,
   desiredSongLinks = [],
+  actItems = [],
 }: Step5DancerProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +94,7 @@ export default function Step5Dancer({
   const hasCalculatedRef = useRef(false);
 
   // Build crewId & numberOfPeople based on selection mode
-  const crewId = selectionMode === "manual" ? selectedCrewIds : [];
+
   const numberOfPeople = crewMembers;
   const payload: DancerBooking = useMemo(() => {
     const firstSession = sessions[0];
@@ -103,16 +114,17 @@ export default function Step5Dancer({
       endTime,
       bookingExtraServiceRequests,
       // crewMembers,
-      crewId,
+
       numberOfPeople,
       bookingNature,
       goalId,
       referenceLink,
-      danceTypeIds,
+      customerPrice: price,
       specificSong,
       performanceDurationMinutes,
       callTime,
       desiredSongLinks,
+      actItems,
     };
   }, [
     dancerId,
@@ -122,16 +134,17 @@ export default function Step5Dancer({
     sessions,
     bookingExtraServiceRequests,
     // crewMembers,
-    crewId,
+
     numberOfPeople,
     bookingNature,
     goalId,
     referenceLink,
-    danceTypeIds,
+    price,
     specificSong,
     performanceDurationMinutes,
     callTime,
     desiredSongLinks,
+    actItems,
   ]);
 
   const handleCalculate = async () => {
@@ -176,12 +189,12 @@ export default function Step5Dancer({
     detail,
     sessions,
     bookingExtraServiceRequests,
-    crewId,
+
     numberOfPeople,
     bookingNature,
     goalId,
     referenceLink,
-    danceTypeIds,
+
     specificSong,
     performanceDurationMinutes,
     callTime,

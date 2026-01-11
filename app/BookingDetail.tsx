@@ -165,6 +165,7 @@ export default function BookingDetail() {
   const totalPrice = booking.price;
   const perSessionPrice = booking?.choreography?.price;
   const status = (booking.statusName || "").trim();
+  const isPaid = booking.isPaid;
   const isComplaintStatus = status === "Đơn trong trạng thái khiếu nại";
   const feedbacks = Array.isArray(booking.bookingFeedbacks)
     ? booking.bookingFeedbacks
@@ -407,6 +408,32 @@ export default function BookingDetail() {
         {/* Cancel Button */}
         {status === "Đơn đặt chờ xác nhận" && (
           <View style={styles.complaintBlock}>
+            {!isPaid && (
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={[styles.updateButton]}
+                  onPress={() => {
+                    router.push({
+                      pathname: "/DancerBooking/[id]",
+                      params: { id: booking.id },
+                    });
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.updateButtonText}>Cập nhập</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.paymentButton]}
+                  onPress={() => {
+                    // Navigate to payment screen
+                    // This might be a payment gateway or another screen
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.paymentButtonText}>Thanh toán</Text>
+                </TouchableOpacity>
+              </View>
+            )}
             <TouchableOpacity
               style={styles.complaintButton}
               onPress={async () => {
@@ -1274,5 +1301,42 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "RobotoMono_700Bold",
     textAlign: "center",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 12,
+  },
+  updateButton: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderWidth: 1.5,
+    borderColor: ORANGE2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  updateButtonText: {
+    color: ORANGE2,
+    fontSize: 15,
+    fontFamily: "RobotoMono_700Bold",
+  },
+  paymentButton: {
+    flex: 1,
+    backgroundColor: ORANGE2,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderWidth: 1.5,
+    borderColor: ORANGE2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  paymentButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontFamily: "RobotoMono_700Bold",
   },
 });

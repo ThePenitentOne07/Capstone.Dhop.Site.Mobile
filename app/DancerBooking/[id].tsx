@@ -197,7 +197,6 @@ export default function DancerBookingScreen() {
             }
             crewMembers={bookingData.crewMembers}
             selectionMode={bookingData.selectionMode}
-            selectedCrewIds={bookingData.selectedCrewIds || []}
             dancerName={name}
             price={price}
             yearExperience={yearExperience}
@@ -205,11 +204,11 @@ export default function DancerBookingScreen() {
             bookingNature={bookingData.bookingNature}
             goalId={bookingData.goalId}
             referenceLink={bookingData.referenceLink}
-            danceTypeIds={bookingData.danceTypeIds}
             specificSong={bookingData.specificSong}
             performanceDurationMinutes={bookingData.performanceDurationMinutes}
             callTime={bookingData.callTime}
             desiredSongLinks={bookingData.desiredSongLinks}
+            actItems={bookingData.actItems}
           />
         )}
       </ScrollView>
