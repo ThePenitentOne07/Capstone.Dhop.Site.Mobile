@@ -295,12 +295,17 @@ export default function Step4({
   const handleSubmit = () => {
     if (!isValid) return;
 
+    const numericPrice = customerPriceInput.replace(/[^0-9]/g, "");
+    const parsedPrice = numericPrice ? parseInt(numericPrice, 10) : undefined;
+
+    // 2. Put it in basePayload so both types get it automatically
     const basePayload = {
       location: location.trim(),
       description: description.trim() || undefined,
       areaId: areaId!,
       bookingExtraServiceRequests,
       goalId: goalIdInput ? parseInt(goalIdInput) : undefined,
+      customerPrice: parsedPrice, // <--- Add here
     };
 
     if (isDancer) {
@@ -311,9 +316,9 @@ export default function Step4({
           (bookingNatureInput as "STANDARD" | "URGENT") || undefined,
         // callTime: callTimeInput.trim() || undefined,
         actItems: actItems.length > 0 ? actItems : undefined,
-        customerPrice: customerPriceInput
-          ? parseInt(customerPriceInput)
-          : undefined,
+        // customerPrice: customerPriceInput
+        //   ? parseInt(customerPriceInput)
+        //   : undefined,
       };
       onSubmit(dancerPayload);
     } else {
@@ -336,9 +341,7 @@ export default function Step4({
           : undefined,
         bookingNature:
           (bookingNatureInput as "STANDARD" | "URGENT") || undefined,
-        customerPrice: customerPriceInput
-          ? parseInt(customerPriceInput)
-          : undefined,
+
         desiredSongLinks:
           desiredSongLinks.length > 0 ? desiredSongLinks : undefined,
       };

@@ -92,6 +92,7 @@ export default function ChoreographerBookingScreen() {
     numberOfMaleStudents?: number;
     numberOfFemaleStudents?: number;
     bookingNature?: "STANDARD" | "URGENT";
+    customerPrice?: number;
   }) => {
     setBookingData({ ...bookingData, ...payload });
     setCurrentStep(6);
@@ -203,6 +204,7 @@ export default function ChoreographerBookingScreen() {
             desiredSongLinks={bookingData.desiredSongLinks}
             numberOfMaleStudents={bookingData.numberOfMaleStudents}
             numberOfFemaleStudents={bookingData.numberOfFemaleStudents}
+            customerPrice={bookingData.customerPrice}
           />
         )}
       </ScrollView>
