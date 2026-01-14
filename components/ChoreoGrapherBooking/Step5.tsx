@@ -31,6 +31,7 @@ interface Step5Props {
   desiredSongLinks?: string[];
   numberOfMaleStudents?: number;
   numberOfFemaleStudents?: number;
+  customerPrice?: number;
 }
 
 function toScheduledISO(dateISO: string, hhmm: string): string {
@@ -55,6 +56,7 @@ export default function Step5({
   desiredSongLinks = [],
   numberOfMaleStudents,
   numberOfFemaleStudents,
+  customerPrice,
 }: Step5Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +85,7 @@ export default function Step5({
       })),
       bookingExtraServiceRequests,
       bookingNature,
+      customerPrice,
     }),
     [
       choreographerId,
@@ -92,6 +95,7 @@ export default function Step5({
       sessions,
       bookingExtraServiceRequests,
       bookingNature,
+      customerPrice,
     ]
   );
 
@@ -142,6 +146,7 @@ export default function Step5({
       setBookingLoading(false);
     }
   };
+  console.log(customerPrice);
 
   return (
     <Animated.View entering={FadeInUp} style={styles.container}>
@@ -185,6 +190,14 @@ export default function Step5({
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Tuổi trung bình:</Text>
                 <Text style={styles.detailValue}>{averageAge}</Text>
+              </View>
+            )}
+            {customerPrice !== undefined && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Giá mong muốn:</Text>
+                <Text style={styles.detailValue}>
+                  {formatCurrency(customerPrice)}
+                </Text>
               </View>
             )}
 

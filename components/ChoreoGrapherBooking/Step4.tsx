@@ -149,6 +149,7 @@ export default function Step4({
     description: "",
     referenceLink: "",
   });
+  console.log(parseInt(customerPriceInput));
 
   // Calculate total performance duration from sessions
   const totalSessionDuration = useMemo(() => {
@@ -338,6 +339,8 @@ export default function Step4({
         customerPrice: customerPriceInput
           ? parseInt(customerPriceInput)
           : undefined,
+        desiredSongLinks:
+          desiredSongLinks.length > 0 ? desiredSongLinks : undefined,
       };
       onSubmit(choreographerPayload);
     }

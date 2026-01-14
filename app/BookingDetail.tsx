@@ -14,6 +14,9 @@ import { useRouter } from "expo-router";
 import { useConversationStore } from "../states/conversationStore";
 import { useAppModal } from "../hooks/useAppModal";
 import { useRefetchOnFocus } from "./hooks/useRefetchOnFocus";
+import { checkUserBalance } from "../service/api";
+import { Modal } from "react-native";
+import { payBooking } from "../service/api";
 
 const ORANGE = "#FF7120";
 const ORANGE2 = "#FF7A00";
@@ -49,6 +52,29 @@ export default function BookingDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [userBalance, setUserBalance] = useState<number>(0);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const handlePaymentPress = async () => {
+    try {
+      setPaymentLoading(true);
+      const response = await checkUserBalance();
+      const balance = response.data?.result || 0;
+      setUserBalance(balance);
+      setPaymentModalVisible(true);
+    } catch (e: any) {
+      showModal({
+        title: "Lỗi",
+        message:
+          e?.response?.data?.message ||
+          e?.message ||
+          "Không thể lấy thông tin ví.",
+        status: "error",
+      });
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
 
   const loadBooking = useCallback(
     async (isActive: () => boolean = () => true) => {
@@ -175,7 +201,6 @@ export default function BookingDetail() {
   // Determine status color for main booking status card
   const { bg: statusBg, color: statusColor } = getBookingStatusStyle(status);
   console.log("log time", formatDateTime(booking.bookingDate));
-  
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -208,6 +233,19 @@ export default function BookingDetail() {
             </Text>
           </View>
         )}
+
+        {/* Payment Status */}
+        <View style={styles.paymentStatusBlock}>
+          <Text style={styles.paymentStatusLabel}>Trạng thái thanh toán</Text>
+          <Text
+            style={[
+              styles.paymentStatusValue,
+              isPaid ? styles.paymentStatusPaid : styles.paymentStatusUnpaid,
+            ]}
+          >
+            {isPaid ? "✓ Đã thanh toán" : "⏳ Chưa thanh toán"}
+          </Text>
+        </View>
 
         {/* Address / Customer */}
         <View
@@ -301,10 +339,32 @@ export default function BookingDetail() {
           </View>
 
           <View style={styles.priceRow}>
-            {/* {!!perSessionPrice && (
-              <Text style={styles.oldPrice}>{formatNumber(perSessionPrice)}đ</Text>
-            )} */}
-            <Text style={styles.curPrice}>{formatNumber(totalPrice)}đ</Text>
+            {booking?.suggestedPrice &&
+              booking.suggestedPrice !== booking.price && (
+                <>
+                  <View style={styles.priceItemRow}>
+                    <Text style={styles.priceLabel}>Giá đề xuất:</Text>
+                    <Text style={styles.oldPrice}>
+                      {formatNumber(booking.suggestedPrice)}đ
+                    </Text>
+                  </View>
+                  <View style={styles.priceItemRow}>
+                    <Text style={styles.priceLabel}>Giá hiện mong muốn:</Text>
+                    <Text style={styles.curPrice}>
+                      {formatNumber(totalPrice)}đ
+                    </Text>
+                  </View>
+                </>
+              )}
+            {!booking?.suggestedPrice ||
+              (booking.suggestedPrice === booking.price && (
+                <View style={styles.priceItemRow}>
+                  <Text style={styles.priceLabel}>Giá:</Text>
+                  <Text style={styles.curPrice}>
+                    {formatNumber(totalPrice)}đ
+                  </Text>
+                </View>
+              ))}
           </View>
 
           <View style={styles.totalBar}>
@@ -420,17 +480,20 @@ export default function BookingDetail() {
                   }}
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.updateButtonText}>Cập nhập</Text>
+                  <Text style={styles.updateButtonText}>Cập nhật</Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   style={[styles.paymentButton]}
-                  onPress={() => {
-                    // Navigate to payment screen
-                    // This might be a payment gateway or another screen
-                  }}
+                  onPress={handlePaymentPress}
+                  disabled={paymentLoading}
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.paymentButtonText}>Thanh toán</Text>
+                  {paymentLoading ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text style={styles.paymentButtonText}>Thanh toán</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             )}
@@ -452,7 +515,10 @@ export default function BookingDetail() {
                 } catch (e: any) {
                   showModal({
                     title: "Lỗi",
-                    message: e?.response?.data?.message || e?.message || "Không thể hủy đơn.",
+                    message:
+                      e?.response?.data?.message ||
+                      e?.message ||
+                      "Không thể hủy đơn.",
                     status: "error",
                   });
                 } finally {
@@ -524,62 +590,170 @@ export default function BookingDetail() {
         </>
       )} */}
 
-      {status === "Đơn đặt đã kích hoạt" && 
-       !areAllSessionsAbsent(booking.trainingSessions) &&
-       (hasTrainingSessionTimeArrived(booking.trainingSessions) || hasStartedSession(booking.trainingSessions)) && (
-        <View style={styles.actionBar}>
-          <TouchableOpacity
-            style={styles.checkinBtn}
-            onPress={() => {
-              try {
-                const sessions = Array.isArray(booking.trainingSessions)
-                  ? booking.trainingSessions.slice()
-                  : [];
-                
-                // Find all sessions with TRAINING_SESSION_STARTED status
-                const startedSessions = sessions.filter(
-                  (s: any) => s?.statusCode === "TRAINING_SESSION_STARTED"
-                );
-                
-                // Sort by sessionNo (ascending) and get the lowest one
-                const sortedStarted = startedSessions.sort(
-                  (a: any, b: any) => (a.sessionNo || 0) - (b.sessionNo || 0)
-                );
-                
-                // Get the lowest sessionNo that has started
-                const target = sortedStarted[0];
-                
-                if (target?.id) {
-                  router.push({
-                    pathname: "/CustomerQRCheckIn",
-                    params: { trainingSessionId: String(target.id) },
-                  });
-                } else {
-                  // Fallback: try to find any not started session if no started session found
-                  const sorted = sessions.sort(
+      {status === "Đơn đặt đã kích hoạt" &&
+        !areAllSessionsAbsent(booking.trainingSessions) &&
+        (hasTrainingSessionTimeArrived(booking.trainingSessions) ||
+          hasStartedSession(booking.trainingSessions)) && (
+          <View style={styles.actionBar}>
+            <TouchableOpacity
+              style={styles.checkinBtn}
+              onPress={() => {
+                try {
+                  const sessions = Array.isArray(booking.trainingSessions)
+                    ? booking.trainingSessions.slice()
+                    : [];
+
+                  // Find all sessions with TRAINING_SESSION_STARTED status
+                  const startedSessions = sessions.filter(
+                    (s: any) => s?.statusCode === "TRAINING_SESSION_STARTED"
+                  );
+
+                  // Sort by sessionNo (ascending) and get the lowest one
+                  const sortedStarted = startedSessions.sort(
                     (a: any, b: any) => (a.sessionNo || 0) - (b.sessionNo || 0)
                   );
-                  const notStarted = sorted.find(
-                    (s: any) => s?.statusCode === "TRAINING_SESSION_NOT_STARTED"
-                  );
-                  if (notStarted?.id) {
+
+                  // Get the lowest sessionNo that has started
+                  const target = sortedStarted[0];
+
+                  if (target?.id) {
                     router.push({
                       pathname: "/CustomerQRCheckIn",
-                      params: { trainingSessionId: String(notStarted.id) },
+                      params: { trainingSessionId: String(target.id) },
                     });
                   } else {
-                    router.push("/CustomerQRCheckIn");
+                    // Fallback: try to find any not started session if no started session found
+                    const sorted = sessions.sort(
+                      (a: any, b: any) =>
+                        (a.sessionNo || 0) - (b.sessionNo || 0)
+                    );
+                    const notStarted = sorted.find(
+                      (s: any) =>
+                        s?.statusCode === "TRAINING_SESSION_NOT_STARTED"
+                    );
+                    if (notStarted?.id) {
+                      router.push({
+                        pathname: "/CustomerQRCheckIn",
+                        params: { trainingSessionId: String(notStarted.id) },
+                      });
+                    } else {
+                      router.push("/CustomerQRCheckIn");
+                    }
                   }
+                } catch {
+                  router.push("/CustomerQRCheckIn");
                 }
-              } catch {
-                router.push("/CustomerQRCheckIn");
-              }
-            }}
-          >
-            <Text style={styles.checkinBtnText}>Check in</Text>
-          </TouchableOpacity>
+              }}
+            >
+              <Text style={styles.checkinBtnText}>Check in</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      <Modal
+        visible={paymentModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPaymentModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Xác nhận thanh toán</Text>
+
+            <View style={styles.paymentInfoBlock}>
+              <View style={styles.paymentRow}>
+                <Text style={styles.paymentLabel}>Số dư ví:</Text>
+                <Text style={styles.paymentBalance}>
+                  {formatNumber(userBalance)}đ
+                </Text>
+              </View>
+
+              <View style={styles.paymentRow}>
+                <Text style={styles.paymentLabel}>Giá dịch vụ:</Text>
+                <Text style={styles.paymentPrice}>
+                  {formatNumber(totalPrice)}đ
+                </Text>
+              </View>
+
+              {userBalance < totalPrice && (
+                <View style={styles.insufficientBlock}>
+                  <Text style={styles.insufficientText}>
+                    ⚠️ Số dư không đủ. Cần thêm{" "}
+                    <Text style={styles.insufficientAmount}>
+                      {formatNumber(totalPrice - userBalance)}đ
+                    </Text>
+                  </Text>
+                </View>
+              )}
+
+              {userBalance >= totalPrice && (
+                <View style={styles.sufficientBlock}>
+                  <Text style={styles.sufficientText}>
+                    ✓ Số dư đủ để thanh toán
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setPaymentModalVisible(false)}
+                disabled={paymentLoading}
+              >
+                <Text style={styles.modalCancelBtnText}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalConfirmBtn,
+                  (paymentLoading || userBalance < totalPrice) &&
+                    styles.modalConfirmBtnDisabled,
+                ]}
+                onPress={async () => {
+                  if (userBalance < totalPrice) return;
+
+                  try {
+                    setPaymentLoading(true);
+                    // Reuse payBooking or ensure your API service has a generic pay function
+                    await payBooking(booking.id);
+
+                    showModal({
+                      title: "Thành công",
+                      message: "Thanh toán thành công.",
+                      status: "success",
+                      autoCloseAfter: 2000,
+                    });
+                    setPaymentModalVisible(false);
+                    await loadBooking(); // Refresh data
+                  } catch (e: any) {
+                    showModal({
+                      title: "Lỗi",
+                      message:
+                        e?.response?.data?.message ||
+                        e?.message ||
+                        "Không thể thanh toán.",
+                      status: "error",
+                    });
+                  } finally {
+                    setPaymentLoading(false);
+                  }
+                }}
+                disabled={paymentLoading || userBalance < totalPrice}
+              >
+                {paymentLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.modalConfirmBtnText}>
+                    {userBalance >= totalPrice
+                      ? "Xác nhận thanh toán"
+                      : "Số dư không đủ"}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-      )}
+      </Modal>
+
       {modal}
     </View>
   );
@@ -589,7 +763,7 @@ function hasStartedSession(trainingSessions: any[]): boolean {
   if (!Array.isArray(trainingSessions) || trainingSessions.length === 0) {
     return false;
   }
-  
+
   // Check if any session has started (use statusCode for comparison)
   return trainingSessions.some((s: any) => {
     const statusCode = (s?.statusCode || "").trim();
@@ -601,7 +775,7 @@ function areAllSessionsAbsent(trainingSessions: any[]): boolean {
   if (!Array.isArray(trainingSessions) || trainingSessions.length === 0) {
     return false;
   }
-  
+
   // Check if all sessions are ABSENT
   return trainingSessions.every((s: any) => {
     const statusCode = (s?.statusCode || "").trim();
@@ -615,7 +789,7 @@ function hasTrainingSessionTimeArrived(trainingSessions: any[]): boolean {
   }
 
   const now = new Date();
-  
+
   // Find sessions that haven't started yet (use statusCode for comparison)
   const notStartedSessions = trainingSessions.filter((s: any) => {
     const statusCode = (s?.statusCode || "").trim();
@@ -633,9 +807,13 @@ function hasTrainingSessionTimeArrived(trainingSessions: any[]): boolean {
 
     try {
       let sessionDate: Date;
-      
+
       // Parse the date string (format: "dd-mm-yyyy HH:mm" or ISO format)
-      if (typeof scheduledTime === "string" && scheduledTime.includes("-") && scheduledTime.includes(" ")) {
+      if (
+        typeof scheduledTime === "string" &&
+        scheduledTime.includes("-") &&
+        scheduledTime.includes(" ")
+      ) {
         const [datePart, timePart] = scheduledTime.split(" ");
         const [day, month, year] = datePart.split("-");
         const [hours, minutes] = timePart.split(":");
@@ -696,7 +874,7 @@ function sessionSummary(s: any) {
     const dt = s.scheduledTime;
     let dateStr = "";
     let start = "";
-    
+
     // Parse the date string directly to preserve the exact time
     if (dt && typeof dt === "string" && dt.includes("-") && dt.includes(" ")) {
       // Format: "dd-mm-yyyy HH:mm" or "dd-mm-yyyy HH:MM"
@@ -716,7 +894,7 @@ function sessionSummary(s: any) {
       dateStr = `${day}/${month}/${year}`;
       start = `${hours}:${minutes}`;
     }
-    
+
     let dur = "";
     if (s.durationMinutes) {
       if (s.durationMinutes >= 60)
@@ -725,9 +903,7 @@ function sessionSummary(s: any) {
           (s.durationMinutes % 60 ? ` ${s.durationMinutes % 60} phút` : "");
       else dur = s.durationMinutes + " phút";
     }
-    return (
-      `${dateStr} ${start}` + (dur ? `, thời lượng ${dur}` : "")
-    );
+    return `${dateStr} ${start}` + (dur ? `, thời lượng ${dur}` : "");
   } catch {
     return "";
   }
@@ -736,7 +912,7 @@ function sessionSummary(s: any) {
 function getStatusColor(statusCode: string): string {
   // Use statusCode (ENUM) for comparison logic
   const code = (statusCode || "").trim();
-  
+
   if (code === "TRAINING_SESSION_SUCCESSFUL") {
     return "#0F9D58"; // Green for successful
   }
@@ -836,6 +1012,31 @@ const styles = StyleSheet.create({
     borderColor: "#EEE",
     height: 200,
   },
+  paymentStatusBlock: {
+    marginHorizontal: 12,
+    marginBottom: 12,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#EEE",
+  },
+  paymentStatusLabel: {
+    fontSize: 15,
+    color: "#111827",
+    marginBottom: 8,
+    fontFamily: "RobotoMono_700Bold",
+  },
+  paymentStatusValue: {
+    fontSize: 16,
+    fontFamily: "RobotoMono_700Bold",
+  },
+  paymentStatusPaid: {
+    color: "#16A34A",
+  },
+  paymentStatusUnpaid: {
+    color: "#F59E0B",
+  },
   blockTitle: {
     fontSize: 15,
     // fontWeight: '800',
@@ -884,7 +1085,7 @@ const styles = StyleSheet.create({
   thumbInitial: {
     fontSize: 26,
     color: ORANGE2,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   itemTitle: {
     fontSize: 16,
@@ -904,10 +1105,9 @@ const styles = StyleSheet.create({
     fontFamily: "RobotoMono_700Bold",
   },
   priceRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "column",
     marginTop: 10,
-    gap: 8,
+    gap: 6,
   },
   oldPrice: {
     color: "#A7A7A7",
@@ -1192,6 +1392,16 @@ const styles = StyleSheet.create({
     zIndex: 20,
     gap: 14,
   },
+  priceItemRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  priceLabel: {
+    color: "#6B7280",
+    fontSize: 14,
+    fontFamily: "RobotoMono_400Regular",
+  },
   acceptBtn: {
     flex: 1,
     backgroundColor: ORANGE2,
@@ -1335,6 +1545,117 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   paymentButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontFamily: "RobotoMono_700Bold",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+    width: "85%",
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: "RobotoMono_700Bold",
+    color: "#1F2937",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  paymentInfoBlock: {
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    gap: 12,
+  },
+  paymentRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  paymentLabel: {
+    color: "#6B7280",
+    fontSize: 14,
+    fontFamily: "RobotoMono_400Regular",
+  },
+  paymentBalance: {
+    color: "#059669",
+    fontSize: 16,
+    fontFamily: "RobotoMono_700Bold",
+  },
+  paymentPrice: {
+    color: "#111827",
+    fontSize: 16,
+    fontFamily: "RobotoMono_700Bold",
+  },
+  insufficientBlock: {
+    backgroundColor: "#FEE2E2",
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+  },
+  insufficientText: {
+    color: "#B91C1B",
+    fontSize: 13,
+    fontFamily: "RobotoMono_400Regular",
+  },
+  insufficientAmount: {
+    fontFamily: "RobotoMono_700Bold",
+    color: "#DC2626",
+  },
+  sufficientBlock: {
+    backgroundColor: "#DCFCE7",
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#BBF7D0",
+  },
+  sufficientText: {
+    color: "#166534",
+    fontSize: 13,
+    fontFamily: "RobotoMono_700Bold",
+  },
+  modalButtonRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 24,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: "#E5E7EB",
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalCancelBtnText: {
+    color: "#6B7280",
+    fontSize: 15,
+    fontFamily: "RobotoMono_700Bold",
+  },
+  modalConfirmBtn: {
+    flex: 1,
+    backgroundColor: ORANGE2,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalConfirmBtnDisabled: {
+    opacity: 0.6,
+  },
+  modalConfirmBtnText: {
     color: "#fff",
     fontSize: 15,
     fontFamily: "RobotoMono_700Bold",

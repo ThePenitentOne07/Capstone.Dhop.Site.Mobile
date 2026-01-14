@@ -157,7 +157,7 @@ export default function Step2({ choreographerId, numberOfDays, bookingNature = '
 
   const isWithin48Hours = (date: Date) => {
     const now = new Date();
-    const minBookingTime = new Date(now.getTime() + 48 * 60 * 60 * 1000); // 48 hours from now
+    const minBookingTime = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
     const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const startOfMinBookingDate = new Date(
       minBookingTime.getFullYear(),
@@ -169,7 +169,7 @@ export default function Step2({ choreographerId, numberOfDays, bookingNature = '
 
   const isBeyond48Hours = (date: Date) => {
     const now = new Date();
-    const maxBookingTime = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+    const maxBookingTime = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     const endOfAllowedDate = new Date(
       maxBookingTime.getFullYear(),
       maxBookingTime.getMonth(),
@@ -248,9 +248,9 @@ export default function Step2({ choreographerId, numberOfDays, bookingNature = '
         <Text style={styles.title}>Chọn ngày</Text>
         <Text style={styles.subtitle}>Chọn {numberOfDays} ngày riêng lẻ để đặt lịch</Text>
         {bookingNature === 'STANDARD' ? (
-          <Text style={styles.warningText}>⚠️ Phải đặt lịch trước ít nhất 48 giờ</Text>
+          <Text style={styles.warningText}>⚠️ Phải đặt lịch trước ít nhất 7 ngày</Text>
         ) : (
-          <Text style={styles.warningText}>⚠️ Buổi đầu tiên phải trong 48 giờ tới</Text>
+          <Text style={styles.warningText}>⚠️ Buổi đầu tiên phải trong 7 ngày tới</Text>
         )}
         {sessionsError ? <Text style={styles.errorText}>{sessionsError}</Text> : null}
       </View>

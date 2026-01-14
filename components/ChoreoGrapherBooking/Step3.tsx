@@ -1,27 +1,40 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
-import Dropdown from '../common/Dropdown';
-import type { OccupiedSession } from './Step2';
+import React, { useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
+import Dropdown from "../common/Dropdown";
+import type { OccupiedSession } from "./Step2";
 
 interface Step3Props {
   selectedDatesISO: string[];
   occupiedSessionsByDate?: Record<string, OccupiedSession[]>;
-  bookingNature?: 'STANDARD' | 'URGENT';
-  onSubmit: (sessions: { dateISO: string; startTime: string; durationMinutes: number }[]) => void;
+  bookingNature?: "STANDARD" | "URGENT";
+  onSubmit: (
+    sessions: { dateISO: string; startTime: string; durationMinutes: number }[]
+  ) => void;
 }
 
 function formatDateLabel(iso: string) {
   const d = new Date(iso);
-  return d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+  return d.toLocaleDateString("vi-VN", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 function generateTimeOptions(): string[] {
   const options: string[] = [];
   for (let h = 0; h < 24; h++) {
     for (let m = 0; m < 60; m += 30) {
-      const hh = String(h).padStart(2, '0');
-      const mm = String(m).padStart(2, '0');
+      const hh = String(h).padStart(2, "0");
+      const mm = String(m).padStart(2, "0");
       options.push(`${hh}:${mm}`);
     }
   }
@@ -30,15 +43,23 @@ function generateTimeOptions(): string[] {
 
 const durationOptions = [30, 60, 90, 120, 150, 180];
 
-export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, bookingNature = 'STANDARD', onSubmit }: Step3Props) {
+export default function Step3({
+  selectedDatesISO,
+  occupiedSessionsByDate = {},
+  bookingNature = "STANDARD",
+  onSubmit,
+}: Step3Props) {
   const timeOptions = useMemo(() => generateTimeOptions(), []);
-  const minBookingTime = useMemo(() => new Date(Date.now() + 48 * 60 * 60 * 1000), []);
+  const minBookingTime = useMemo(
+    () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    []
+  );
 
-  // Check if a session time is within 48 hours from now
+  // Check if a session time is within 7 days from now
   const isWithin48Hours = (dateISO: string, startTime: string): boolean => {
     try {
       const date = new Date(dateISO);
-      const [hours, minutes] = startTime.split(':').map(Number);
+      const [hours, minutes] = startTime.split(":").map(Number);
       const sessionDateTime = new Date(date);
       sessionDateTime.setHours(hours, minutes, 0, 0);
 
@@ -50,11 +71,11 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, b
 
   // Get available time options based on booking nature
   const getAvailableTimeOptions = (dateISO: string): string[] => {
-    if (bookingNature === 'URGENT') {
+    if (bookingNature === "URGENT") {
       // Urgent: allow any time (first session will be validated separately)
       return timeOptions;
     }
-    // Standard: must be at least 48h away
+    // Standard: must be at least 7 days away
     return timeOptions.filter((time) => !isWithin48Hours(dateISO, time));
   };
 
@@ -64,38 +85,50 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, b
     if (availableTimes.length > 0) {
       return availableTimes[0]; // Use first available time
     }
-    // Fallback: calculate a time that's at least 48 hours from now
+    // Fallback: calculate a time that's at least 7 days from now
     const now = new Date();
-    const minBookingTime = new Date(now.getTime() + 48 * 60 * 60 * 1000 + 60 * 60 * 1000); // 49 hours to be safe
-    const hours = String(minBookingTime.getHours()).padStart(2, '0');
-    const minutes = String(minBookingTime.getMinutes()).padStart(2, '0');
+    const minBookingTime = new Date(
+      now.getTime() + 7 * 24 * 60 * 60 * 1000
+    ); // 7 days to be safe
+    const hours = String(minBookingTime.getHours()).padStart(2, "0");
+    const minutes = String(minBookingTime.getMinutes()).padStart(2, "0");
     return `${hours}:${minutes}`;
   };
 
   const [sessions, setSessions] = useState<
     Record<string, { startTime: string; durationMinutes: number }>
   >(() => {
-    const init: Record<string, { startTime: string; durationMinutes: number }> = {};
+    const init: Record<string, { startTime: string; durationMinutes: number }> =
+      {};
     selectedDatesISO.forEach((dateISO) => {
-      init[dateISO] = { startTime: getDefaultTime(dateISO), durationMinutes: 60 };
+      init[dateISO] = {
+        startTime: getDefaultTime(dateISO),
+        durationMinutes: 60,
+      };
     });
     return init;
   });
 
   const busySessionsForDate = (dateISO: string) => {
-    const key = dateISO.split('T')[0];
+    const key = dateISO.split("T")[0];
     return occupiedSessionsByDate[key] || [];
   };
 
   const parseTimeToMinutes = (time: string) => {
-    const [hh, mm] = time.split(':').map((v) => parseInt(v, 10));
+    const [hh, mm] = time.split(":").map((v) => parseInt(v, 10));
     if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
     return hh * 60 + mm;
   };
 
-  const hasConflictForDate = (dateISO: string, currentSessions: Record<string, { startTime: string; durationMinutes: number }>) => {
+  const hasConflictForDate = (
+    dateISO: string,
+    currentSessions: Record<
+      string,
+      { startTime: string; durationMinutes: number }
+    >
+  ) => {
     // Sử dụng currentSessions được truyền vào thay vì state `sessions`
-    const config = currentSessions[dateISO]; 
+    const config = currentSessions[dateISO];
     if (!config?.startTime || !config?.durationMinutes) return false;
 
     const startMinutes = parseTimeToMinutes(config.startTime);
@@ -106,9 +139,9 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, b
     return busy.some((session) => {
       if (!session.scheduledTime) return false;
       const start = new Date(session.scheduledTime);
-      
+
       // 🚨 Chú ý Múi giờ: Đảm bảo getHours/getMinutes là đúng giờ địa phương mong muốn
-      const busyStartMinutes = start.getHours() * 60 + start.getMinutes(); 
+      const busyStartMinutes = start.getHours() * 60 + start.getMinutes();
 
       let busyEndMinutes: number;
       if (session.endTime) {
@@ -127,7 +160,9 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, b
 
   // 1. Tính toán hasAnyConflict bằng cách sử dụng hasConflictForDate với state `sessions` hiện tại
   const hasAnyConflict = useMemo(() => {
-    return selectedDatesISO.some((dateISO) => hasConflictForDate(dateISO, sessions));
+    return selectedDatesISO.some((dateISO) =>
+      hasConflictForDate(dateISO, sessions)
+    );
   }, [selectedDatesISO, sessions]);
 
   // For standard: block sessions within 48h. For urgent: require earliest session within 48h.
@@ -145,7 +180,7 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, b
         const session = sessions[dateISO];
         if (!session?.startTime) return null;
         const date = new Date(dateISO);
-        const [hours, minutes] = session.startTime.split(':').map(Number);
+        const [hours, minutes] = session.startTime.split(":").map(Number);
         const dt = new Date(date);
         dt.setHours(hours, minutes, 0, 0);
         return dt;
@@ -156,9 +191,11 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, b
   }, [selectedDatesISO, sessions]);
 
   const urgentFirstSessionValid =
-    bookingNature !== 'URGENT' || (earliestSessionDateTime && earliestSessionDateTime <= minBookingTime);
+    bookingNature !== "URGENT" ||
+    (earliestSessionDateTime && earliestSessionDateTime <= minBookingTime);
 
-  const hasSessionTooSoonForStandard = bookingNature === 'STANDARD' && hasSessionWithin48Hours;
+  const hasSessionTooSoonForStandard =
+    bookingNature === "STANDARD" && hasSessionWithin48Hours;
 
   const canSubmit =
     !hasAnyConflict &&
@@ -170,34 +207,38 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, b
 
   // 2. Sửa lỗi cập nhật state không đồng bộ bằng cách dùng functional update
   const setTime = (dateISO: string, value: string) => {
-    setSessions(prevSessions => ({ 
-      ...prevSessions, 
-      [dateISO]: { ...prevSessions[dateISO], startTime: value } 
+    setSessions((prevSessions) => ({
+      ...prevSessions,
+      [dateISO]: { ...prevSessions[dateISO], startTime: value },
     }));
   };
 
   // 3. Sửa lỗi cập nhật state không đồng bộ bằng cách dùng functional update
   const setDuration = (dateISO: string, value: number) => {
-    setSessions(prevSessions => ({
+    setSessions((prevSessions) => ({
       ...prevSessions,
       [dateISO]: { ...prevSessions[dateISO], durationMinutes: value },
     }));
   };
 
   const formatTimeRange = (session: OccupiedSession) => {
-    if (!session?.scheduledTime) return '';
+    if (!session?.scheduledTime) return "";
     const start = new Date(session.scheduledTime);
     const end = session.endTime
       ? new Date(session.endTime)
       : new Date(start.getTime() + (session.durationMinutes || 0) * 60000);
     const format = (date: Date) =>
-      date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+      date.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
     return `${format(start)} - ${format(end)}`;
   };
 
   const handleSubmit = () => {
     if (!canSubmit) return;
-    const result = selectedDatesISO.map(dateISO => ({
+    const result = selectedDatesISO.map((dateISO) => ({
       dateISO,
       startTime: sessions[dateISO].startTime,
       durationMinutes: sessions[dateISO].durationMinutes,
@@ -207,37 +248,50 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, b
 
   return (
     <Animated.View entering={FadeInUp} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+      >
         {selectedDatesISO.map((dateISO) => {
           const s = sessions[dateISO];
           const busySessions = busySessionsForDate(dateISO);
           // Sử dụng hasConflictForDate với state sessions hiện tại
-          const hasConflict = hasConflictForDate(dateISO, sessions); 
+          const hasConflict = hasConflictForDate(dateISO, sessions);
           return (
             <View key={dateISO} style={styles.card}>
               <Text style={styles.dateLabel}>{formatDateLabel(dateISO)}</Text>
 
-             
-                {busySessions.length > 0 && (
-                   <View style={styles.busyWrapper}>
-                    <Text style={styles.busyLabel}>Khung giờ biên đạo đã bận</Text>
-                    {busySessions.map((session, idx) => (
-                      <View key={`${session.scheduledTime}-${idx}`} style={styles.busyItem}>
-                        <Text style={styles.busyTime}>{formatTimeRange(session)}</Text>
-                        {session.sessionNo ? (
-                          <Text style={styles.busyMeta}>Buổi #{session.sessionNo}</Text>
-                        ) : null}
-                      </View>
-                    ))}
-                  </View>
-                ) }
-              
+              {busySessions.length > 0 && (
+                <View style={styles.busyWrapper}>
+                  <Text style={styles.busyLabel}>
+                    Khung giờ biên đạo đã bận
+                  </Text>
+                  {busySessions.map((session, idx) => (
+                    <View
+                      key={`${session.scheduledTime}-${idx}`}
+                      style={styles.busyItem}
+                    >
+                      <Text style={styles.busyTime}>
+                        {formatTimeRange(session)}
+                      </Text>
+                      {session.sessionNo ? (
+                        <Text style={styles.busyMeta}>
+                          Buổi #{session.sessionNo}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ))}
+                </View>
+              )}
 
               <View style={styles.row}>
                 <View style={styles.dropdownColumn}>
                   <Text style={styles.dropdownLabel}>Giờ bắt đầu</Text>
                   <Dropdown
-                    data={getAvailableTimeOptions(dateISO).map((t) => ({ value: t, label: t }))}
+                    data={getAvailableTimeOptions(dateISO).map((t) => ({
+                      value: t,
+                      label: t,
+                    }))}
                     onChange={(item) => setTime(dateISO, item.value)}
                     placeholder={s.startTime}
                   />
@@ -252,7 +306,9 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, b
                       value: String(d),
                       label: `${d} phút`,
                     }))}
-                    onChange={(item) => setDuration(dateISO, parseInt(item.value))}
+                    onChange={(item) =>
+                      setDuration(dateISO, parseInt(item.value))
+                    }
                     placeholder={`${s.durationMinutes} phút`}
                   />
                 </View>
@@ -260,40 +316,52 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, b
 
               {hasConflict && (
                 <Text style={styles.conflictText}>
-                  Khung giờ này trùng với lịch đã có. Vui lòng chọn khung giờ khác.
+                  Khung giờ này trùng với lịch đã có. Vui lòng chọn khung giờ
+                  khác.
                 </Text>
               )}
-              {bookingNature === 'STANDARD' && isWithin48Hours(dateISO, s.startTime) && (
-                <Text style={styles.warningText}>
-                  ⚠️ Phải đặt lịch trước ít nhất 48 giờ. Vui lòng chọn giờ muộn hơn.
-                </Text>
-              )}
+              {bookingNature === "STANDARD" &&
+                isWithin48Hours(dateISO, s.startTime) && (
+                  <Text style={styles.warningText}>
+                    ⚠️ Phải đặt lịch trước ít nhất 7 ngày. Vui lòng chọn ngày
+                    muộn hơn.
+                  </Text>
+                )}
             </View>
           );
         })}
 
-        {bookingNature === 'STANDARD' && hasSessionWithin48Hours && (
+        {bookingNature === "STANDARD" && hasSessionWithin48Hours && (
           <View style={styles.warningCard}>
             <Text style={styles.warningCardText}>
-              ⚠️ Một hoặc nhiều buổi tập được đặt trong vòng 48 giờ. Vui lòng chọn thời gian muộn hơn.
+              ⚠️ Một hoặc nhiều buổi tập được đặt trong vòng 7 ngày. Vui lòng
+              chọn ngày muộn hơn.
             </Text>
           </View>
         )}
-        {bookingNature === 'URGENT' && !urgentFirstSessionValid && (
+        {bookingNature === "URGENT" && !urgentFirstSessionValid && (
           <View style={styles.warningCard}>
             <Text style={styles.warningCardText}>
               ⚠️ Buổi tập đầu tiên phải nằm trong 48 giờ tới.
             </Text>
           </View>
         )}
-        <Animated.View entering={FadeInUp.delay(200)} style={styles.submitButtonContainer}>
+        <Animated.View
+          entering={FadeInUp.delay(200)}
+          style={styles.submitButtonContainer}
+        >
           <TouchableOpacity
             style={[styles.submitBtn, !canSubmit && styles.submitBtnDisabled]}
             disabled={!canSubmit}
             onPress={handleSubmit}
             activeOpacity={0.8}
           >
-            <Text style={[styles.submitText, !canSubmit && styles.submitTextDisabled]}>
+            <Text
+              style={[
+                styles.submitText,
+                !canSubmit && styles.submitTextDisabled,
+              ]}
+            >
               Tiếp theo
             </Text>
           </TouchableOpacity>
@@ -304,10 +372,10 @@ export default function Step3({ selectedDatesISO, occupiedSessionsByDate = {}, b
 }
 
 const styles = StyleSheet.create({
-// ... (Styles không thay đổi)
+  // ... (Styles không thay đổi)
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 20,
     paddingTop: 20,
   },
@@ -315,55 +383,55 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   card: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: "#F9FAFB",
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: "#E5E7EB",
     padding: 16,
     marginBottom: 16,
   },
   busyWrapper: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: "#FFF7ED",
     borderRadius: 10,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#FED7AA',
+    borderColor: "#FED7AA",
   },
   busyLabel: {
     fontSize: 12,
-    color: '#B45309',
+    color: "#B45309",
     marginBottom: 6,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   busyItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 4,
   },
   busyTime: {
     fontSize: 13,
-    color: '#92400E',
-    fontFamily: 'RobotoMono_700Bold',
+    color: "#92400E",
+    fontFamily: "RobotoMono_700Bold",
   },
   busyMeta: {
     fontSize: 12,
-    color: '#D97706',
+    color: "#D97706",
   },
   freeText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: "#6B7280",
   },
   dateLabel: {
     fontSize: 16,
-    color: '#1F2937',
+    color: "#1F2937",
     marginBottom: 12,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
   spacer: {
     width: 12,
@@ -373,16 +441,16 @@ const styles = StyleSheet.create({
   },
   dropdownLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: "#6B7280",
     marginBottom: 6,
   },
   submitBtn: {
-    backgroundColor: '#FF7A00',
+    backgroundColor: "#FF7A00",
     borderRadius: 12,
     paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#FF7A00',
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#FF7A00",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -390,17 +458,17 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   submitBtnDisabled: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: "#E5E7EB",
     shadowOpacity: 0,
     elevation: 0,
   },
   submitText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: 'RobotoMono_700Bold',
+    fontFamily: "RobotoMono_700Bold",
   },
   submitTextDisabled: {
-    color: '#9CA3AF',
+    color: "#9CA3AF",
   },
   submitButtonContainer: {
     marginTop: 16,
@@ -409,26 +477,26 @@ const styles = StyleSheet.create({
   conflictText: {
     marginTop: 8,
     fontSize: 12,
-    color: '#DC2626',
-    fontFamily: 'RobotoMono_400Regular',
+    color: "#DC2626",
+    fontFamily: "RobotoMono_400Regular",
   },
   warningText: {
     marginTop: 8,
     fontSize: 12,
-    color: '#F59E0B',
-    fontFamily: 'RobotoMono_700Bold',
+    color: "#F59E0B",
+    fontFamily: "RobotoMono_700Bold",
   },
   warningCard: {
-    backgroundColor: '#FFFBEB',
+    backgroundColor: "#FFFBEB",
     borderRadius: 10,
     padding: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: "#FDE68A",
   },
   warningCardText: {
     fontSize: 13,
-    color: '#92400E',
-    fontFamily: 'RobotoMono_700Bold',
+    color: "#92400E",
+    fontFamily: "RobotoMono_700Bold",
   },
 });
