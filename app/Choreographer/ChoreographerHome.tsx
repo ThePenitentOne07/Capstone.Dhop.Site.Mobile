@@ -162,15 +162,15 @@ export default function ChoreographerHome() {
 
         {/* MENU LIST */}
         <View style={styles.menuSection}>
-          <MenuButton index={0} icon="📜" label="Lịch đặt" onPress={()=>{router.push('/Choreographer/RequestBookingList')}} />
-          <MenuButton index={1} icon="💳" label="Ví tiền" />
+          <MenuButton index={0} icon="" label="Lịch đặt" onPress={()=>{router.push('/Choreographer/RequestBookingList')}} />
+          {/* <MenuButton index={1} icon="💳" label="Ví tiền" /> */}
           {/* <MenuButton index={2} icon="📈" label="Lịch sử giao dịch" /> */}
           {/* <MenuButton index={2} icon="" label="Khiếu nại đơn đặt" onPress={()=>{router.push('/PlatformComplaint')}} /> */}
 
-          <MenuButton index={2} icon="" label="Chat" onPress={()=>{router.push('/ChatList')}} />
+          <MenuButton index={1} icon="" label="Chat" onPress={()=>{router.push('/ChatList')}} />
 
-          <MenuButton index={3} icon="" label="Quét mã check in" onPress={()=>{router.push('/Choreographer/CheckInQr')}} />
-          <MenuButton index={4} icon="🚪" label="Đăng xuất" showLast={true} onPress={handleLogout} />
+          <MenuButton index={2} icon="" label="Quét mã check in" onPress={()=>{router.push('/Choreographer/CheckInQr')}} />
+          <MenuButton index={3} icon="" label="Đăng xuất" showLast={true} onPress={handleLogout} />
         </View>
         {loading && <ActivityIndicator color={ORANGE2} style={{marginTop:20}} />}
       </ScrollView>

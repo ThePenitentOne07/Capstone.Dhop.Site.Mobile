@@ -196,7 +196,7 @@ function BookingCard({ booking, onPress }: { booking: any; onPress?: () => void 
   const totalPrice = booking.price;
   const title = booking.customer?.name || 'Khách hàng';
   const subtitle = `${booking.area?.ward || ''}${booking.area?.ward ? ', ' : ''}${booking.area?.city || ''}`;
-  const hasFeedback = Array.isArray(booking.bookingFeedbacks) && booking.bookingFeedbacks.length > 0;
+  const hasFeedback = Array.isArray(booking.feedbacks) && booking.feedbacks.length > 0;
   const isCompleted = (booking?.statusName || '').trim() === 'Đơn đặt hoàn tất';
   const showFeedbackRow = hasFeedback || isCompleted;
   const ava = booking.customer?.avatar;
@@ -239,7 +239,7 @@ function BookingCard({ booking, onPress }: { booking: any; onPress?: () => void 
             {hasFeedback ? 'Khách đã đánh giá' : 'Chưa có đánh giá'}
           </Text>
           {hasFeedback && (
-            <Text style={styles.feedbackCount}>{booking.bookingFeedbacks.length} đánh giá</Text>
+            <Text style={styles.feedbackCount}>{booking.feedbacks.length} đánh giá</Text>
           )}
         </View>
       )}

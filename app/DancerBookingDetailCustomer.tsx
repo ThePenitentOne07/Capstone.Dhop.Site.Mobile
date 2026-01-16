@@ -166,8 +166,8 @@ export default function DancerBookingDetailCustomer() {
   const perSessionPrice = booking?.dancer?.price;
   const isPaid = booking.isPaid;
   const status = (booking.statusName || "").trim();
-  const feedbacks = Array.isArray(booking.bookingFeedbacks)
-    ? booking.bookingFeedbacks
+  const feedbacks = Array.isArray(booking.feedbacks)
+    ? booking.feedbacks
     : [];
   const hasFeedback = feedbacks.length > 0;
 
@@ -236,7 +236,8 @@ export default function DancerBookingDetailCustomer() {
           style={[styles.block, { position: "relative", paddingBottom: 52 }]}
         >
           <Text style={styles.blockTitle}>Thông tin đơn đặt</Text>
-          <Text style={styles.addrName}>{booking.dancer?.danceGroupName}</Text>
+          <Text style={styles.addrName}>Tên nhóm nhảy: {booking.dancer?.danceGroupName}</Text>
+          <Text style={styles.addrName}>Mục tiêu: {booking.goalDescription}</Text>
           <Text style={styles.addrText}>{booking.address}</Text>
           {!!booking.area && (
             <Text style={styles.addrText}>
@@ -489,7 +490,7 @@ export default function DancerBookingDetailCustomer() {
                   }}
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.updateButtonText}>Cập nhập</Text>
+                  <Text style={styles.updateButtonText}>Cập nhật</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.paymentButton]}
@@ -1003,7 +1004,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: "#EEE",
-    height: 250,
+    height: 300,
   },
   blockTitle: {
     fontSize: 15,

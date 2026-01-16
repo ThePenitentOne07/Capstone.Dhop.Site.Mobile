@@ -9,13 +9,13 @@ import {
   Image,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { getBookingById, cancelChoreographerBooking } from "../service/api";
+import { getBookingById, cancelChoreographerBooking, updateChoreographerBooking } from "../service/api";
 import { useRouter } from "expo-router";
 import { useConversationStore } from "../states/conversationStore";
 import { useAppModal } from "../hooks/useAppModal";
 import { useRefetchOnFocus } from "./hooks/useRefetchOnFocus";
 import { checkUserBalance } from "../service/api";
-import { Modal } from "react-native";
+import { Modal, TextInput } from "react-native";
 import { payBooking } from "../service/api";
 
 const ORANGE = "#FF7120";
@@ -55,6 +55,11 @@ export default function BookingDetail() {
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [userBalance, setUserBalance] = useState<number>(0);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [updateModalVisible, setUpdateModalVisible] = useState(false);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [updateLocation, setUpdateLocation] = useState("");
+  const [updateDetail, setUpdateDetail] = useState("");
+  const [updateCustomerPrice, setUpdateCustomerPrice] = useState("");
   const handlePaymentPress = async () => {
     try {
       setPaymentLoading(true);
@@ -193,8 +198,8 @@ export default function BookingDetail() {
   const status = (booking.statusName || "").trim();
   const isPaid = booking.isPaid;
   const isComplaintStatus = status === "Đơn trong trạng thái khiếu nại";
-  const feedbacks = Array.isArray(booking.bookingFeedbacks)
-    ? booking.bookingFeedbacks
+  const feedbacks = Array.isArray(booking.feedbacks)
+    ? booking.feedbacks
     : [];
   const hasFeedback = feedbacks.length > 0;
 
@@ -251,9 +256,10 @@ export default function BookingDetail() {
         <View
           style={[styles.block, { position: "relative", paddingBottom: 52 }]}
         >
-          <Text style={styles.blockTitle}>Thông tin biên đạo</Text>
-          <Text style={styles.addrName}>{booking.choreography?.username}</Text>
-          <Text style={styles.addrText}>{booking.address}</Text>
+          <Text style={styles.blockTitle}>Thông tin buổi biểu diễn</Text>
+          <Text style={styles.addrName}>Tên biên đạo: {booking.choreography?.username}</Text>
+          <Text style={styles.addrName}>Mục tiêu: {booking.goalDescription}</Text>
+          <Text style={styles.addrText}>Địa chỉ: {booking.address}</Text>
           {!!booking.area && (
             <Text style={styles.addrText}>
               {booking.area.ward}, {booking.area.city}
@@ -473,10 +479,12 @@ export default function BookingDetail() {
                 <TouchableOpacity
                   style={[styles.updateButton]}
                   onPress={() => {
-                    router.push({
-                      pathname: "/DancerBooking/[id]",
-                      params: { id: booking.id },
-                    });
+                    setUpdateLocation(booking?.address || "");
+                    setUpdateDetail(booking?.detail || "");
+                    setUpdateCustomerPrice(
+                      String(booking?.customerPrice || "")
+                    );
+                    setUpdateModalVisible(true);
                   }}
                   activeOpacity={0.85}
                 >
@@ -754,6 +762,140 @@ export default function BookingDetail() {
         </View>
       </Modal>
 
+      {/* Update Modal */}
+      <Modal
+        visible={updateModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setUpdateModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Cập nhật thông tin đơn</Text>
+
+            <View style={styles.modalField}>
+              <Text style={styles.modalLabel}>Địa điểm</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Nhập địa điểm..."
+                placeholderTextColor="#9CA3AF"
+                value={updateLocation}
+                onChangeText={setUpdateLocation}
+              />
+            </View>
+
+            <View style={styles.modalField}>
+              <Text style={styles.modalLabel}>Mô tả</Text>
+              <TextInput
+                style={[styles.modalInput, styles.modalInputMultiline]}
+                placeholder="Nhập mô tả..."
+                placeholderTextColor="#9CA3AF"
+                value={updateDetail}
+                onChangeText={setUpdateDetail}
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+
+            <View style={styles.modalField}>
+              <Text style={styles.modalLabel}>Giá tiền</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Nhập giá tiền..."
+                placeholderTextColor="#9CA3AF"
+                value={updateCustomerPrice}
+                onChangeText={setUpdateCustomerPrice}
+                keyboardType="number-pad"
+              />
+            </View>
+
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setUpdateModalVisible(false)}
+                disabled={updateLoading}
+              >
+                <Text style={styles.modalCancelBtnText}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalConfirmBtn,
+                  updateLoading && styles.modalConfirmBtnDisabled,
+                ]}
+                onPress={async () => {
+                  if (
+                    !booking?.id ||
+                    !updateLocation.trim() ||
+                    !updateCustomerPrice
+                  ) {
+                    showModal({
+                      title: "Lỗi",
+                      message: "Vui lòng điền đầy đủ thông tin.",
+                      status: "error",
+                    });
+                    return;
+                  }
+
+                  try {
+                    setUpdateLoading(true);
+
+                    // Build payload with only changed fields
+                    const updatePayload: any = {};
+
+                    if (updateLocation !== (booking?.address || "")) {
+                      updatePayload.location = updateLocation;
+                    }
+
+                    if (updateDetail !== (booking?.detail || "")) {
+                      updatePayload.detail = updateDetail;
+                    }
+
+                    if (
+                      parseInt(updateCustomerPrice) !== booking?.customerPrice
+                    ) {
+                      updatePayload.customerPrice =
+                        parseInt(updateCustomerPrice);
+                    }
+
+                    // Only make request if there are changes
+                    if (Object.keys(updatePayload).length > 0) {
+                      await updateChoreographerBooking(booking.id, updatePayload);
+                    }
+
+                    showModal({
+                      title: "Thành công",
+                      message: "Cập nhật thông tin thành công.",
+                      status: "success",
+                      autoCloseAfter: 2000,
+                    });
+                    setUpdateModalVisible(false);
+                    await loadBooking();
+                  } catch (e: any) {
+                    showModal({
+                      title: "Lỗi",
+                      message:
+                        e?.response?.data?.message ||
+                        e?.message ||
+                        "Không thể cập nhật thông tin.",
+                      status: "error",
+                    });
+                  } finally {
+                    setUpdateLoading(false);
+                  }
+                }}
+                disabled={updateLoading}
+              >
+                {updateLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.modalConfirmBtnText}>Xác nhận</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {modal}
     </View>
   );
@@ -1010,7 +1152,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: "#EEE",
-    height: 200,
+    height: 300,
   },
   paymentStatusBlock: {
     marginHorizontal: 12,
@@ -1111,7 +1253,7 @@ const styles = StyleSheet.create({
   },
   oldPrice: {
     color: "#A7A7A7",
-    textDecorationLine: "line-through",
+    // textDecorationLine: "line-through",
     fontSize: 16,
     fontFamily: "RobotoMono_400Regular",
   },
@@ -1659,5 +1801,29 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 15,
     fontFamily: "RobotoMono_700Bold",
+  },
+  modalInputMultiline: {
+    minHeight: 96,
+    textAlignVertical: "top",
+  },
+  modalField: {
+    marginBottom: 16,
+  },
+  modalLabel: {
+    fontSize: 14,
+    fontFamily: "RobotoMono_700Bold",
+    color: "#6B7280",
+    marginBottom: 6,
+  },
+  modalInput: {
+    backgroundColor: "#F9FAFB",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    color: "#1F2937",
+    fontSize: 14,
+    fontFamily: "RobotoMono_400Regular",
   },
 });

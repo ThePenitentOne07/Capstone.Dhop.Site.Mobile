@@ -132,8 +132,9 @@ export default function DancerBookingDetail() {
     (booking.trainingSessions?.length || 0);
   const totalPrice = booking.price;
   const perSessionPrice = booking?.dancer?.price;
+  const isPaid = booking.isPaid;
   const status = (booking.statusName || '').trim();
-  const feedbacks = Array.isArray(booking.bookingFeedbacks) ? booking.bookingFeedbacks : [];
+  const feedbacks = Array.isArray(booking.feedbacks) ? booking.feedbacks : [];
   const hasFeedback = feedbacks.length > 0;
 
   // Determine status color for main booking status card
@@ -149,6 +150,18 @@ export default function DancerBookingDetail() {
           <Text style={[styles.statusTitle, { color: statusColor }]}>{status}</Text>
           <Text style={styles.shipStatus}>Ngày đặt</Text>
           <Text style={styles.shipTime}>{formatDateTime(booking.bookingDate)}</Text>
+        </View>
+        {/* Payment Status */}
+        <View style={styles.paymentStatusBlock}>
+          <Text style={styles.paymentStatusLabel}>Trạng thái thanh toán</Text>
+          <Text
+            style={[
+              styles.paymentStatusValue,
+              isPaid ? styles.paymentStatusPaid : styles.paymentStatusUnpaid,
+            ]}
+          >
+            {isPaid ? "✓ Đã thanh toán" : "⏳ Chưa thanh toán"}
+          </Text>
         </View>
 
         {/* Address / Customer */}
@@ -749,6 +762,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6B7280',
     fontFamily: 'RobotoMono_400Regular',
+  },
+  paymentStatusBlock: {
+    marginHorizontal: 12,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#EEE',
+  },
+  paymentStatusLabel: {
+    fontSize: 15,
+    color: '#111827',
+    marginBottom: 8,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  paymentStatusValue: {
+    fontSize: 16,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  paymentStatusPaid: {
+    color: '#16A34A',
+  },
+  paymentStatusUnpaid: {
+    color: '#F59E0B',
   },
   stateContainer: {
     flex: 1,

@@ -131,8 +131,9 @@ export default function BookingDetailOnHold() {
   const qty = booking.numberOfTrainingSessions ?? (booking.trainingSessions?.length || 0);
   const totalPrice = booking.price;
   const perSessionPrice = booking?.choreography?.price;
+  const isPaid = booking.isPaid;
   const status = (booking.statusName || '').trim();
-  const feedbacks = Array.isArray(booking.bookingFeedbacks) ? booking.bookingFeedbacks : [];
+  const feedbacks = Array.isArray(booking.feedbacks) ? booking.feedbacks : [];
   const hasFeedback = feedbacks.length > 0;
   
 
@@ -150,12 +151,25 @@ export default function BookingDetailOnHold() {
           <Text style={styles.shipStatus}>Ngày đặt</Text>
           <Text style={styles.shipTime}>{formatDateTime(booking.bookingDate)}</Text>
         </View>
+        {/* Payment Status */}
+        <View style={styles.paymentStatusBlock}>
+          <Text style={styles.paymentStatusLabel}>Trạng thái thanh toán</Text>
+          <Text
+            style={[
+              styles.paymentStatusValue,
+              isPaid ? styles.paymentStatusPaid : styles.paymentStatusUnpaid,
+            ]}
+          >
+            {isPaid ? "✓ Đã thanh toán" : "⏳ Chưa thanh toán"}
+          </Text>
+        </View>
 
         {/* Address / Customer */}
         <View style={[styles.block, {position:'relative', paddingBottom:52}]}>
           <Text style={styles.blockTitle}>Thông tin khách hàng</Text>
-          <Text style={styles.addrName}>{booking.customer?.name}</Text>
-          <Text style={styles.addrText}>{booking.address}</Text>
+          <Text style={styles.addrName}>Tên khách hàng: {booking.customer?.name}</Text>
+          <Text style={styles.addrName}>Mục tiêu: {booking.goalDescription}</Text>
+          <Text style={styles.addrText}>Địa chỉ: {booking.address}</Text>
           {!!booking.area && (
             <Text style={styles.addrText}>{booking.area.ward}, {booking.area.city}</Text>
           )}
@@ -359,31 +373,33 @@ export default function BookingDetailOnHold() {
                 <Text style={styles.declineBtnText}>Từ chối</Text>
               )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.acceptBtn} onPress={async () => {
-              setAcceptLoading(true); setAcceptError(undefined);
-              try {
-                console.log('acceptChoreographerBooking request:', {
-                  bookingId: booking.id,
-                  statusName: 'BOOKING_ACTIVATE',
-                });
-                await acceptChoreographerBooking(booking.id, 'BOOKING_ACTIVATE');
-                showModal({
-                  title: 'Thành công',
-                  message: 'Đơn đã được chấp nhận.',
-                  status: 'success',
-                  autoCloseAfter: 2000,
-                  onAutoClose: () => load(),
-                });
-              } catch(e:any) {
-                setAcceptError(e?.response?.data?.message || e?.message || 'Lỗi khi xác nhận');
-              } finally { setAcceptLoading(false); }
-            }} disabled={acceptLoading || declineLoading}>
-              {acceptLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.acceptBtnText}>Đồng ý</Text>
-              )}
-            </TouchableOpacity>
+            {isPaid && (
+              <TouchableOpacity style={styles.acceptBtn} onPress={async () => {
+                setAcceptLoading(true); setAcceptError(undefined);
+                try {
+                  console.log('acceptChoreographerBooking request:', {
+                    bookingId: booking.id,
+                    statusName: 'BOOKING_ACTIVATE',
+                  });
+                  await acceptChoreographerBooking(booking.id, 'BOOKING_ACTIVATE');
+                  showModal({
+                    title: 'Thành công',
+                    message: 'Đơn đã được chấp nhận.',
+                    status: 'success',
+                    autoCloseAfter: 2000,
+                    onAutoClose: () => load(),
+                  });
+                } catch(e:any) {
+                  setAcceptError(e?.response?.data?.message || e?.message || 'Lỗi khi xác nhận');
+                } finally { setAcceptLoading(false); }
+              }} disabled={acceptLoading || declineLoading}>
+                {acceptLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.acceptBtnText}>Đồng ý</Text>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
           {acceptError && <Text style={{textAlign:'center',color:'#b91c1c',fontWeight:'bold',marginBottom:6}}>{acceptError}</Text>}
         </>
@@ -560,7 +576,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: '#EEE',
-    height: 200,
+    height: 300,
   },
   blockTitle: {
     fontSize: 15,
@@ -954,6 +970,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6B7280',
     fontFamily: 'RobotoMono_400Regular',
+  },
+  paymentStatusBlock: {
+    marginHorizontal: 12,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#EEE',
+  },
+  paymentStatusLabel: {
+    fontSize: 15,
+    color: '#111827',
+    marginBottom: 8,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  paymentStatusValue: {
+    fontSize: 16,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  paymentStatusPaid: {
+    color: '#16A34A',
+  },
+  paymentStatusUnpaid: {
+    color: '#F59E0B',
   },
   stateContainer: {
     flex: 1,

@@ -277,8 +277,8 @@ function BookingCard({
   }${booking.area?.city || ''}`;
 
   const hasFeedback =
-    Array.isArray(booking.bookingFeedbacks) &&
-    booking.bookingFeedbacks.length > 0;
+    Array.isArray(booking.feedbacks) &&
+    booking.feedbacks.length > 0;
   const isCompleted =
     (booking?.statusName || '').trim() === 'Đơn đặt hoàn tất';
   const showFeedbackRow = hasFeedback || isCompleted;
@@ -335,11 +335,7 @@ function BookingCard({
           >
             {hasFeedback ? 'Đã đánh giá' : 'Chưa đánh giá'}
           </Text>
-          {hasFeedback && (
-            <Text style={styles.feedbackCount}>
-              {booking.bookingFeedbacks.length} đánh giá
-            </Text>
-          )}
+          
         </View>
       )}
     </TouchableOpacity>

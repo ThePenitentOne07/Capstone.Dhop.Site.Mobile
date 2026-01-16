@@ -425,6 +425,9 @@ export const cancelDancerBooking = (bookingId: string | number) => {
 export const updateDancerBooking = (bookingId: number, payload: any) => {
   return api.patch(`/booking/${bookingId}`, payload);
 };
+export const updateChoreographerBooking = (bookingId: number, payload: any) => {
+  return api.patch(`/booking/choreographer/${bookingId}`, payload);
+};
 
 // Check-in training session via QR
 export const qrTrainingSession = (

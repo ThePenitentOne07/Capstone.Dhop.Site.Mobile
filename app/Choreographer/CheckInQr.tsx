@@ -113,6 +113,7 @@ export default function CheckInQr() {
 
         const address = parsedData?.address || '';
         const scheduledTime = parsedData?.trainingSession?.scheduledTime || '';
+        const endTime = parsedData?.trainingSession?.endTime || '';
         const durationMinutes = parsedData?.trainingSession?.durationMinutes || 0;
         const customerName = parsedData?.customerName || '';
 
@@ -139,11 +140,17 @@ export default function CheckInQr() {
                   
                   {scheduledTime ? (
                     <View style={styles.modalInfoRow}>
-                      <Text style={styles.modalLabel}>Thời gian:</Text>
-                      <Text style={styles.modalValue}>{formatDateTime(scheduledTime)}</Text>
+                      <Text style={styles.modalLabel}>Bắt đầu lúc:</Text>
+                      <Text style={styles.modalValue}>{(scheduledTime)}</Text>
                     </View>
                   ) : null}
-                  
+
+                  {endTime ? (
+                    <View style={styles.modalInfoRow}>
+                      <Text style={styles.modalLabel}>Kết thúc lúc:</Text>
+                      <Text style={styles.modalValue}>{(endTime)}</Text>
+                    </View>
+                  ) : null}
                   {durationMinutes > 0 ? (
                     <View style={styles.modalInfoRow}>
                       <Text style={styles.modalLabel}>Thời lượng:</Text>
