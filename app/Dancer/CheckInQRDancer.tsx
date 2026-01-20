@@ -143,7 +143,7 @@ export default function CheckInQRDancer() {
                   
                   {bookingDate ? (
                     <View style={styles.modalInfoRow}>
-                      <Text style={styles.modalLabel}>Ngày đặt:</Text>
+                      <Text style={styles.modalLabel}>Ngày diễn:</Text>
                       <Text style={styles.modalValue}>{formatDateTime(bookingDate)}</Text>
                     </View>
                   ) : null}

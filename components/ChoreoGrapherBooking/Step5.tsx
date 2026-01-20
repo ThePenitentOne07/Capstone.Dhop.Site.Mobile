@@ -230,7 +230,7 @@ export default function Step5({
                     bookingNature === "URGENT" && { color: "#DC2626" },
                   ]}
                 >
-                  {bookingNature === "STANDARD" ? "Chuẩn" : "Khẩn cấp"}
+                  {bookingNature === "STANDARD" ? "Tiêu chuẩn" : "Khẩn cấp"}
                 </Text>
               </View>
             )}

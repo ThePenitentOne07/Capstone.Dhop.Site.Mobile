@@ -353,8 +353,8 @@ export const getDancerBookings = (params?: GetDancerBookingsParams) => {
 export const dancerAcceptBooking = (bookingId: number) => {
   return api.patch(`/dancers/apply-booking`, { bookingId });
 };
-export const dancerCompleteWork = (bookingId: number, qrCodeData: string) => {
-  return api.post(`/dancers/complete-work`, { bookingId, qrCodeData });
+export const dancerCompleteWork = (bookingId: number) => {
+  return api.post(`/dancers/complete-work`, { bookingId});
 };
 export const dancerStartWorking = (bookingId: number) => {
   return api.patch(`/dancers/start-work-booking`, { bookingId });

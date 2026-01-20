@@ -134,7 +134,7 @@ export default function DancerBookingDetail() {
   const perSessionPrice = booking?.dancer?.price;
   const isPaid = booking.isPaid;
   const status = (booking.statusName || '').trim();
-  const feedbacks = Array.isArray(booking.feedbacks) ? booking.feedbacks : [];
+  const feedbacks = Array.isArray(booking.bookingFeedbacks) ? booking.bookingFeedbacks : [];
   const hasFeedback = feedbacks.length > 0;
 
   // Determine status color for main booking status card
@@ -241,10 +241,32 @@ export default function DancerBookingDetail() {
           </View>
 
           <View style={styles.priceRow}>
-            {/* {!!perSessionPrice && (
-              <Text style={styles.oldPrice}>{formatNumber(perSessionPrice)}đ</Text>
-            )} */}
-            <Text style={styles.curPrice}>{formatNumber(totalPrice)}đ</Text>
+            {booking?.suggestedPrice &&
+              booking.suggestedPrice !== booking.price && (
+                <>
+                  <View style={styles.priceItemRow}>
+                    <Text style={styles.priceLabel}>Giá đề xuất:</Text>
+                    <Text style={styles.oldPrice}>
+                      {formatNumber(booking.suggestedPrice)}đ
+                    </Text>
+                  </View>
+                  <View style={styles.priceItemRow}>
+                    <Text style={styles.priceLabel}>Giá khách hàng mong muốn:</Text>
+                    <Text style={styles.curPrice}>
+                      {formatNumber(totalPrice)}đ
+                    </Text>
+                  </View>
+                </>
+              )}
+            {!booking?.suggestedPrice ||
+              (booking.suggestedPrice === booking.price && (
+                <View style={styles.priceItemRow}>
+                  <Text style={styles.priceLabel}>Giá:</Text>
+                  <Text style={styles.curPrice}>
+                    {formatNumber(totalPrice)}đ
+                  </Text>
+                </View>
+              ))}
           </View>
 
           <View style={styles.totalBar}>
@@ -288,6 +310,40 @@ export default function DancerBookingDetail() {
           </View>
         )}
 
+        {/* Act Items */}
+        {Array.isArray(booking.actItems) && booking.actItems.length > 0 && (
+          <View style={styles.actItemsBlock}>
+            <Text style={styles.actItemsTitle}>Các tiết mục biểu diễn</Text>
+            {booking.actItems.map((item: any, idx: number) => (
+              <View key={item.id || idx} style={styles.actItemCard}>
+                <View style={styles.actItemHeader}>
+                  <Text style={styles.actItemIndex}>#{item.orderIndex}</Text>
+                  <Text style={styles.actItemSong}>{item.songName}</Text>
+                </View>
+                <View style={styles.actItemDetails}>
+                  <Text style={styles.actItemDetailText}>
+                    Thể loại: {item.danceTypeName || `ID: ${item.danceTypeId}`}
+                  </Text>
+                  <Text style={styles.actItemDetailText}>
+                    Thời lượng: {item.durationMinutes} phút
+                  </Text>
+                </View>
+                <Text style={styles.actItemDesc}>{item.description}</Text>
+                <Text style={styles.actItemLink} numberOfLines={1}>
+                  {item.referenceLink}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+        {isPaid && status === 'Đơn đặt chờ xác nhận' && (
+            <View style={styles.hintMessage}>
+              <Text style={styles.hintMessageText}>
+                Hãy qua trang web của ứng dụng để phân công thành viên
+              </Text>
+            </View>
+          )}
+
         {/* Feedback */}
         {status === 'Đơn đặt hoàn tất' && (
           <View style={styles.feedbackBlock}>
@@ -312,6 +368,7 @@ export default function DancerBookingDetail() {
       {/* Floating action buttons */}
       {status === 'Đơn đặt chờ xác nhận' && (
         <>
+          
           <View style={styles.actionBar}>
             <TouchableOpacity
               style={styles.declineBtn}
@@ -345,31 +402,7 @@ export default function DancerBookingDetail() {
                 <Text style={styles.declineBtnText}>Từ chối</Text>
               )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.acceptBtn} onPress={async () => {
-              setAcceptLoading(true); setAcceptError(undefined);
-              try {
-                console.log('acceptDancerBooking request:', {
-                  bookingId: booking.id,
-                  statusName: 'BOOKING_ACTIVATE',
-                });
-                await dancerAcceptBooking(booking.id);
-                showModal({
-                  title: 'Thành công',
-                  message: 'Đơn đã được chấp nhận.',
-                  status: 'success',
-                  autoCloseAfter: 2000,
-                  onAutoClose: () => load(),
-                });
-              } catch(e:any) {
-                setAcceptError(e?.response?.data?.message || e?.message || 'Lỗi khi xác nhận');
-              } finally { setAcceptLoading(false); }
-            }} disabled={acceptLoading || declineLoading}>
-              {acceptLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.acceptBtnText}>Đồng ý</Text>
-              )}
-            </TouchableOpacity>
+           
           </View>
           {acceptError && <Text style={{textAlign:'center',color:'#b91c1c',fontWeight:'bold',marginBottom:6}}>{acceptError}</Text>}
         </>
@@ -577,19 +610,27 @@ const styles = StyleSheet.create({
     fontFamily: 'RobotoMono_700Bold',
   },
   priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
     marginTop: 10,
-    gap: 8,
+    gap: 6,
+  },
+  priceItemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  priceLabel: {
+    color: '#6B7280',
+    fontSize: 14,
+    fontFamily: 'RobotoMono_400Regular',
   },
   oldPrice: {
-    color: '#A7A7A7',
-    textDecorationLine: 'line-through',
+    color: '#111827',
     fontSize: 16,
     fontFamily: 'RobotoMono_400Regular',
   },
   curPrice: {
-    fontSize: 20,
+    fontSize: 18,
     color: '#111827',
     fontFamily: 'RobotoMono_700Bold',
   },
@@ -788,6 +829,72 @@ const styles = StyleSheet.create({
   paymentStatusUnpaid: {
     color: '#F59E0B',
   },
+  actItemsBlock: {
+    marginHorizontal: 12,
+    marginBottom: 28,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#FFECD0',
+  },
+  actItemsTitle: {
+    color: ORANGE2,
+    fontSize: 15,
+    marginBottom: 10,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  actItemCard: {
+    backgroundColor: '#FFF9EF',
+    borderRadius: 9,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#FFD8B4',
+  },
+  actItemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  actItemIndex: {
+    color: ORANGE,
+    fontSize: 12,
+    fontFamily: 'RobotoMono_700Bold',
+    backgroundColor: '#FFE4CC',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  actItemSong: {
+    flex: 1,
+    color: '#111827',
+    fontSize: 14,
+    fontFamily: 'RobotoMono_700Bold',
+  },
+  actItemDetails: {
+    marginBottom: 8,
+    gap: 4,
+  },
+  actItemDetailText: {
+    color: '#6B7280',
+    fontSize: 13,
+    fontFamily: 'RobotoMono_400Regular',
+  },
+  actItemDesc: {
+    color: '#4B5563',
+    fontSize: 13,
+    fontFamily: 'RobotoMono_400Regular',
+    marginBottom: 6,
+    lineHeight: 18,
+  },
+  actItemLink: {
+    color: '#2563EB',
+    fontSize: 12,
+    fontFamily: 'RobotoMono_400Regular',
+    textDecorationLine: 'underline',
+  },
   stateContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -813,6 +920,24 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 15,
     fontFamily: 'RobotoMono_700Bold',
+  },
+  hintMessage: {
+    // position: 'absolute',
+    left: 0,
+    right: 0,
+    // bottom: 110,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    backgroundColor: '#FEF3C7',
+    borderTopWidth: 1,
+    borderTopColor: '#FCD34D',
+    // zIndex: 19,
+  },
+  hintMessageText: {
+    textAlign: 'center',
+    color: '#B45309',
+    fontSize: 13,
+    fontFamily: 'RobotoMono_400Regular',
   },
   actionBar: {
     flexDirection: 'row',

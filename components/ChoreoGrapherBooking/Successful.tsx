@@ -15,7 +15,7 @@ export default function Successful({ totalPrice, sessions, onDone }: SuccessfulP
   const router = useRouter();
   
   const handleNavigateToBookingList = () => {
-    router.push('/BookingList');
+    router.back();
   };
   
   return (
@@ -50,7 +50,7 @@ export default function Successful({ totalPrice, sessions, onDone }: SuccessfulP
             onPress={handleNavigateToBookingList} 
             activeOpacity={0.85}
           >
-            <Text style={styles.bookingListText}>Tới danh sách đặt lịch</Text>
+            <Text style={styles.bookingListText}>Quay lại</Text>
           </TouchableOpacity>
           {onDone && (
             <TouchableOpacity style={styles.doneBtn} onPress={onDone} activeOpacity={0.85}>
