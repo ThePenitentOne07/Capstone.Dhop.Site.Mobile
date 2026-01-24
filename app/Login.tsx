@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ActivityIndicator } from "react-native";
+import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Platform } from "react-native";
 import Animated, { SlideInDown,  BounceIn, Easing, CSSAnimationKeyframes} from "react-native-reanimated";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { loginUser, getUserInfo } from "../service/api";
+import { loginUser, getUserInfo, registerFCMToken } from "../service/api";
 import { useAppModal } from "../hooks/useAppModal";
+import { registerForPushNotificationsAsync } from "../service/notificationService";
 
 
 export default function LoginScreen() {
@@ -45,6 +46,23 @@ export default function LoginScreen() {
         throw new Error("Không nhận được token từ máy chủ");
       }
       await AsyncStorage.setItem("token", token);
+      
+      // Register FCM token
+      try {
+        const fcmToken = await registerForPushNotificationsAsync();
+        if (fcmToken) {
+          console.log('📱 FCM Token:', fcmToken);
+          await registerFCMToken({
+            token: fcmToken,
+            deviceType: Platform.OS === 'ios' ? 'ios' : 'android',
+          });
+          console.log('✅ FCM Token registered with backend');
+        }
+      } catch (fcmError) {
+        console.error('❌ Failed to register FCM token:', fcmError);
+        // Don't block login if FCM registration fails
+      }
+      
       // fetch user info to decide where to go
       try {
         const userRes = await getUserInfo();

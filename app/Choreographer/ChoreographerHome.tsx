@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { useUserInfo } from '../../hooks/useUserInfo';
@@ -6,6 +6,8 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, Eas
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppModal } from '../../hooks/useAppModal';
 import { useNotificationStore } from '../../states/notificationStore';
+import { useRefetchOnFocus } from '../hooks/useRefetchOnFocus';
+import { getNotifications, unregisterFCMToken } from '../../service/api';
 
 const ORANGE = '#FF7120';
 const ORANGE2 = '#FF7A00';
@@ -14,7 +16,7 @@ export default function ChoreographerHome() {
   const router = useRouter();
   const { user, loading } = useUserInfo();
   const { showModal, modal } = useAppModal();
-  const { unreadCount } = useNotificationStore();
+  const { unreadCount, setNotifications } = useNotificationStore();
   const avatarSource = user?.avatar
     ? { uri: user.avatar }
     : require('../../assets/vecteezy_man-using-smartphone-device_24096847.png');
@@ -33,6 +35,12 @@ export default function ChoreographerHome() {
           text: 'Đăng xuất',
           destructive: true,
           onPress: async () => {
+            try {
+              // Get FCM token and unregister it
+              await unregisterFCMToken();
+            } catch (error) {
+              console.error("Error unregistering FCM token:", error);
+            }
             await AsyncStorage.multiRemove(['token', 'user']);
             router.replace('/Login');
           },
@@ -111,6 +119,34 @@ export default function ChoreographerHome() {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
+
+  // Refetch notifications when screen comes into focus
+  const refetchNotifications = useCallback(async () => {
+    try {
+      const response = await getNotifications();
+      const items = response.data?.items ?? [];
+      const mapped = items.map((item) => ({
+        id: item.id,
+        title: item.title ?? "Notification",
+        message: item.message ?? "",
+        type: (item.type === "success" || item.type === "warning" || item.type === "error" 
+          ? item.type 
+          : "info") as "info" | "success" | "warning" | "error",
+        timestamp: new Date(item.createdAt),
+        read: !!item.read,
+        data: {
+          link: item.link,
+          userUUID: item.userUUID,
+        },
+      }));
+      setNotifications(mapped);
+    } catch (error) {
+      console.error("Failed to refetch notifications:", error);
+    }
+  }, [setNotifications]);
+
+  // Refetch notifications when screen is focused
+  useRefetchOnFocus(refetchNotifications);
 
   // Profile section entry animation
   const profileOpacity = useSharedValue(0);
